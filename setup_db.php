@@ -1,25 +1,27 @@
 <?php
-// setup_db.php – Run once to create database and tables
+// setup_db.php – Jalankan SEKALI untuk membuat tabel di Neon PostgreSQL
+// Akses via browser: https://mbg.jack-ai.my.id/setup_db.php
+// HAPUS file ini setelah berhasil!
+
 require __DIR__ . '/database/db.php';
 
-// Connect without dbname first to create the database
-$dsn = sprintf('mysql:host=%s;port=%s;charset=%s', DB_HOST, DB_PORT, DB_CHARSET);
-$pdo = new PDO($dsn, DB_USER, DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+header('Content-Type: text/plain; charset=UTF-8');
 
-$sql = file_get_contents(__DIR__ . '/database/schema.sql');
+try {
+    $pdo = getDB();
+    echo "✅ Koneksi ke Neon PostgreSQL berhasil.\n\n";
 
-// Split by semicolons and run each statement
-$statements = array_filter(array_map('trim', explode(';', $sql)));
-foreach ($statements as $stmt) {
-    if (!empty($stmt)) {
-        try {
-            $pdo->exec($stmt);
-        } catch (PDOException $e) {
-            // Ignore duplicate entry errors for demo data
-            if ($e->getCode() !== '23000') {
-                echo "Error: " . $e->getMessage() . "\n";
-            }
-        }
-    }
+    $sql = file_get_contents(__DIR__ . '/database/schema.sql');
+
+    // Jalankan seluruh SQL sekaligus (PostgreSQL mendukung multi-statement)
+    $pdo->exec($sql);
+
+    echo "✅ Tabel laporan_aduan dan aduan_log berhasil dibuat.\n";
+    echo "✅ Trigger updated_at terpasang.\n";
+    echo "✅ Data demo (3 baris) berhasil dimasukkan.\n\n";
+    echo "⚠️  PENTING: Hapus file setup_db.php dari server setelah ini!\n";
+
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo "❌ Error: " . $e->getMessage() . "\n";
 }
-echo "Database 'radar_mbg' dan tabel berhasil dibuat!\n";

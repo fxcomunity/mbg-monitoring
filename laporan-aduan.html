@@ -60,23 +60,357 @@
 <main class="w-full pt-20 bg-surface min-h-[calc(100vh-20rem)]">
   <div class="flex flex-col w-full">
     <!-- Hero Banner -->
-    <section class="w-full bg-primary text-on-primary py-space-xl px-space-md sm:px-space-lg relative overflow-hidden">
-      <div class="max-w-7xl mx-auto flex flex-col gap-space-md relative z-10">
-        <div class="flex items-center gap-space-xs">
-          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-lowest/10 backdrop-blur-md">
-            <span class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed animate-ping"></span>
-            <span class="font-label-sm text-label-sm text-surface-container-high tracking-wider uppercase">Layanan Aduan Siaga 24 Jam</span>
+    <section class="w-full bg-primary text-on-primary relative overflow-hidden">
+      <div class="absolute -top-10 -right-10 w-72 h-72 rounded-full bg-white/5 blur-2xl pointer-events-none"></div>
+      <div class="absolute bottom-0 left-1/3 w-48 h-48 rounded-full bg-tertiary-fixed/10 blur-3xl pointer-events-none"></div>
+      <div class="max-w-7xl mx-auto px-space-md sm:px-space-lg py-10 sm:py-14 relative z-10">
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10">
+            <span class="w-2 h-2 rounded-full bg-tertiary-fixed animate-pulse"></span>
+            <span class="font-label-sm text-label-sm text-tertiary-fixed tracking-wider uppercase font-semibold">Siaga 24 Jam</span>
           </span>
-          <span class="font-label-sm text-label-sm text-surface-container-high">• Respons Satgas &lt; 120 Menit</span>
+          <span class="px-3 py-1 rounded-full bg-white/10 border border-white/10 font-label-sm text-label-sm text-surface-container-high">Respons Satgas &lt; 120 Menit</span>
+          <span class="px-3 py-1 rounded-full bg-white/10 border border-white/10 font-label-sm text-label-sm text-surface-container-high flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">lock</span> SSL Terenkripsi
+          </span>
         </div>
-        <h1 class="font-headline-xl text-headline-xl sm:text-[36px] font-bold tracking-tight">
-          Pusat Pengaduan &amp; Aduan Partisipatif MBG Nasional
+        <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight mb-3">
+          Pusat Pengaduan &amp; Aduan<br class="hidden sm:block"/>
+          <span class="text-tertiary-fixed">Partisipatif MBG Nasional</span>
         </h1>
-        <p class="font-body-lg text-body-lg text-surface-container-high/90 max-w-3xl leading-relaxed">
-          Saluran pengawasan publik resmi Badan Gizi Nasional (BGN). Laporkan segala bentuk ketidaksesuaian menu, keterlambatan distribusi, kualitas cita rasa, maupun kecurigaan pelanggaran sanitasi SPPG. Identitas pelapor dilindungi penuh.
+        <p class="font-body-lg text-body-lg text-surface-container-high/85 max-w-2xl leading-relaxed mb-6">
+          Saluran pengawasan publik resmi Badan Gizi Nasional. Laporkan ketidaksesuaian menu, keterlambatan distribusi, atau pelanggaran sanitasi SPPG. <strong class="text-on-primary">Identitas pelapor dilindungi penuh.</strong>
         </p>
+        <div class="flex flex-wrap gap-3">
+          <div class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 border border-white/10">
+            <span class="material-symbols-outlined text-tertiary-fixed text-[18px]">inbox</span>
+            <span class="font-label-md font-semibold"><span id="heroTotal">—</span> Total Laporan</span>
+          </div>
+          <div class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 border border-white/10">
+            <span class="material-symbols-outlined text-tertiary-fixed text-[18px]">pending_actions</span>
+            <span class="font-label-md font-semibold"><span id="heroProses">—</span> Diproses</span>
+          </div>
+          <div class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 border border-white/10">
+            <span class="material-symbols-outlined text-tertiary-fixed text-[18px]">check_circle</span>
+            <span class="font-label-md font-semibold"><span id="heroSelesai">—</span> Selesai</span>
+          </div>
+        </div>
       </div>
     </section>
+
+    <!-- Content Grid -->
+    <section class="w-full px-space-md sm:px-space-lg py-space-xl max-w-7xl mx-auto">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
+
+        <!-- FORM ADUAN (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col gap-space-md">
+
+          <!-- Form Card -->
+          <div class="bg-surface-card rounded-3xl shadow-sm border border-border-subtle overflow-hidden">
+            <div class="px-space-lg pt-space-lg pb-4 border-b border-border-subtle flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-primary-container flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[22px] text-tertiary-fixed">edit_note</span>
+                </div>
+                <div>
+                  <h2 class="font-headline-md text-headline-md text-primary font-bold leading-tight">Formulir Laporan Baru</h2>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant">Lengkapi data agar satgas segera menindaklanjuti.</p>
+                </div>
+              </div>
+              <span class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-status-success/10 border border-status-success/20">
+                <span class="material-symbols-outlined text-status-success text-[14px]">lock</span>
+                <span class="font-label-sm text-label-sm text-status-success font-semibold">Tersandikan SSL</span>
+              </span>
+            </div>
+
+            <form id="complaintForm" class="p-space-lg flex flex-col gap-5">
+              <!-- Row 1 -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1">Nama Lengkap / Inisial <span class="text-status-error">*</span></label>
+                  <input required id="reporterName"
+                    class="px-4 py-3 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:border-border-focus focus:outline-none transition-all placeholder:text-outline"
+                    placeholder="Budi S. atau B.S." type="text"/>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1">Nomor WhatsApp <span class="text-status-error">*</span></label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm font-semibold">+62</span>
+                    <input required id="reporterPhone"
+                      class="w-full pl-12 pr-4 py-3 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none transition-all placeholder:text-outline"
+                      placeholder="8xxxxxxxxxx" type="tel"/>
+                  </div>
+                </div>
+              </div>
+              <!-- Row 2 -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label class="font-label-md text-label-md text-primary font-semibold">Peran Pelapor</label>
+                  <select id="reporterRole"
+                    class="px-4 py-3 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none transition-all cursor-pointer">
+                    <option value="wali">👨‍👩‍👧 Orang Tua / Wali Murid</option>
+                    <option value="guru">👩‍🏫 Guru / Tenaga Pendidik</option>
+                    <option value="komite">🏫 Komite Sekolah</option>
+                    <option value="siswa">🎒 Peserta Didik</option>
+                    <option value="masyarakat">👥 Masyarakat Umum / Media</option>
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="font-label-md text-label-md text-primary font-semibold">Kategori Masalah</label>
+                  <select id="issueCategory"
+                    class="px-4 py-3 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none transition-all cursor-pointer">
+                    <option value="waktu">⏰ Keterlambatan Pengantaran</option>
+                    <option value="menu">🍱 Ketidaksesuaian Menu / Porsi</option>
+                    <option value="suhu">🌡️ Makanan Dingin (&lt;60°C)</option>
+                    <option value="higienitas">🧼 Higienitas / Kemasan Rusak</option>
+                    <option value="alergen">⚠️ Insiden Alergi / Keamanan Pangan</option>
+                    <option value="lainnya">📝 Lainnya</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Row 3 -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1.5">
+                  <label class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1">Nama Sekolah / Lembaga <span class="text-status-error">*</span></label>
+                  <input required id="schoolTarget"
+                    class="px-4 py-3 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none transition-all placeholder:text-outline"
+                    placeholder="SDN 01 Senayan, Jakarta" type="text"/>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1">Tanggal Kejadian <span class="text-status-error">*</span></label>
+                  <input required id="incidentDate"
+                    class="px-4 py-3 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none transition-all"
+                    type="date"/>
+                </div>
+              </div>
+              <!-- Row 4 -->
+              <div class="flex flex-col gap-1.5">
+                <label class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1">Deskripsi Rinci Kejadian <span class="text-status-error">*</span></label>
+                <textarea required id="reportDescription" rows="5"
+                  class="px-4 py-3 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none transition-all resize-none placeholder:text-outline leading-relaxed"
+                  placeholder="Ceritakan kronologi: waktu kejadian, kondisi makanan, kondisi siswa, nomor batch pada wadah, dsb..."></textarea>
+                <div class="flex justify-between">
+                  <span class="text-xs text-on-surface-variant">Minimal 10 karakter</span>
+                  <span id="charCount" class="text-xs text-on-surface-variant font-mono">0 / 5000</span>
+                </div>
+              </div>
+              <!-- Row 5: Upload -->
+              <div class="flex flex-col gap-1.5">
+                <label class="font-label-md text-label-md text-primary font-semibold">Foto Bukti <span class="font-normal text-on-surface-variant">(opsional)</span></label>
+                <div id="uploadDropzone"
+                  class="relative rounded-2xl border-2 border-dashed border-border-subtle hover:border-secondary bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer group overflow-hidden">
+                  <div class="flex flex-col items-center justify-center text-center gap-2 py-6 px-4">
+                    <div class="w-12 h-12 rounded-2xl bg-surface-card group-hover:bg-secondary-fixed flex items-center justify-center shadow-sm transition-colors">
+                      <span class="material-symbols-outlined text-[24px] text-secondary">cloud_upload</span>
+                    </div>
+                    <div>
+                      <span class="font-label-md text-label-md text-primary font-semibold block">Klik atau seret foto ke sini</span>
+                      <span class="font-body-sm text-body-sm text-on-surface-variant">JPG, PNG, WEBP — Maks. 10 MB</span>
+                    </div>
+                    <div id="fileChosenLabel" class="hidden items-center gap-1.5 px-3 py-1 rounded-full bg-status-success/10 border border-status-success/20">
+                      <span class="material-symbols-outlined text-status-success text-[14px]">check_circle</span>
+                      <span id="fileNameText" class="text-xs text-status-success font-semibold max-w-[180px] truncate"></span>
+                    </div>
+                  </div>
+                  <input type="file" id="photoInput" class="hidden" accept="image/*"/>
+                  <div id="photoPreviewWrap" class="hidden border-t border-border-subtle relative">
+                    <img id="photoPreview" src="" alt="Preview foto" class="w-full max-h-52 object-cover"/>
+                    <button type="button" id="btnRemovePhoto"
+                      class="absolute top-2 right-2 w-8 h-8 rounded-full bg-primary/80 text-on-primary flex items-center justify-center hover:bg-primary transition-colors shadow">
+                      <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <!-- Privacy notice -->
+              <div class="flex items-start gap-3 px-4 py-3 rounded-2xl bg-secondary-fixed/30 border border-secondary-fixed/50">
+                <span class="material-symbols-outlined text-[18px] text-on-secondary-fixed shrink-0 mt-0.5">shield_person</span>
+                <p class="font-body-sm text-body-sm text-on-secondary-fixed leading-relaxed">
+                  <strong>Identitas Anda dilindungi.</strong> Data hanya digunakan untuk pembaruan status laporan dan tidak disebarluaskan kepada pihak manapun.
+                </p>
+              </div>
+              <!-- Error -->
+              <div id="formError" class="hidden px-4 py-3.5 rounded-2xl bg-error-container border border-error/20 text-on-error-container font-body-sm text-body-sm flex items-start gap-2.5">
+                <span class="material-symbols-outlined text-[20px] shrink-0">error</span>
+                <span id="formErrorMsg"></span>
+              </div>
+              <!-- Submit -->
+              <button type="submit" id="btnSubmit"
+                class="w-full py-4 rounded-2xl bg-primary text-on-primary font-label-lg font-bold shadow-lg hover:shadow-xl hover:bg-primary-container active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed group">
+                <span class="material-symbols-outlined text-[22px] group-hover:translate-x-0.5 transition-transform" id="btnSubmitIcon">send</span>
+                <span id="btnSubmitLabel">Kirimkan Aduan Resmi ke Satgas BGN</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Cek Status Tiket -->
+          <div class="bg-surface-card rounded-3xl border border-border-subtle shadow-sm p-space-lg flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-secondary-fixed flex items-center justify-center">
+                <span class="material-symbols-outlined text-on-secondary-fixed text-[20px]">manage_search</span>
+              </div>
+              <div>
+                <h3 class="font-label-lg text-label-lg text-primary font-bold">Lacak Status Laporan</h3>
+                <p class="text-xs text-on-surface-variant">Masukkan kode tiket yang Anda terima</p>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <input id="ticketCheckInput" type="text" placeholder="TKT-BGN-YYYYMMDD-XXXX"
+                class="flex-1 px-4 py-3 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none font-mono text-sm tracking-widest uppercase placeholder:tracking-normal placeholder:font-sans placeholder:text-outline transition-all"/>
+              <button id="btnCheckTicket"
+                class="px-5 py-3 rounded-xl bg-secondary text-on-secondary font-label-md font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">search</span>
+                <span>Lacak</span>
+              </button>
+            </div>
+            <div id="ticketCheckResult" class="hidden flex-col gap-3"></div>
+          </div>
+        </div>
+
+        <!-- SIDEBAR (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col gap-space-md">
+          <!-- WhatsApp Card -->
+          <div class="bg-surface-card p-space-lg rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-4 relative overflow-hidden">
+            <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-status-success/8 pointer-events-none"></div>
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-2xl bg-status-success/15 text-status-success flex items-center justify-center">
+                <span class="material-symbols-outlined text-[24px]">chat</span>
+              </div>
+              <div>
+                <h3 class="font-headline-sm text-headline-sm text-primary font-bold">WhatsApp Hotline Siaga</h3>
+                <span class="text-xs text-on-surface-variant">Respons instan bercentang hijau</span>
+              </div>
+            </div>
+            <a href="https://wa.me/6281110008008?text=Halo%20Satgas%20MBG,%20saya%20ingin%20melaporkan%20terkait%20program%20MBG" target="_blank"
+              class="py-3.5 px-5 rounded-2xl bg-status-success text-white font-label-md font-bold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:bg-status-success/90 active:scale-[0.98]">
+              <span class="material-symbols-outlined text-[20px]">chat</span>
+              <span>+62 811-1000-8008</span>
+            </a>
+          </div>
+
+          <!-- Call Card -->
+          <div class="bg-surface-card p-space-lg rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-2xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center">
+                <span class="material-symbols-outlined text-[24px]">call</span>
+              </div>
+              <div>
+                <h3 class="font-headline-sm text-headline-sm text-primary font-bold">Call Center Bebas Pulsa</h3>
+                <span class="text-xs text-on-surface-variant">Halo MBG Indonesia</span>
+              </div>
+            </div>
+            <a href="tel:+6281110008008"
+              class="p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container flex items-center justify-between transition-colors group border border-border-subtle">
+              <div>
+                <span class="text-xl font-extrabold text-primary font-mono tracking-wide block">+62 811-1000-8008</span>
+                <span class="text-xs text-on-surface-variant">Senin–Minggu • 06.00–20.00 WIB</span>
+              </div>
+              <span class="material-symbols-outlined text-secondary text-[32px] group-hover:scale-110 transition-transform">headset_mic</span>
+            </a>
+          </div>
+
+          <!-- Alur Penanganan dengan timeline vertikal -->
+          <div class="bg-surface-container-low p-space-lg rounded-3xl border border-border-subtle flex flex-col gap-4">
+            <h4 class="font-label-lg text-label-lg text-primary font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-secondary text-[20px]">timeline</span>
+              Alur Penanganan Satgas
+            </h4>
+            <div class="flex flex-col gap-0 relative">
+              <div class="absolute left-[11px] top-4 bottom-4 w-px bg-border-subtle"></div>
+              <div class="flex items-start gap-3 pb-5 relative">
+                <div class="w-6 h-6 rounded-full bg-primary text-on-primary text-xs font-bold flex items-center justify-center shrink-0 ring-2 ring-surface-container-low z-10">1</div>
+                <div>
+                  <p class="font-label-md text-label-md text-primary font-semibold">Verifikasi Awal <span class="text-xs text-on-surface-variant font-normal ml-1">(&lt;15 mnt)</span></p>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Sistem memvalidasi identitas sekolah dan SPPG penyedia yang bertugas.</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 pb-5 relative">
+                <div class="w-6 h-6 rounded-full bg-secondary text-on-secondary text-xs font-bold flex items-center justify-center shrink-0 ring-2 ring-surface-container-low z-10">2</div>
+                <div>
+                  <p class="font-label-md text-label-md text-primary font-semibold">Inspeksi Lapangan</p>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Tim BGN daerah kontak komite sekolah dan kirim satgas jika ada pelanggaran berat.</p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 relative">
+                <div class="w-6 h-6 rounded-full bg-status-success text-white text-xs font-bold flex items-center justify-center shrink-0 ring-2 ring-surface-container-low z-10">3</div>
+                <div>
+                  <p class="font-label-md text-label-md text-primary font-semibold">Solusi &amp; Penggantian</p>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">SPPG wajib ganti porsi atau terima surat peringatan evaluasi kemitraan.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Jaminan Perlindungan -->
+          <div class="bg-gradient-to-br from-tertiary-container to-primary-container p-space-lg rounded-3xl flex flex-col gap-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-tertiary-fixed text-[22px]">verified_user</span>
+              <h4 class="font-label-lg text-label-lg text-on-primary font-bold">Jaminan Perlindungan</h4>
+            </div>
+            <ul class="flex flex-col gap-2">
+              <li class="flex items-center gap-2 font-body-sm text-body-sm text-surface-container-high">
+                <span class="material-symbols-outlined text-tertiary-fixed text-[16px]">check</span>
+                Data terenkripsi SSL end-to-end
+              </li>
+              <li class="flex items-center gap-2 font-body-sm text-body-sm text-surface-container-high">
+                <span class="material-symbols-outlined text-tertiary-fixed text-[16px]">check</span>
+                Identitas pelapor tidak disebarluaskan
+              </li>
+              <li class="flex items-center gap-2 font-body-sm text-body-sm text-surface-container-high">
+                <span class="material-symbols-outlined text-tertiary-fixed text-[16px]">check</span>
+                Tersimpan di PostgreSQL Neon (SSL)
+              </li>
+              <li class="flex items-center gap-2 font-body-sm text-body-sm text-surface-container-high">
+                <span class="material-symbols-outlined text-tertiary-fixed text-[16px]">check</span>
+                Audit trail lengkap setiap perubahan status
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ── Ticket Modal ──────────────────────────────────── -->
+<div id="ticketModal" class="fixed inset-0 z-50 bg-primary/60 backdrop-blur-xl hidden items-center justify-center p-4">
+  <div class="w-full max-w-sm bg-surface-card rounded-3xl shadow-2xl overflow-hidden">
+    <div class="h-1.5 bg-gradient-to-r from-secondary via-tertiary-fixed to-status-success"></div>
+    <div class="p-6 flex flex-col gap-5 items-center text-center">
+      <div class="relative w-20 h-20 flex items-center justify-center">
+        <div class="absolute inset-0 rounded-full bg-tertiary-container/30 animate-ping scale-75"></div>
+        <div class="relative w-20 h-20 rounded-full bg-gradient-to-br from-tertiary-container to-primary-container flex items-center justify-center shadow-lg">
+          <span class="material-symbols-outlined text-tertiary-fixed text-[44px]">check_circle</span>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-xl font-extrabold text-primary">Laporan Berhasil Terkirim! 🎉</h3>
+        <p class="text-sm text-on-surface-variant mt-1.5">Laporan Anda telah masuk ke antrean siaga Satgas BGN RI.</p>
+      </div>
+      <div class="w-full p-4 rounded-2xl bg-surface-container-low border border-border-subtle text-left flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <span class="text-xs text-on-surface-variant uppercase tracking-wide block mb-1">Nomor Tiket Aduan</span>
+            <span id="ticketNumberDisplay" class="text-base font-extrabold text-primary font-mono tracking-widest">TKT-BGN——</span>
+          </div>
+          <button id="btnCopyTicket" title="Salin tiket"
+            class="w-9 h-9 rounded-xl bg-surface-container hover:bg-surface-container-high text-secondary flex items-center justify-center transition-colors border border-border-subtle">
+            <span class="material-symbols-outlined text-[18px]">content_copy</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2 pt-2 border-t border-border-subtle">
+          <span class="w-2 h-2 rounded-full bg-status-success animate-pulse flex-shrink-0"></span>
+          <span class="text-xs text-status-success font-semibold">Estimasi respon pertama: &lt; 45 menit</span>
+        </div>
+      </div>
+      <p class="text-xs text-on-surface-variant leading-relaxed">Simpan nomor tiket untuk melacak perkembangan laporan via fitur <strong>Lacak Status Laporan</strong>.</p>
+      <button id="btnCloseTicketModal"
+        class="w-full py-3.5 rounded-2xl bg-primary text-on-primary font-label-md font-bold hover:bg-primary-container transition-colors shadow-md active:scale-[0.98]">
+        Selesai &amp; Kembali
+      </button>
+    </div>
+  </div>
+</div>
 
     <!-- Content Section -->
     <section class="w-full px-space-md sm:px-space-lg py-space-xl max-w-7xl mx-auto">
@@ -286,31 +620,69 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // ── Default date ──────────────────────────────────────
+    // ── Default date ─────────────────────────────────────
     const dateInput = document.getElementById('incidentDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
+    // ── Live stats dari aduan.php ─────────────────────────
+    fetch('aduan.php?action=stats')
+      .then(r => r.json())
+      .then(j => {
+        if (j.status === 'success') {
+          const d = j.data;
+          ['heroTotal','heroProses','heroSelesai'].forEach((id, i) => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = [d.total, d.diproses, d.selesai][i];
+          });
+        }
+      }).catch(() => {});
+
+    // ── Char counter ─────────────────────────────────────
+    const desc      = document.getElementById('reportDescription');
+    const charCount = document.getElementById('charCount');
+    if (desc && charCount) {
+      desc.addEventListener('input', () => {
+        const n = desc.value.length;
+        charCount.innerText = n + ' / 5000';
+        charCount.classList.toggle('text-status-error', n > 4800);
+      });
+    }
+
     // ── Dropzone & photo preview ──────────────────────────
-    const dropzone   = document.getElementById('uploadDropzone');
-    const photoInput = document.getElementById('photoInput');
-    const fileLabel  = document.getElementById('fileChosenLabel');
-    const photoPreview = document.getElementById('photoPreview');
+    const dropzone        = document.getElementById('uploadDropzone');
+    const photoInput      = document.getElementById('photoInput');
+    const fileLabel       = document.getElementById('fileChosenLabel');
+    const fileNameText    = document.getElementById('fileNameText');
+    const photoPreviewWrap= document.getElementById('photoPreviewWrap');
+    const photoPreview    = document.getElementById('photoPreview');
+    const btnRemovePhoto  = document.getElementById('btnRemovePhoto');
 
     if (dropzone && photoInput) {
-      dropzone.addEventListener('click', () => photoInput.click());
+      dropzone.addEventListener('click', (e) => {
+        if (e.target === btnRemovePhoto || btnRemovePhoto?.contains(e.target)) return;
+        photoInput.click();
+      });
       photoInput.addEventListener('change', () => {
         if (photoInput.files.length > 0) {
           const file = photoInput.files[0];
-          fileLabel.innerText = '✓ ' + file.name;
-          fileLabel.classList.remove('hidden');
-          // Show preview
+          if (fileNameText) fileNameText.innerText = file.name;
+          fileLabel?.classList.remove('hidden');
+          fileLabel?.classList.add('flex');
           const reader = new FileReader();
           reader.onload = e => {
-            photoPreview.src = e.target.result;
-            photoPreview.classList.remove('hidden');
+            if (photoPreview) photoPreview.src = e.target.result;
+            photoPreviewWrap?.classList.remove('hidden');
           };
           reader.readAsDataURL(file);
         }
+      });
+      btnRemovePhoto?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        photoInput.value = '';
+        photoPreviewWrap?.classList.add('hidden');
+        fileLabel?.classList.add('hidden');
+        fileLabel?.classList.remove('flex');
+        if (photoPreview) photoPreview.src = '';
       });
     }
 
@@ -325,133 +697,135 @@
     const errBox        = document.getElementById('formError');
     const errMsg        = document.getElementById('formErrorMsg');
 
-    function showError(msg) {
+    const showError = (msg) => {
       errMsg.innerText = msg;
       errBox.classList.remove('hidden');
-      errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    function hideError() {
-      errBox.classList.add('hidden');
-    }
-    function setLoading(on) {
+      errBox.scrollIntoView({ behavior:'smooth', block:'center' });
+    };
+    const hideError = () => errBox.classList.add('hidden');
+    const setLoading = (on) => {
       btnSubmit.disabled = on;
-      if (on) {
-        btnIcon.innerText  = 'hourglass_top';
-        btnLabel.innerText = 'Mengirim laporan...';
-      } else {
-        btnIcon.innerText  = 'send';
-        btnLabel.innerText = 'Kirimkan Aduan Resmi ke Satgas BGN';
+      btnIcon.innerText  = on ? 'hourglass_top' : 'send';
+      btnLabel.innerText = on ? 'Mengirim laporan...' : 'Kirimkan Aduan Resmi ke Satgas BGN';
+    };
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+      setLoading(true);
+
+      const fd = new FormData();
+      fd.append('reporter_name',  document.getElementById('reporterName').value.trim());
+      fd.append('reporter_phone', document.getElementById('reporterPhone').value.trim());
+      fd.append('reporter_role',  document.getElementById('reporterRole').value);
+      fd.append('issue_category', document.getElementById('issueCategory').value);
+      fd.append('school_target',  document.getElementById('schoolTarget').value.trim());
+      fd.append('incident_date',  dateInput.value);
+      fd.append('description',    desc.value.trim());
+      if (photoInput?.files.length > 0) fd.append('photo', photoInput.files[0]);
+
+      try {
+        const res  = await fetch('aduan.php', { method:'POST', body:fd });
+        const json = await res.json();
+
+        if (res.ok && json.status === 'success') {
+          if (ticketDisplay) ticketDisplay.innerText = json.ticket_code;
+          modal?.classList.remove('hidden');
+          modal?.classList.add('flex');
+          form.reset();
+          dateInput.value = new Date().toISOString().split('T')[0];
+          fileLabel?.classList.add('hidden');
+          fileLabel?.classList.remove('flex');
+          photoPreviewWrap?.classList.add('hidden');
+          if (photoPreview) photoPreview.src = '';
+          if (charCount) charCount.innerText = '0 / 5000';
+        } else {
+          showError(json.errors ? json.errors.join(' ') : (json.message || 'Terjadi kesalahan.'));
+        }
+      } catch {
+        showError('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+      } finally {
+        setLoading(false);
       }
-    }
+    });
 
-    if (form) {
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        hideError();
-        setLoading(true);
+    btnClose?.addEventListener('click', () => {
+      modal?.classList.add('hidden');
+      modal?.classList.remove('flex');
+    });
 
-        const fd = new FormData();
-        fd.append('reporter_name',  document.getElementById('reporterName').value.trim());
-        fd.append('reporter_phone', document.getElementById('reporterPhone').value.trim());
-        fd.append('reporter_role',  document.getElementById('reporterRole').value);
-        fd.append('issue_category', document.getElementById('issueCategory').value);
-        fd.append('school_target',  document.getElementById('schoolTarget').value.trim());
-        fd.append('incident_date',  document.getElementById('incidentDate').value);
-        fd.append('description',    document.getElementById('reportDescription').value.trim());
-        if (photoInput && photoInput.files.length > 0) {
-          fd.append('photo', photoInput.files[0]);
-        }
-
-        try {
-          const res  = await fetch('aduan.php', { method: 'POST', body: fd });
-          const json = await res.json();
-
-          if (res.ok && json.status === 'success') {
-            ticketDisplay.innerText = json.ticket_code || 'TKT-BGN-XXXXXXXX';
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            form.reset();
-            dateInput.value = new Date().toISOString().split('T')[0];
-            if (fileLabel)  fileLabel.classList.add('hidden');
-            if (photoPreview) { photoPreview.classList.add('hidden'); photoPreview.src = ''; }
-          } else {
-            const detail = json.errors ? json.errors.join(' ') : (json.message || 'Terjadi kesalahan. Silakan coba lagi.');
-            showError(detail);
-          }
-        } catch (err) {
-          showError('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
-        } finally {
-          setLoading(false);
-        }
+    // Copy ticket button
+    document.getElementById('btnCopyTicket')?.addEventListener('click', () => {
+      const code = ticketDisplay?.innerText || '';
+      navigator.clipboard?.writeText(code).then(() => {
+        const btn = document.getElementById('btnCopyTicket');
+        const icon = btn?.querySelector('.material-symbols-outlined');
+        if (icon) { icon.innerText = 'check'; setTimeout(() => { icon.innerText = 'content_copy'; }, 2000); }
       });
-    }
+    });
 
-    if (btnClose && modal) {
-      btnClose.addEventListener('click', () => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      });
-    }
-
-    // ── Cek Status Tiket ──────────────────────────────────
+    // ── Cek Status Tiket ─────────────────────────────────
     const btnCheck    = document.getElementById('btnCheckTicket');
     const ticketInput = document.getElementById('ticketCheckInput');
     const checkResult = document.getElementById('ticketCheckResult');
 
-    const statusColors = {
-      masuk:      'bg-surface-container-high text-on-surface',
-      verifikasi: 'bg-secondary-fixed text-on-secondary-fixed',
-      proses:     'bg-tertiary-container text-tertiary-fixed',
-      selesai:    'bg-status-success/15 text-status-success',
-      ditolak:    'bg-error-container text-on-error-container',
+    const STATUS_COLOR = {
+      masuk:      ['bg-surface-container-high','text-on-surface'],
+      verifikasi: ['bg-secondary-fixed','text-on-secondary-fixed'],
+      proses:     ['bg-tertiary-container','text-on-tertiary-container'],
+      selesai:    ['bg-status-success/15','text-status-success'],
+      ditolak:    ['bg-error-container','text-on-error-container'],
     };
-    const statusIcons = {
-      masuk: 'inbox', verifikasi: 'fact_check', proses: 'pending_actions',
-      selesai: 'check_circle', ditolak: 'cancel',
-    };
+    const STATUS_ICON = { masuk:'inbox', verifikasi:'fact_check', proses:'pending_actions', selesai:'check_circle', ditolak:'cancel' };
+    const CAT_LABEL = { waktu:'Keterlambatan', menu:'Menu/Porsi', suhu:'Suhu Makanan', higienitas:'Higienitas', alergen:'Alergi Siswa', lainnya:'Lainnya' };
 
-    if (btnCheck && ticketInput && checkResult) {
-      btnCheck.addEventListener('click', async () => {
-        const code = ticketInput.value.trim().toUpperCase();
-        if (!code) { ticketInput.focus(); return; }
+    const checkTicket = async () => {
+      const code = ticketInput.value.trim().toUpperCase();
+      if (!code) { ticketInput.focus(); return; }
 
-        checkResult.classList.remove('hidden');
-        checkResult.innerHTML = '<span class="text-on-surface-variant animate-pulse">Mencari tiket...</span>';
+      checkResult.classList.remove('hidden');
+      checkResult.classList.add('flex');
+      checkResult.innerHTML = `<div class="flex items-center gap-2 text-on-surface-variant py-2"><span class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span><span class="text-sm">Mencari tiket...</span></div>`;
 
-        try {
-          const res  = await fetch('aduan.php?ticket=' + encodeURIComponent(code));
-          const json = await res.json();
+      try {
+        const res  = await fetch('aduan.php?ticket=' + encodeURIComponent(code));
+        const json = await res.json();
 
-          if (res.ok && json.status === 'success') {
-            const d   = json.data;
-            const col = statusColors[d.status] || 'bg-surface-container text-on-surface';
-            const ico = statusIcons[d.status]  || 'info';
-            checkResult.innerHTML = `
-              <div class="flex items-center gap-2 ${col} px-3 py-2 rounded-xl font-semibold">
-                <span class="material-symbols-outlined text-[18px]">${ico}</span>
-                <span>${d.status_label}</span>
+        if (res.ok && json.status === 'success') {
+          const d   = json.data;
+          const col = (STATUS_COLOR[d.status] || ['bg-surface-container','text-on-surface']).join(' ');
+          const ico = STATUS_ICON[d.status] || 'info';
+          const cat = CAT_LABEL[d.issue_category] || d.issue_category;
+          checkResult.innerHTML = `
+            <div class="flex items-center gap-2.5 ${col} px-4 py-3 rounded-2xl font-semibold text-sm">
+              <span class="material-symbols-outlined text-[20px]">${ico}</span>
+              <span>${d.status_label}</span>
+            </div>
+            <div class="bg-surface-container-low rounded-2xl border border-border-subtle overflow-hidden">
+              <div class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-0 text-sm divide-y divide-border-subtle">
+                ${[
+                  ['Nomor Tiket', `<span class="font-mono font-bold">${d.ticket_code}</span>`],
+                  ['Sekolah', d.school_target],
+                  ['Kategori', cat],
+                  ['Tanggal Kejadian', d.incident_date],
+                  ['Tanggal Lapor', d.created_at.slice(0,10)],
+                  ['Terakhir Diperbarui', d.updated_at.slice(0,10)],
+                ].map(([k,v]) => `
+                  <span class="px-4 py-2.5 text-on-surface-variant font-medium bg-surface-container-low/50">${k}</span>
+                  <span class="px-4 py-2.5 text-on-surface">${v}</span>
+                `).join('')}
               </div>
-              <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-on-surface-variant mt-1">
-                <span class="font-semibold text-primary">Tiket:</span><span class="font-mono">${d.ticket_code}</span>
-                <span class="font-semibold text-primary">Sekolah:</span><span>${d.school_target}</span>
-                <span class="font-semibold text-primary">Kategori:</span><span>${d.issue_category}</span>
-                <span class="font-semibold text-primary">Tanggal:</span><span>${d.incident_date}</span>
-                <span class="font-semibold text-primary">Dikirim:</span><span>${d.created_at.slice(0,10)}</span>
-                <span class="font-semibold text-primary">Diperbarui:</span><span>${d.updated_at.slice(0,10)}</span>
-              </div>`;
-          } else {
-            checkResult.innerHTML = `<div class="flex items-center gap-2 text-on-error-container bg-error-container px-3 py-2 rounded-xl font-semibold"><span class="material-symbols-outlined text-[18px]">search_off</span><span>${json.message || 'Tiket tidak ditemukan.'}</span></div>`;
-          }
-        } catch {
-          checkResult.innerHTML = '<span class="text-status-error font-semibold">Gagal terhubung ke server.</span>';
+            </div>`;
+        } else {
+          checkResult.innerHTML = `<div class="flex items-center gap-2 text-on-error-container bg-error-container px-4 py-3 rounded-2xl font-semibold text-sm"><span class="material-symbols-outlined text-[18px]">search_off</span><span>${json.message || 'Tiket tidak ditemukan.'}</span></div>`;
         }
-      });
+      } catch {
+        checkResult.innerHTML = `<div class="text-status-error font-semibold text-sm px-2">Gagal terhubung ke server.</div>`;
+      }
+    };
 
-      // Tekan Enter di input tiket
-      ticketInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') btnCheck.click();
-      });
-    }
+    btnCheck?.addEventListener('click', checkTicket);
+    ticketInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkTicket(); });
   });
 </script>
 <footer class="w-full bg-surface-container-lowest border-t border-border-subtle mt-space-xl">

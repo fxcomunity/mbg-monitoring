@@ -1,0 +1,29 @@
+# ── Env & Secrets ───────────────────────────────────────────
+.env
+database/certs/
+
+# ── Uploads (file user) ──────────────────────────────────────
+uploads/
+
+# ── OS & Editor ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── PHP ──────────────────────────────────────────────────────
+vendor/
+composer.lock
+
+# ── Setup scripts (jalankan sekali, jangan deploy) ───────────
+setup_db.php
+
+# ── Android build output ────────────────────────────────────
+android/.gradle/
+android/build/
+android/local.properties
+android/*.apk
+android/*.aab

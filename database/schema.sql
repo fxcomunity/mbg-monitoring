@@ -1,78 +1,78 @@
 -- ============================================================
--- Database: radar_mbg
--- Skema lengkap untuk sistem laporan/aduan MBG Nasional
+-- Database: neondb (Neon PostgreSQL)
+-- Skema lengkap sistem laporan/aduan MBG Nasional
 -- ============================================================
-
-CREATE DATABASE IF NOT EXISTS `radar_mbg`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE `radar_mbg`;
 
 -- ----------------------------------------------------------------
 -- Tabel: laporan_aduan
--- Menyimpan setiap pengaduan publik yang masuk dari formulir web
 -- ----------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `laporan_aduan` (
-  `id`                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `ticket_code`       VARCHAR(30)     NOT NULL UNIQUE COMMENT 'Kode tiket unik, cth: TKT-BGN-20261014-4821',
-  `reporter_name`     VARCHAR(120)    NOT NULL COMMENT 'Nama lengkap atau inisial pelapor',
-  `reporter_phone`    VARCHAR(20)     NOT NULL COMMENT 'Nomor WhatsApp aktif pelapor',
-  `reporter_role`     ENUM('wali','guru','komite','siswa','masyarakat') NOT NULL DEFAULT 'masyarakat'
-                                      COMMENT 'Peran/status pelapor',
-  `issue_category`    ENUM('waktu','menu','suhu','higienitas','alergen','lainnya') NOT NULL DEFAULT 'lainnya'
-                                      COMMENT 'Kategori jenis masalah',
-  `school_target`     VARCHAR(200)    NOT NULL COMMENT 'Nama sekolah atau lembaga yang dilaporkan',
-  `incident_date`     DATE            NOT NULL COMMENT 'Tanggal kejadian yang dilaporkan',
-  `description`       TEXT            NOT NULL COMMENT 'Deskripsi rinci kronologi kejadian',
-  `photo_path`        VARCHAR(500)    NULL COMMENT 'Path file foto bukti yang diunggah',
-  `photo_original_name` VARCHAR(255)  NULL COMMENT 'Nama file asli foto',
-  `status`            ENUM('masuk','verifikasi','proses','selesai','ditolak') NOT NULL DEFAULT 'masuk'
-                                      COMMENT 'Status penanganan laporan oleh satgas',
-  `priority`          ENUM('rendah','sedang','tinggi','kritis') NOT NULL DEFAULT 'sedang'
-                                      COMMENT 'Prioritas penanganan',
-  `satgas_notes`      TEXT            NULL COMMENT 'Catatan internal tim satgas verifikator',
-  `ip_address`        VARCHAR(45)     NULL COMMENT 'IP address pengirim (IPv4/IPv6)',
-  `user_agent`        VARCHAR(500)    NULL COMMENT 'Browser/client pengirim',
-  `created_at`        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at`        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `idx_ticket`          (`ticket_code`),
-  INDEX `idx_status`          (`status`),
-  INDEX `idx_category`        (`issue_category`),
-  INDEX `idx_school`          (`school_target`(100)),
-  INDEX `idx_incident_date`   (`incident_date`),
-  INDEX `idx_created`         (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Tabel pengaduan publik program MBG – dikelola Satgas BGN';
+CREATE TABLE IF NOT EXISTS laporan_aduan (
+  id                  BIGSERIAL PRIMARY KEY,
+  ticket_code         VARCHAR(30)  NOT NULL UNIQUE,
+  reporter_name       VARCHAR(120) NOT NULL,
+  reporter_phone      VARCHAR(20)  NOT NULL,
+  reporter_role       VARCHAR(20)  NOT NULL DEFAULT 'masyarakat'
+                        CHECK (reporter_role IN ('wali','guru','komite','siswa','masyarakat')),
+  issue_category      VARCHAR(20)  NOT NULL DEFAULT 'lainnya'
+                        CHECK (issue_category IN ('waktu','menu','suhu','higienitas','alergen','lainnya')),
+  school_target       VARCHAR(200) NOT NULL,
+  incident_date       DATE         NOT NULL,
+  description         TEXT         NOT NULL,
+  photo_path          VARCHAR(500),
+  photo_original_name VARCHAR(255),
+  status              VARCHAR(20)  NOT NULL DEFAULT 'masuk'
+                        CHECK (status IN ('masuk','verifikasi','proses','selesai','ditolak')),
+  priority            VARCHAR(10)  NOT NULL DEFAULT 'sedang'
+                        CHECK (priority IN ('rendah','sedang','tinggi','kritis')),
+  satgas_notes        TEXT,
+  ip_address          VARCHAR(45),
+  user_agent          VARCHAR(500),
+  created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_laporan_ticket        ON laporan_aduan (ticket_code);
+CREATE INDEX IF NOT EXISTS idx_laporan_status        ON laporan_aduan (status);
+CREATE INDEX IF NOT EXISTS idx_laporan_category      ON laporan_aduan (issue_category);
+CREATE INDEX IF NOT EXISTS idx_laporan_incident_date ON laporan_aduan (incident_date);
+CREATE INDEX IF NOT EXISTS idx_laporan_created       ON laporan_aduan (created_at DESC);
+
+-- Auto-update updated_at via trigger
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_laporan_updated_at ON laporan_aduan;
+CREATE TRIGGER trg_laporan_updated_at
+  BEFORE UPDATE ON laporan_aduan
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- ----------------------------------------------------------------
--- Tabel: aduan_log
--- Riwayat perubahan status untuk audit trail
+-- Tabel: aduan_log (audit trail)
 -- ----------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS `aduan_log` (
-  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `laporan_id`    BIGINT UNSIGNED NOT NULL,
-  `old_status`    VARCHAR(20)     NULL,
-  `new_status`    VARCHAR(20)     NOT NULL,
-  `changed_by`    VARCHAR(80)     NOT NULL DEFAULT 'sistem',
-  `notes`         TEXT            NULL,
-  `created_at`    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_log_laporan`
-    FOREIGN KEY (`laporan_id`) REFERENCES `laporan_aduan` (`id`)
-    ON DELETE CASCADE ON UPDATE CASCADE,
-  INDEX `idx_log_laporan` (`laporan_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Audit trail perubahan status laporan aduan';
+CREATE TABLE IF NOT EXISTS aduan_log (
+  id          BIGSERIAL PRIMARY KEY,
+  laporan_id  BIGINT      NOT NULL REFERENCES laporan_aduan(id) ON DELETE CASCADE,
+  old_status  VARCHAR(20),
+  new_status  VARCHAR(20) NOT NULL,
+  changed_by  VARCHAR(80) NOT NULL DEFAULT 'sistem',
+  notes       TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_log_laporan ON aduan_log (laporan_id);
 
 -- ----------------------------------------------------------------
--- Data contoh awal (3 baris demo)
+-- Data contoh (3 baris demo) – pakai ON CONFLICT agar aman dijalankan ulang
 -- ----------------------------------------------------------------
-INSERT INTO `laporan_aduan`
-  (`ticket_code`, `reporter_name`, `reporter_phone`, `reporter_role`,
-   `issue_category`, `school_target`, `incident_date`, `description`,
-   `status`, `priority`, `ip_address`)
+INSERT INTO laporan_aduan
+  (ticket_code, reporter_name, reporter_phone, reporter_role,
+   issue_category, school_target, incident_date, description,
+   status, priority, ip_address)
 VALUES
   ('TKT-BGN-20261013-1001', 'Budi S.', '082111000001', 'wali',
    'suhu', 'SDN 01 Senayan Jakarta', '2026-10-13',
@@ -87,4 +87,5 @@ VALUES
   ('TKT-BGN-20261013-1003', 'Komite RW.05', '087800000003', 'komite',
    'waktu', 'SDN Sukajadi 03 Bandung', '2026-10-12',
    'Pengantaran terlambat lebih dari 90 menit tanpa pemberitahuan.',
-   'proses', 'sedang', '127.0.0.1');
+   'proses', 'sedang', '127.0.0.1')
+ON CONFLICT (ticket_code) DO NOTHING;
