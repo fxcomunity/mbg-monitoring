@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layoutWidth="match_parent"
+    android:layoutHeight="match_parent"
+    android:background="@drawable/bg_gradient_primary"
+    android:padding="24dp">
+
+    <!-- Center Branding Container -->
+    <LinearLayout
+        android:layoutWidth="wrap_content"
+        android:layoutHeight="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <!-- Logo Icon Container -->
+        <FrameLayout
+            android:layoutWidth="88dp"
+            android:layoutHeight="88dp"
+            android:background="@drawable/bg_gradient_primary"
+            android:padding="16dp">
+
+            <ImageView
+                android:layoutWidth="match_parent"
+                android:layoutHeight="match_parent"
+                android:src="@drawable/ic_verified"
+                app:tint="@color/bgn_tertiary_fixed"
+                android:contentDescription="BGN Logo" />
+        </FrameLayout>
+
+        <TextView
+            android:layoutWidth="wrap_content"
+            android:layoutHeight="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/app_full_name"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="@color/bgn_on_primary"
+            android:letterSpacing="-0.02" />
+
+        <TextView
+            android:layoutWidth="wrap_content"
+            android:layoutHeight="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/bgn_institution_name"
+            android:textSize="13sp"
+            android:textColor="@color/bgn_on_primary_container" />
+
+        <ProgressBar
+            android:layoutWidth="32dp"
+            android:layoutHeight="32dp"
+            android:layout_marginTop="36dp"
+            android:indeterminateTint="@color/bgn_tertiary_fixed" />
+    </LinearLayout>
+
+    <!-- Bottom Copyright -->
+    <TextView
+        android:layoutWidth="match_parent"
+        android:layoutHeight="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="16dp"
+        android:text="@string/copyright_text"
+        android:textSize="10sp"
+        android:textColor="@color/bgn_on_primary_container"
+        android:textAlignment="center" />
+
+</RelativeLayout>

@@ -243,94 +243,54 @@
       <span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
     </div>
   </div>
-</form>
-<!-- Action Strip & Active Breadcrumbs -->
-<div class="mt-space-md pt-space-md flex flex-wrap items-center justify-between gap-space-md">
-  <div class="flex items-center gap-2 flex-wrap" id="breadcrumbContainer">
-    <span class="font-label-sm text-label-sm text-on-surface-variant">Rute Lokasi:</span>
-    <span id="routeProvinsi" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">Belum Memilih</span>
-    <span class="text-on-surface-variant text-label-sm">›</span>
-    <span id="routeKota" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">-</span>
-    <span class="text-on-surface-variant text-label-sm">›</span>
-    <span id="breadcrumbSchool" class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold">-</span>
-  </div>
-  <div class="flex items-center gap-space-sm w-full sm:w-auto">
-    <button id="btnResetFilter" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5" type="button">
-      <span class="material-symbols-outlined text-[16px]">restart_alt</span>
-      <span>Reset Pilihan</span>
-    </button>
-    <button id="btnApplyFilter" class="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm flex items-center justify-center gap-1.5" type="button">
-      <span class="material-symbols-outlined text-tertiary-fixed text-[18px]">search_check</span>
-      <span>Tampilkan Menu MBG</span>
-    </button>
-  </div>
-</div>
-</div></section>
-<!-- State Belum Memilih Sekolah (Empty / Selection Prompt State) -->
-<section id="menuSelectionPrompt" class="w-full px-space-md sm:px-space-lg py-space-xl max-w-[1200px] mx-auto transition-all duration-300">
-  <div class="bg-surface-card p-space-xl sm:p-12 rounded-3xl border-2 border-dashed border-border-subtle shadow-sm flex flex-col items-center justify-center text-center">
-    <div class="w-16 h-16 rounded-2xl bg-primary-container text-tertiary-fixed flex items-center justify-center mb-4 shadow-sm">
-      <span class="material-symbols-outlined text-[36px]">soup_kitchen</span>
+
+  <!-- Action Buttons Row -->
+  <div class="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border-subtle">
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-on-surface-variant font-medium">Contoh Cepat:</span>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="sdn-01-senayan">SDN 01 Senayan</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="sdn-01-menteng">SDN 01 Menteng</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="smpn-19-kby">SMPN 19 Kebayoran</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="sdn-sukajadi-03">SDN Sukajadi 03 Bandung</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="smpn-3-sby">SMPN 3 Surabaya</button>
     </div>
-    <span class="px-3 py-1 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm font-semibold mb-2">Portal Transparansi Publik Radar MBG</span>
-    <h3 class="font-headline-xl text-headline-xl text-primary font-bold">Pilih Satuan Pendidikan Terlebih Dahulu</h3>
-    <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl mt-2 leading-relaxed">
-      Silakan gunakan dropdown filter wilayah di atas untuk menentukan provinsi, kota, dan sekolah Anda. Atau klik salah satu rekomendasi sekolah di bawah ini untuk langsung memantau menu hari ini, nilai gizi AKG terverifikasi, serta dapur SPPG penyedianya.
-    </p>
-    
-    <!-- Quick Selection Pills -->
-    <div class="mt-space-lg pt-space-md border-t border-border-subtle w-full max-w-2xl flex flex-col items-center gap-3">
-      <span class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[18px] text-secondary">touch_app</span>
-        Pilihan Cepat Sekolah Terpopuler:
-      </span>
-      <div class="flex flex-wrap items-center justify-center gap-2">
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="sdn-01-senayan">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SDN 01 Senayan (Jakarta)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="sdn-01-menteng">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SDN 01 Menteng (Jakarta)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="smpn-19-kby">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SMPN 19 Kebayoran (Jakarta)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="sdn-sukajadi-03">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SDN Sukajadi 03 (Bandung)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="smpn-3-sby">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SMPN 3 Surabaya (Jatim)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="smpn-1-smg">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SMPN 1 Semarang (Jateng)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="sman-70-jkt">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SMAN 70 Jakarta (SMA)</span>
-        </button>
-      </div>
-    </div>
-  </div>
-</section>
-<div id="menuDetailWrapper" class="hidden transition-all duration-500">
-  <div class="w-full max-w-[1200px] mx-auto px-space-md sm:px-space-lg pt-space-md">
-    <div class="p-space-md rounded-2xl bg-surface-card border border-border-subtle flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-      <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-status-success animate-pulse"></span>
-        <span class="font-label-md text-label-md text-primary font-bold">Data Menu Terverifikasi Ditampilkan</span>
-        <span class="font-body-sm text-body-sm text-on-surface-variant hidden sm:inline">• Diperbarui otomatis dari SPPG Mitra</span>
-      </div>
-      <button id="btnChangeSchoolTop" type="button" class="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold flex items-center gap-1.5 transition-colors">
-        <span class="material-symbols-outlined text-[18px]">edit</span>
-        <span>Pilih / Ganti Sekolah Lain</span>
+    <div class="flex items-center gap-2">
+      <button type="button" id="btnResetFilter" class="px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1">
+        <span class="material-symbols-outlined text-[16px]">restart_alt</span>
+        <span>Reset</span>
+      </button>
+      <button type="button" id="btnApplyFilter" class="px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-colors flex items-center gap-1 shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">visibility</span>
+        <span>Tampilkan Menu</span>
       </button>
     </div>
   </div>
+</form>
+<!-- Action Strip & Active Breadcrumbs -->
+<div class="mt-space-md pt-space-md flex flex-wrap items-center justify-between gap-space-md">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Rute Lokasi:</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">DKI Jakarta</span>
+<span class="text-on-surface-variant text-label-sm">›</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">Jakarta Selatan</span>
+<span class="text-on-surface-variant text-label-sm">›</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">Kebayoran Baru</span>
+<span class="text-on-surface-variant text-label-sm">›</span>
+<span class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold">SDN 01 Senayan</span>
+</div>
+<div class="flex items-center gap-space-sm w-full sm:w-auto">
+<button class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+<span>Reset Lokasi</span>
+</button>
+<button class="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm flex items-center justify-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-tertiary-fixed text-[18px]">search_check</span>
+<span>Terapkan Filter</span>
+</button>
+</div>
+</div>
+</div>
+</section>
 <!-- Section Menu MBG Hari Ini (Highlight Utama) -->
 <section class="w-full px-space-md sm:px-space-lg py-space-md max-w-[1200px] mx-auto">
 <!-- Header of Selected Entity -->
@@ -614,7 +574,7 @@
 <div class="relative z-10 flex items-center justify-between">
 <div>
 <span id="sppgNameDisplay" class="font-label-md text-label-md font-bold block text-on-primary">Dapur Sentral Kebayoran Baru 03</span>
-<span id="sppgAddressDisplay" class="font-body-sm text-body-sm text-on-primary-container">Jl. Kyai Maja No. 14, Jakarta Selatan</span>
+<span id="sppgAddressDisplay" class="font-body-sm text-body-sm text-on-primary-container block">Jl. Kyai Maja No. 14, Jakarta Selatan</span><a id="sppgGoogleMapLink" href="https://www.google.com/maps/search/?api=1&query=Dapur+Sentral+Kebayoran+Baru+03+Jl.+Kyai+Maja+No.+14+Jakarta+Selatan" target="_blank" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-lowest/90 hover:bg-surface-container-lowest text-primary text-xs font-semibold backdrop-blur-sm transition-all shadow-sm"><span class="material-symbols-outlined text-[16px] text-secondary">explore</span><span>Buka Lokasi Dapur di Google Maps</span><span class="material-symbols-outlined text-[14px]">open_in_new</span></a>
 </div>
 <span class="px-2 py-1 rounded bg-surface-container-lowest text-primary font-label-sm text-label-sm font-semibold">
                 Radius 3.2 km
@@ -704,6 +664,7 @@
 <p class="font-body-md text-body-md text-on-primary-container leading-relaxed">
             Wali murid, guru, dan komite sekolah berhak memberikan penilaian nyata terhadap kesegaran sayur, ukuran porsi lauk, serta ketepatan waktu pengantaran SPPG secara anonim dan transparan.
           </p>
+</div>
 <!-- Interactive Rating Quick Strip -->
 <div class="mt-2 flex flex-col sm:flex-row sm:items-center gap-space-md p-space-md rounded-2xl bg-surface-container-low/10 border border-white/10">
 <span class="font-label-md text-label-md text-on-primary">Beri Nilai Hari Ini:</span>
@@ -747,7 +708,7 @@
 <span>Unggah Foto Bukti Makanan</span>
 </button>
 <div class="grid grid-cols-2 gap-2">
-<a class="py-2.5 px-3 rounded-xl bg-status-success hover:bg-status-success/90 text-on-secondary font-label-md text-label-md transition-all flex items-center justify-center gap-1.5 shadow-sm" href="https://wa.me/628111234567" rel="noopener noreferrer" target="_blank">
+<a class="py-2.5 px-3 rounded-xl bg-status-success hover:bg-status-success/90 text-on-secondary font-label-md text-label-md transition-all flex items-center justify-center gap-1.5 shadow-sm" href="https://wa.me/6281110008008" rel="noopener noreferrer" target="_blank">
 <span class="material-symbols-outlined text-[18px]">chat</span>
 <span>WhatsApp Siaga</span>
 </a>
@@ -805,7 +766,7 @@
       }
     });
   </script>
-</div></div></main><footer class="w-full bg-surface-container-lowest border-t border-border-subtle mt-space-xl">
+</div></main><footer class="w-full bg-surface-container-lowest border-t border-border-subtle mt-space-xl">
   <div class="w-full px-space-lg py-space-xl">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-xl mb-space-xl">
       <div class="flex flex-col gap-space-sm">
@@ -828,14 +789,14 @@
             <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">call</span>
             <div>
               <span class="font-label-md text-label-md text-primary block">Halo MBG RI:</span>
-              <span>150-098 / (021) 3456-7890</span>
+              <a href="https://wa.me/6281110008008" target="_blank" class="hover:text-primary font-semibold transition-colors">+62 811-1000-8008</a>
             </div>
           </div>
           <div class="flex items-start gap-space-xs">
             <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">mail</span>
             <div>
               <span class="font-label-md text-label-md text-primary block">Surat Elektronik:</span>
-              <span>aduan.mbg@bgn.go.id</span>
+              <a href="mailto:halo@bgn.go.id" class="hover:text-primary font-semibold transition-colors">halo@bgn.go.id</a>
             </div>
           </div>
           <div class="flex items-start gap-space-xs">
@@ -860,7 +821,7 @@
       <div class="flex flex-col gap-space-sm">
         <span class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Transparansi &amp; Partisipasi</span>
         <div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-          <span class="font-label-md text-label-md text-primary">Audit Publik Mandiri</span>
+          <span class="font-label-md text-label-md text-primary font-bold">Audit Publik Mandiri</span>
           <p class="font-body-sm text-body-sm text-on-surface-variant">
             Masyarakat berhak memantau komposisi nutrisi, asal suplai pangan lokal, dan verifikasi Satuan Pelayanan Pemenuhan Gizi (SPPG).
           </p>
@@ -871,9 +832,12 @@
       </div>
     </div>
     <div class="pt-space-lg border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-sm text-body-sm">
-      <span>© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi Undang-Undang.</span>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-sm font-semibold tracking-wide">Redesain</span>
+        <span>© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi Undang-Undang.</span>
+      </div>
       <div class="flex items-center gap-space-lg font-label-md text-label-md">
-        <a class="hover:text-primary transition-colors" href="standar-uji-akg.html">Kebijakan Privasi</a>
+        <a class="hover:text-primary transition-colors" href="kebijakan-privasi.html">Kebijakan Privasi</a>
         <a class="hover:text-primary transition-colors" href="standar-uji-akg.html">Standar Kualitas Pangan</a>
         <a class="hover:text-primary transition-colors" href="index.html">Keterbukaan Informasi Publik</a>
       </div>
@@ -1209,7 +1173,7 @@
       });
     }
 
-    // Render School Details
+    // Render School Details & Dynamic Maps Links
     function renderSchool(schoolKey) {
       const data = schoolDb[schoolKey];
       if (!data) return;
@@ -1251,6 +1215,16 @@
 
       const sppgDoc = document.getElementById('sppgDietitianDisplay');
       if (sppgDoc) sppgDoc.textContent = data.sppg.dietitian;
+
+      // Dynamic Google Maps Linking for SPPG and School
+      const sppgMap = document.getElementById('sppgGoogleMapLink');
+      if (sppgMap) {
+        sppgMap.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(data.sppg.name + ', ' + data.sppg.address);
+      }
+      const schoolMap = document.getElementById('schoolGoogleMapLink');
+      if (schoolMap) {
+        schoolMap.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(data.name + ' ' + data.kotaName);
+      }
 
       // Toggle View State
       if (promptState) promptState.classList.add('hidden');
@@ -1317,7 +1291,6 @@
     const urlParams = new URLSearchParams(window.location.search);
     const qParam = urlParams.get('q') || urlParams.get('school');
     if (qParam) {
-      // Find matching key
       const qLower = qParam.toLowerCase();
       let matchedKey = null;
       Object.keys(schoolDb).forEach(k => {
@@ -1328,7 +1301,6 @@
       if (matchedKey) {
         renderSchool(matchedKey);
       } else {
-        // Default to senayan if query not matched
         renderSchool('sdn-01-senayan');
       }
     }

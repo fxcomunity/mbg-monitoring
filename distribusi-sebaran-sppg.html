@@ -149,6 +149,11 @@
 </div>
 <!-- Filter Controls -->
 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+<a id="btnFilterMapLink" href="https://www.google.com/maps/search/?api=1&query=Dapur+SPPG+Badan+Gizi+Nasional+DKI+Jakarta" target="_blank" class="px-3.5 py-2 bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md rounded-xl transition-colors flex items-center gap-1.5 shadow-sm">
+  <span class="material-symbols-outlined text-[16px]">map</span>
+  <span id="btnFilterMapLinkText">Buka Wilayah di Google Maps</span>
+  <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</a>
 <select class="px-3 py-2 bg-surface-container-low text-on-surface font-label-md text-label-md rounded-xl focus:outline-none focus:ring-2 focus:ring-border-focus" id="filter-provinsi">
 <option value="all">Semua Provinsi (38)</option>
 <option selected="" value="dki">DKI Jakarta</option>
@@ -190,8 +195,9 @@
 <div class="self-end pointer-events-auto max-w-sm w-full bg-surface-card/95 backdrop-blur-md p-4 rounded-2xl shadow-lg space-y-3">
 <div class="flex items-start justify-between">
 <div>
-<span class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary-fixed text-label-sm font-label-sm">SPPG-JKTSEL-008</span>
-<h3 class="text-headline-sm font-headline-sm text-primary mt-1">SPPG Pasar Minggu Sentral</h3>
+<span id="pinnedSppgCode" class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary-fixed text-label-sm font-label-sm">SPPG-JKTSEL-008</span>
+<h3 id="pinnedSppgTitle" class="text-headline-sm font-headline-sm text-primary mt-1">SPPG Pasar Minggu Sentral</h3>
+<span id="pinnedSppgAddress" class="text-xs text-on-surface-variant block mt-0.5">Jl. Raya Ragunan No. 12, Pasar Minggu, Jakarta Selatan</span>
 </div>
 <span class="material-symbols-outlined text-status-success text-[24px]">verified</span>
 </div>
@@ -213,9 +219,14 @@
 <div class="bg-secondary h-full rounded-full w-[85%]"></div>
 </div>
 <div class="flex justify-between text-label-sm font-label-sm text-on-surface-variant">
-<span>Distribusi Hari Ini: 2.550/3.000 porsi</span>
-<span class="font-semibold text-secondary">85%</span>
+<span id="pinnedSppgPortion">Distribusi Hari Ini: 2.550/3.000 porsi</span>
+<span id="pinnedSppgPct" class="font-semibold text-secondary">85%</span>
 </div>
+<a id="pinnedSppgMapLink" href="https://www.google.com/maps/search/?api=1&query=SPPG+Pasar+Minggu+Sentral+Jl.+Raya+Ragunan+No.+12+Jakarta+Selatan" target="_blank" class="w-full py-2 px-3 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm">
+  <span class="material-symbols-outlined text-[16px]">explore</span>
+  <span>Buka Lokasi SPPG di Google Maps</span>
+  <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</a>
 </div>
 </div>
 <!-- Mini Legend on Bottom Left -->
@@ -685,14 +696,14 @@
             <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">call</span>
             <div>
               <span class="font-label-md text-label-md text-primary block">Halo MBG RI:</span>
-              <span>150-098 / (021) 3456-7890</span>
+              <a href="https://wa.me/6281110008008" target="_blank" class="hover:text-primary font-semibold transition-colors">+62 811-1000-8008</a>
             </div>
           </div>
           <div class="flex items-start gap-space-xs">
             <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">mail</span>
             <div>
               <span class="font-label-md text-label-md text-primary block">Surat Elektronik:</span>
-              <span>aduan.mbg@bgn.go.id</span>
+              <a href="mailto:halo@bgn.go.id" class="hover:text-primary font-semibold transition-colors">halo@bgn.go.id</a>
             </div>
           </div>
           <div class="flex items-start gap-space-xs">
@@ -717,7 +728,7 @@
       <div class="flex flex-col gap-space-sm">
         <span class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Transparansi &amp; Partisipasi</span>
         <div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-          <span class="font-label-md text-label-md text-primary">Audit Publik Mandiri</span>
+          <span class="font-label-md text-label-md text-primary font-bold">Audit Publik Mandiri</span>
           <p class="font-body-sm text-body-sm text-on-surface-variant">
             Masyarakat berhak memantau komposisi nutrisi, asal suplai pangan lokal, dan verifikasi Satuan Pelayanan Pemenuhan Gizi (SPPG).
           </p>
@@ -728,9 +739,12 @@
       </div>
     </div>
     <div class="pt-space-lg border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-sm text-body-sm">
-      <span>© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi Undang-Undang.</span>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-sm font-semibold tracking-wide">Redesain</span>
+        <span>© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi Undang-Undang.</span>
+      </div>
       <div class="flex items-center gap-space-lg font-label-md text-label-md">
-        <a class="hover:text-primary transition-colors" href="standar-uji-akg.html">Kebijakan Privasi</a>
+        <a class="hover:text-primary transition-colors" href="kebijakan-privasi.html">Kebijakan Privasi</a>
         <a class="hover:text-primary transition-colors" href="standar-uji-akg.html">Standar Kualitas Pangan</a>
         <a class="hover:text-primary transition-colors" href="index.html">Keterbukaan Informasi Publik</a>
       </div>
@@ -756,6 +770,76 @@
           const q = encodeURIComponent(navSearch.value.trim());
           if (q) window.location.href = 'menu-hari-ini.html?q=' + q;
         }
+      });
+    }
+  });
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const provFilter = document.getElementById('filter-provinsi');
+    const pinnedCode = document.getElementById('pinnedSppgCode');
+    const pinnedTitle = document.getElementById('pinnedSppgTitle');
+    const pinnedAddr = document.getElementById('pinnedSppgAddress');
+    const pinnedLink = document.getElementById('pinnedSppgMapLink');
+    const filterMapLink = document.getElementById('btnFilterMapLink');
+    const filterMapText = document.getElementById('btnFilterMapLinkText');
+
+    const sppgRegionalData = {
+      "dki": {
+        code: "SPPG-JKTSEL-008",
+        name: "SPPG Pasar Minggu Sentral",
+        addr: "Jl. Raya Ragunan No. 12, Pasar Minggu, Jakarta Selatan",
+        query: "SPPG Pasar Minggu Sentral Jl Raya Ragunan Jakarta Selatan",
+        regionName: "DKI Jakarta"
+      },
+      "jabar": {
+        code: "SPPG-JBRBDG-003",
+        name: "SPPG Sukajadi Bandung Sentral",
+        addr: "Jl. Sukajadi No. 188, Sukajadi, Kota Bandung, Jawa Barat",
+        query: "SPPG Sukajadi No 188 Sukajadi Kota Bandung Jawa Barat",
+        regionName: "Jawa Barat"
+      },
+      "jateng": {
+        code: "SPPG-JTGSMG-005",
+        name: "SPPG Semarang Tengah",
+        addr: "Jl. Pemuda No. 70, Semarang Tengah, Kota Semarang, Jawa Tengah",
+        query: "SPPG Jl Pemuda No 70 Semarang Tengah Kota Semarang",
+        regionName: "Jawa Tengah"
+      },
+      "jatim": {
+        code: "SPPG-JTMSBY-002",
+        name: "SPPG Surabaya Rungkut Sentral",
+        addr: "Kawasan Industri SIER No. 12, Rungkut, Kota Surabaya, Jawa Timur",
+        query: "SPPG Kawasan Industri SIER No 12 Rungkut Surabaya",
+        regionName: "Jawa Timur"
+      },
+      "banten": {
+        code: "SPPG-BTNTGR-004",
+        name: "SPPG Cipocok Jaya Serang",
+        addr: "Jl. Raya Pandeglang No. 45, Cipocok Jaya, Kota Serang, Banten",
+        query: "SPPG Cipocok Jaya Kota Serang Banten",
+        regionName: "Banten"
+      },
+      "all": {
+        code: "SPPG-NASIONAL-001",
+        name: "Sentra SPPG Klaster Terpadu BGN",
+        addr: "Jaringan 840 Dapur SPPG Terakreditasi Seluruh Indonesia",
+        query: "Badan Gizi Nasional Indonesia",
+        regionName: "Seluruh Wilayah RI"
+      }
+    };
+
+    if (provFilter) {
+      provFilter.addEventListener('change', () => {
+        const val = provFilter.value;
+        const item = sppgRegionalData[val] || sppgRegionalData["all"];
+
+        if (pinnedCode) pinnedCode.textContent = item.code;
+        if (pinnedTitle) pinnedTitle.textContent = item.name;
+        if (pinnedAddr) pinnedAddr.textContent = item.addr;
+        if (pinnedLink) pinnedLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(item.query);
+        if (filterMapLink) filterMapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(item.query);
+        if (filterMapText) filterMapText.textContent = 'Buka ' + item.regionName + ' di Maps';
       });
     }
   });

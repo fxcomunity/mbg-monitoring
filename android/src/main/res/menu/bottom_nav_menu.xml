@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_beranda"
+        android:title="@string/nav_beranda" />
+
+    <item
+        android:id="@+id/nav_menu_today"
+        android:icon="@drawable/ic_menu_hari_ini"
+        android:title="@string/nav_menu" />
+
+    <item
+        android:id="@+id/nav_distribution"
+        android:icon="@drawable/ic_distribusi"
+        android:title="@string/nav_distribusi" />
+
+    <item
+        android:id="@+id/nav_report"
+        android:icon="@drawable/ic_laporan"
+        android:title="@string/nav_laporan" />
+</menu>

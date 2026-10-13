@@ -194,13 +194,19 @@ function getFooter() {
 HTML;
 }
 
+// =========================================================================
 // 1. BUILD index.html
+// =========================================================================
 $sourceIndex = file_get_contents(__DIR__ . '/stitch_radar_mbg_redesign/stitch_radar_mbg_redesign/monitoring_nasional_radar_mbg_badan_gizi_nasional/code.html');
 
-// Replace header
+// Replace header & footer
 $sourceIndex = preg_replace('/<header[\s\S]*?<\/header>/', getHeader('index'), $sourceIndex);
-// Replace footer
 $sourceIndex = preg_replace('/<footer[\s\S]*?<\/footer>[\s\S]*?<\/body>/', getFooter() . "\n</body>", $sourceIndex);
+
+// Standardize phone & email
+$sourceIndex = str_replace('https://wa.me/6281190000888', 'https://wa.me/6281110008008', $sourceIndex);
+$sourceIndex = str_replace('0811-9000-0888', '+62 811-1000-8008', $sourceIndex);
+$sourceIndex = str_replace('aduan.mbg@bgn.go.id', 'halo@bgn.go.id', $sourceIndex);
 
 // Update Quick Access Cards links
 $sourceIndex = str_replace(
@@ -231,7 +237,51 @@ $sourceIndex = preg_replace(
     $sourceIndex
 );
 
-// Connect dynamic search API in index.html
+// Enhance Peta Telemetri in index.html to be interactive with Google Maps
+$oldMapHeader = '<div class="flex items-center justify-between">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-primary font-bold">Peta Telemetri Wilayah Logistik MBG</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Titik sensor IoT suhu kendaraan van termal dan radius dapur SPPG</p>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-sm text-label-sm">
+                Rata-rata 64.2°C
+              </span>
+</div>';
+
+$newMapHeader = <<<HTML
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+  <div>
+    <h3 class="font-headline-sm text-headline-sm text-primary font-bold flex items-center gap-2">
+      <span class="material-symbols-outlined text-secondary text-[22px]">map</span>
+      <span>Peta Telemetri Wilayah Logistik MBG</span>
+    </h3>
+    <p class="font-body-sm text-body-sm text-on-surface-variant">Titik sensor IoT suhu kendaraan van termal dan radius dapur SPPG</p>
+  </div>
+  <div class="flex items-center gap-2">
+    <span id="telemetryTempBadge" class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-sm text-label-sm font-semibold">
+      Rata-rata 64.2°C
+    </span>
+    <a id="btnMapGoogleLink" href="https://www.google.com/maps/search/?api=1&query=Badan+Gizi+Nasional+SPPG+DKI+Jakarta" target="_blank" class="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm">
+      <span class="material-symbols-outlined text-[16px]">location_on</span>
+      <span id="mapLinkText">Buka di Google Maps</span>
+      <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+    </a>
+  </div>
+</div>
+<!-- Quick Region Telemetry Switcher -->
+<div class="flex flex-wrap items-center gap-2 pt-1 pb-1">
+  <span class="text-xs font-semibold text-primary">Pilih Wilayah Peta:</span>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm transition-all" data-region="dki" data-label="DKI Jakarta" data-query="Badan Gizi Nasional SPPG DKI Jakarta" data-temp="64.2°C">DKI Jakarta</button>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="jabar" data-label="Jawa Barat" data-query="Badan Gizi Nasional SPPG Kota Bandung Jawa Barat" data-temp="65.0°C">Jawa Barat</button>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="jateng" data-label="Jawa Tengah" data-query="Badan Gizi Nasional SPPG Kota Semarang Jawa Tengah" data-temp="63.8°C">Jawa Tengah</button>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="jatim" data-label="Jawa Timur" data-query="Badan Gizi Nasional SPPG Surabaya Jawa Timur" data-temp="66.1°C">Jawa Timur</button>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="nasional" data-label="Seluruh Indonesia" data-query="Badan Gizi Nasional Indonesia" data-temp="64.5°C">Seluruh Indonesia</button>
+</div>
+HTML;
+
+$sourceIndex = str_replace($oldMapHeader, $newMapHeader, $sourceIndex);
+
+// Connect dynamic search API and Google Maps interactivity in index.html
 $apiSearchScript = <<<HTML
 <script>
   // Enhanced dynamic search via api.php
@@ -292,6 +342,31 @@ $apiSearchScript = <<<HTML
       window.location.href = 'menu-hari-ini.html?q=' + encodeURIComponent(q);
     });
   }
+
+  // Region Telemetry Interactivity with Google Maps
+  const regionBtns = document.querySelectorAll('.region-telemetry-btn');
+  const btnMapGoogleLink = document.getElementById('btnMapGoogleLink');
+  const telemetryTempBadge = document.getElementById('telemetryTempBadge');
+
+  regionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      regionBtns.forEach(b => {
+        b.className = 'region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all';
+      });
+      btn.className = 'region-telemetry-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm transition-all';
+
+      const q = btn.getAttribute('data-query');
+      const temp = btn.getAttribute('data-temp');
+      const label = btn.getAttribute('data-label');
+
+      if (btnMapGoogleLink && q) {
+        btnMapGoogleLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+      }
+      if (telemetryTempBadge && temp) {
+        telemetryTempBadge.textContent = 'Rata-rata ' + temp;
+      }
+    });
+  });
 </script>
 HTML;
 
@@ -300,11 +375,18 @@ $sourceIndex = injectFaviconAndMeta($sourceIndex, 'Radar MBG - Pusat Monitoring 
 file_put_contents(__DIR__ . '/index.html', $sourceIndex);
 echo "index.html written successfully.\n";
 
+// =========================================================================
 // 2. BUILD menu-hari-ini.html
+// =========================================================================
 $sourceMenu = file_get_contents(__DIR__ . '/stitch_radar_mbg_redesign/stitch_radar_mbg_redesign/radar_mbg_menu_hari_ini_transparansi_distribusi/code.html');
 $sourceMenu = injectFaviconAndMeta($sourceMenu, 'Menu Hari Ini & Kandungan Gizi AKG - Radar MBG BGN');
 $sourceMenu = preg_replace('/<header[\s\S]*?<\/header>/', getHeader('menu'), $sourceMenu);
 $sourceMenu = preg_replace('/<footer[\s\S]*?<\/footer>[\s\S]*?<\/body>/', getFooter() . "\n</body>", $sourceMenu);
+
+// Standardize phone & email
+$sourceMenu = str_replace('https://wa.me/628111234567', 'https://wa.me/6281110008008', $sourceMenu);
+$sourceMenu = str_replace('0811-1234-567', '+62 811-1000-8008', $sourceMenu);
+$sourceMenu = str_replace('aduan.mbg@bgn.go.id', 'halo@bgn.go.id', $sourceMenu);
 
 // Update Report links to laporan-aduan.html
 $sourceMenu = str_replace(
@@ -383,121 +465,108 @@ $newFilterForm = <<<HTML
       <span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
     </div>
   </div>
-</form>
-HTML;
 
-$sourceMenu = preg_replace('/<form class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-space-md" id="filterForm">[\s\S]*?<\/form>/', $newFilterForm, $sourceMenu);
-
-// Update Action Strip & Active Breadcrumbs
-$oldBreadcrumbSearch = '<div class="mt-space-md pt-space-md flex flex-wrap items-center justify-between gap-space-md">';
-$newBreadcrumb = <<<HTML
-<div class="mt-space-md pt-space-md flex flex-wrap items-center justify-between gap-space-md">
-  <div class="flex items-center gap-2 flex-wrap" id="breadcrumbContainer">
-    <span class="font-label-sm text-label-sm text-on-surface-variant">Rute Lokasi:</span>
-    <span id="routeProvinsi" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">Belum Memilih</span>
-    <span class="text-on-surface-variant text-label-sm">›</span>
-    <span id="routeKota" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">-</span>
-    <span class="text-on-surface-variant text-label-sm">›</span>
-    <span id="breadcrumbSchool" class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold">-</span>
-  </div>
-  <div class="flex items-center gap-space-sm w-full sm:w-auto">
-    <button id="btnResetFilter" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5" type="button">
-      <span class="material-symbols-outlined text-[16px]">restart_alt</span>
-      <span>Reset Pilihan</span>
-    </button>
-    <button id="btnApplyFilter" class="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm flex items-center justify-center gap-1.5" type="button">
-      <span class="material-symbols-outlined text-tertiary-fixed text-[18px]">search_check</span>
-      <span>Tampilkan Menu MBG</span>
-    </button>
-  </div>
-</div>
-HTML;
-$sourceMenu = preg_replace('/<div class="mt-space-md pt-space-md flex flex-wrap items-center justify-between gap-space-md">[\s\S]*?<\/div>\s*<\/div>\s*<\/section>/', $newBreadcrumb . "\n</div></section>", $sourceMenu);
-
-// Empty State / Selection Prompt to show BEFORE user chooses a school
-$selectionPromptHtml = <<<HTML
-<!-- State Belum Memilih Sekolah (Empty / Selection Prompt State) -->
-<section id="menuSelectionPrompt" class="w-full px-space-md sm:px-space-lg py-space-xl max-w-[1200px] mx-auto transition-all duration-300">
-  <div class="bg-surface-card p-space-xl sm:p-12 rounded-3xl border-2 border-dashed border-border-subtle shadow-sm flex flex-col items-center justify-center text-center">
-    <div class="w-16 h-16 rounded-2xl bg-primary-container text-tertiary-fixed flex items-center justify-center mb-4 shadow-sm">
-      <span class="material-symbols-outlined text-[36px]">soup_kitchen</span>
+  <!-- Action Buttons Row -->
+  <div class="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border-subtle">
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-on-surface-variant font-medium">Contoh Cepat:</span>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="sdn-01-senayan">SDN 01 Senayan</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="sdn-01-menteng">SDN 01 Menteng</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="smpn-19-kby">SMPN 19 Kebayoran</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="sdn-sukajadi-03">SDN Sukajadi 03 Bandung</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="smpn-3-sby">SMPN 3 Surabaya</button>
     </div>
-    <span class="px-3 py-1 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm font-semibold mb-2">Portal Transparansi Publik Radar MBG</span>
-    <h3 class="font-headline-xl text-headline-xl text-primary font-bold">Pilih Satuan Pendidikan Terlebih Dahulu</h3>
-    <p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl mt-2 leading-relaxed">
-      Silakan gunakan dropdown filter wilayah di atas untuk menentukan provinsi, kota, dan sekolah Anda. Atau klik salah satu rekomendasi sekolah di bawah ini untuk langsung memantau menu hari ini, nilai gizi AKG terverifikasi, serta dapur SPPG penyedianya.
-    </p>
-    
-    <!-- Quick Selection Pills -->
-    <div class="mt-space-lg pt-space-md border-t border-border-subtle w-full max-w-2xl flex flex-col items-center gap-3">
-      <span class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[18px] text-secondary">touch_app</span>
-        Pilihan Cepat Sekolah Terpopuler:
-      </span>
-      <div class="flex flex-wrap items-center justify-center gap-2">
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="sdn-01-senayan">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SDN 01 Senayan (Jakarta)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="sdn-01-menteng">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SDN 01 Menteng (Jakarta)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="smpn-19-kby">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SMPN 19 Kebayoran (Jakarta)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="sdn-sukajadi-03">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SDN Sukajadi 03 (Bandung)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="smpn-3-sby">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SMPN 3 Surabaya (Jatim)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="smpn-1-smg">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SMPN 1 Semarang (Jateng)</span>
-        </button>
-        <button type="button" class="quick-school-btn px-4 py-2 rounded-xl bg-surface-container-low hover:bg-primary hover:text-on-primary text-primary font-label-md text-label-md transition-all shadow-sm border border-border-subtle flex items-center gap-1.5" data-school="sman-70-jkt">
-          <span class="material-symbols-outlined text-[16px] text-tertiary-fixed">school</span>
-          <span>SMAN 70 Jakarta (SMA)</span>
-        </button>
-      </div>
-    </div>
-  </div>
-</section>
-HTML;
-
-// Wrap the actual detail sections in #menuDetailWrapper
-$startDetailTarget = '<!-- Section Menu MBG Hari Ini (Highlight Utama) -->';
-$changeSchoolTopBar = <<<HTML
-<div id="menuDetailWrapper" class="hidden transition-all duration-500">
-  <div class="w-full max-w-[1200px] mx-auto px-space-md sm:px-space-lg pt-space-md">
-    <div class="p-space-md rounded-2xl bg-surface-card border border-border-subtle flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-      <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-status-success animate-pulse"></span>
-        <span class="font-label-md text-label-md text-primary font-bold">Data Menu Terverifikasi Ditampilkan</span>
-        <span class="font-body-sm text-body-sm text-on-surface-variant hidden sm:inline">• Diperbarui otomatis dari SPPG Mitra</span>
-      </div>
-      <button id="btnChangeSchoolTop" type="button" class="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold flex items-center gap-1.5 transition-colors">
-        <span class="material-symbols-outlined text-[18px]">edit</span>
-        <span>Pilih / Ganti Sekolah Lain</span>
+    <div class="flex items-center gap-2">
+      <button type="button" id="btnResetFilter" class="px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1">
+        <span class="material-symbols-outlined text-[16px]">restart_alt</span>
+        <span>Reset</span>
+      </button>
+      <button type="button" id="btnApplyFilter" class="px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-colors flex items-center gap-1 shadow-sm">
+        <span class="material-symbols-outlined text-[16px]">visibility</span>
+        <span>Tampilkan Menu</span>
       </button>
     </div>
   </div>
+</form>
 HTML;
 
+$sourceMenu = preg_replace('/<form[\s\S]*?<\/form>/', $newFilterForm, $sourceMenu);
+
+// Update Breadcrumb
+$oldBreadcrumb = '<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant mb-space-sm">
+<span>DKI Jakarta</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>Jakarta Selatan</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-bold">Kebayoran Baru</span>
+</div>';
+
+$newBreadcrumb = <<<HTML
+<div class="flex flex-wrap items-center justify-between gap-2 mb-space-sm">
+  <div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">
+    <span id="routeProvinsi">DKI Jakarta</span>
+    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+    <span id="routeKota">Jakarta Selatan</span>
+    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+    <span id="breadcrumbSchool" class="text-primary font-bold">SDN 01 Senayan</span>
+  </div>
+  <button type="button" id="btnChangeSchoolTop" class="text-xs text-secondary hover:text-primary font-semibold flex items-center gap-1">
+    <span class="material-symbols-outlined text-[14px]">tune</span>
+    <span>Ubah Wilayah / Sekolah</span>
+  </button>
+</div>
+HTML;
+$sourceMenu = str_replace($oldBreadcrumb, $newBreadcrumb, $sourceMenu);
+
+// Empty Selection Prompt
+$selectionPromptHtml = <<<HTML
+<div id="menuSelectionPrompt" class="w-full max-w-[1200px] mx-auto px-space-md sm:px-space-lg py-space-xl">
+  <div class="bg-surface-card border-2 border-dashed border-border-subtle rounded-3xl p-space-xl text-center flex flex-col items-center justify-center gap-space-md shadow-sm">
+    <div class="w-16 h-16 rounded-2xl bg-primary-container text-tertiary-fixed flex items-center justify-center">
+      <span class="material-symbols-outlined text-[36px]">touch_app</span>
+    </div>
+    <div class="flex flex-col gap-1 max-w-lg">
+      <h3 class="font-headline-md text-headline-md text-primary font-bold">Silakan Pilih Satuan Pendidikan (Sekolah)</h3>
+      <p class="font-body-md text-body-md text-on-surface-variant">
+        Pilih Provinsi, Kota, dan Sekolah pada formulir filter di atas, atau klik salah satu tombol contoh sekolah di bawah untuk melihat transparansi menu dan nilai gizi AKG terverifikasi.
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center justify-center gap-2 pt-2">
+      <button type="button" class="quick-school-btn px-4 py-2.5 rounded-xl bg-primary text-on-primary font-label-md font-semibold hover:bg-primary-container transition-all flex items-center gap-2 shadow-sm" data-school="sdn-01-senayan">
+        <span class="material-symbols-outlined text-[18px]">school</span>
+        <span>SDN 01 Senayan (Jakarta Selatan)</span>
+      </button>
+      <button type="button" class="quick-school-btn px-4 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-label-md font-semibold transition-all flex items-center gap-2" data-school="sdn-01-menteng">
+        <span class="material-symbols-outlined text-[18px]">school</span>
+        <span>SDN 01 Menteng (Jakarta Pusat)</span>
+      </button>
+      <button type="button" class="quick-school-btn px-4 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary font-label-md font-semibold transition-all flex items-center gap-2" data-school="sdn-sukajadi-03">
+        <span class="material-symbols-outlined text-[18px]">school</span>
+        <span>SDN Sukajadi 03 (Kota Bandung)</span>
+      </button>
+    </div>
+  </div>
+</div>
+HTML;
+
+// Wrap meal detail in hidden container
 $sourceMenu = str_replace(
-    $startDetailTarget,
-    $selectionPromptHtml . "\n" . $changeSchoolTopBar . "\n" . $startDetailTarget,
+    '<!-- SECTION 2: HERO MENU HIGHLIGHT -->',
+    $selectionPromptHtml . "\n" . '<div id="menuDetailWrapper" class="hidden">' . "\n" . '<!-- SECTION 2: HERO MENU HIGHLIGHT -->',
+    $sourceMenu
+);
+$sourceMenu = str_replace(
+    '<!-- SECTION 4: SPPG PROFILE & AUDIT LOG -->',
+    '<!-- SECTION 4: SPPG PROFILE & AUDIT LOG -->',
+    $sourceMenu
+);
+$sourceMenu = str_replace(
+    '<!-- Interactive Rating Quick Strip -->',
+    '</div>' . "\n" . '<!-- Interactive Rating Quick Strip -->',
     $sourceMenu
 );
 
-// Close the #menuDetailWrapper right before <footer
-$sourceMenu = str_replace('</div></main><footer', '</div></div></main><footer', $sourceMenu);
-
-// Add unique element IDs inside the menu detail section for dynamic injection
+// Add unique element IDs and Google Maps buttons
 $sourceMenu = str_replace(
     '<span class="px-3 py-1 rounded-full bg-status-success/15 text-status-success font-label-sm text-label-sm font-semibold flex items-center gap-1">' . "\n" . '<span class="material-symbols-outlined text-[16px]">local_shipping</span>' . "\n" . '              Telah Tiba di Sekolah (Pukul 09:30 WIB)' . "\n" . '            </span>',
     '<span id="arrivalBadge" class="px-3 py-1 rounded-full bg-status-success/15 text-status-success font-label-sm text-label-sm font-semibold flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">local_shipping</span><span id="arrivalBadgeText">Telah Tiba di Sekolah (Pukul 09:30 WIB)</span></span>',
@@ -506,7 +575,7 @@ $sourceMenu = str_replace(
 
 $sourceMenu = str_replace(
     '<h2 id="packageTitle" class="font-headline-xl text-headline-xl text-primary font-bold">Paket Menu Siswa: SDN 01 Senayan Jakarta Selatan</h2>',
-    '<h2 id="packageTitle" class="font-headline-xl text-headline-xl text-primary font-bold">Paket Menu Siswa: SDN 01 Senayan Jakarta Selatan</h2>',
+    '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"><h2 id="packageTitle" class="font-headline-xl text-headline-xl text-primary font-bold">Paket Menu Siswa: SDN 01 Senayan Jakarta Selatan</h2><a id="schoolGoogleMapLink" href="https://www.google.com/maps/search/?api=1&query=SDN+01+Senayan+Jakarta+Selatan" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-low hover:bg-surface-container text-secondary hover:text-primary text-xs font-semibold transition-colors self-start shrink-0"><span class="material-symbols-outlined text-[16px]">school</span><span>Lihat Lokasi Sekolah di Google Maps</span><span class="material-symbols-outlined text-[14px]">open_in_new</span></a></div>',
     $sourceMenu
 );
 
@@ -536,7 +605,7 @@ $sourceMenu = str_replace(
 
 $sourceMenu = str_replace(
     '<span class="font-body-sm text-body-sm text-on-primary-container">Jl. Kyai Maja No. 14, Jakarta Selatan</span>',
-    '<span id="sppgAddressDisplay" class="font-body-sm text-body-sm text-on-primary-container">Jl. Kyai Maja No. 14, Jakarta Selatan</span>',
+    '<span id="sppgAddressDisplay" class="font-body-sm text-body-sm text-on-primary-container block">Jl. Kyai Maja No. 14, Jakarta Selatan</span><a id="sppgGoogleMapLink" href="https://www.google.com/maps/search/?api=1&query=Dapur+Sentral+Kebayoran+Baru+03+Jl.+Kyai+Maja+No.+14+Jakarta+Selatan" target="_blank" class="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-lowest/90 hover:bg-surface-container-lowest text-primary text-xs font-semibold backdrop-blur-sm transition-all shadow-sm"><span class="material-symbols-outlined text-[16px] text-secondary">explore</span><span>Buka Lokasi Dapur di Google Maps</span><span class="material-symbols-outlined text-[14px]">open_in_new</span></a>',
     $sourceMenu
 );
 
@@ -546,7 +615,7 @@ $sourceMenu = str_replace(
     $sourceMenu
 );
 
-// JavaScript for Dynamic Cascading & Rendering
+// JavaScript for Dynamic Cascading & Rendering in menu-hari-ini.html
 $completeMenuScript = <<<HTML
 <script>
   // Complete Dataset for Indonesian Schools in MBG
@@ -854,7 +923,7 @@ $completeMenuScript = <<<HTML
       });
     }
 
-    // Render School Details
+    // Render School Details & Dynamic Maps Links
     function renderSchool(schoolKey) {
       const data = schoolDb[schoolKey];
       if (!data) return;
@@ -896,6 +965,16 @@ $completeMenuScript = <<<HTML
 
       const sppgDoc = document.getElementById('sppgDietitianDisplay');
       if (sppgDoc) sppgDoc.textContent = data.sppg.dietitian;
+
+      // Dynamic Google Maps Linking for SPPG and School
+      const sppgMap = document.getElementById('sppgGoogleMapLink');
+      if (sppgMap) {
+        sppgMap.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(data.sppg.name + ', ' + data.sppg.address);
+      }
+      const schoolMap = document.getElementById('schoolGoogleMapLink');
+      if (schoolMap) {
+        schoolMap.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(data.name + ' ' + data.kotaName);
+      }
 
       // Toggle View State
       if (promptState) promptState.classList.add('hidden');
@@ -962,7 +1041,6 @@ $completeMenuScript = <<<HTML
     const urlParams = new URLSearchParams(window.location.search);
     const qParam = urlParams.get('q') || urlParams.get('school');
     if (qParam) {
-      // Find matching key
       const qLower = qParam.toLowerCase();
       let matchedKey = null;
       Object.keys(schoolDb).forEach(k => {
@@ -973,7 +1051,6 @@ $completeMenuScript = <<<HTML
       if (matchedKey) {
         renderSchool(matchedKey);
       } else {
-        // Default to senayan if query not matched
         renderSchool('sdn-01-senayan');
       }
     }
@@ -982,23 +1059,171 @@ $completeMenuScript = <<<HTML
 HTML;
 
 $sourceMenu = str_replace('</body>', $completeMenuScript . "\n</body>", $sourceMenu);
-
 file_put_contents(__DIR__ . '/menu-hari-ini.html', $sourceMenu);
 echo "menu-hari-ini.html written successfully.\n";
 
+// =========================================================================
 // 3. BUILD distribusi-sebaran-sppg.html
+// =========================================================================
 $sourceDist = file_get_contents(__DIR__ . '/stitch_radar_mbg_redesign/stitch_radar_mbg_redesign/distribusi_sebaran_sppg_radar_mbg/code.html');
 $sourceDist = injectFaviconAndMeta($sourceDist, 'Distribusi & Sebaran SPPG Nasional - Radar MBG BGN');
 $sourceDist = preg_replace('/<header[\s\S]*?<\/header>/', getHeader('distribusi'), $sourceDist);
 $sourceDist = preg_replace('/<footer[\s\S]*?<\/footer>[\s\S]*?<\/body>/', getFooter() . "\n</body>", $sourceDist);
+
+// Standardize phone & email
+$sourceDist = str_replace('aduan.mbg@bgn.go.id', 'halo@bgn.go.id', $sourceDist);
+$sourceDist = str_replace('081190000888', '081110008008', $sourceDist);
+
+// Enhance Filter Bar with Google Maps Direct Button
+$oldDistFilter = '<div class="flex flex-wrap items-center gap-2 sm:gap-3">';
+$newDistFilter = '<div class="flex flex-wrap items-center gap-2 sm:gap-3">
+<a id="btnFilterMapLink" href="https://www.google.com/maps/search/?api=1&query=Dapur+SPPG+Badan+Gizi+Nasional+DKI+Jakarta" target="_blank" class="px-3.5 py-2 bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md rounded-xl transition-colors flex items-center gap-1.5 shadow-sm">
+  <span class="material-symbols-outlined text-[16px]">map</span>
+  <span id="btnFilterMapLinkText">Buka Wilayah di Google Maps</span>
+  <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</a>';
+$sourceDist = str_replace($oldDistFilter, $newDistFilter, $sourceDist);
+
+// Enhance Pinned SPPG Card Overlay with ID tags and Google Maps Button
+$oldPinnedCard = '<div class="self-end pointer-events-auto max-w-sm w-full bg-surface-card/95 backdrop-blur-md p-4 rounded-2xl shadow-lg space-y-3">
+<div class="flex items-start justify-between">
+<div>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary-fixed text-label-sm font-label-sm">SPPG-JKTSEL-008</span>
+<h3 class="text-headline-sm font-headline-sm text-primary mt-1">SPPG Pasar Minggu Sentral</h3>
+</div>
+<span class="material-symbols-outlined text-status-success text-[24px]">verified</span>
+</div>';
+
+$newPinnedCard = '<div class="self-end pointer-events-auto max-w-sm w-full bg-surface-card/95 backdrop-blur-md p-4 rounded-2xl shadow-lg space-y-3">
+<div class="flex items-start justify-between">
+<div>
+<span id="pinnedSppgCode" class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary-fixed text-label-sm font-label-sm">SPPG-JKTSEL-008</span>
+<h3 id="pinnedSppgTitle" class="text-headline-sm font-headline-sm text-primary mt-1">SPPG Pasar Minggu Sentral</h3>
+<span id="pinnedSppgAddress" class="text-xs text-on-surface-variant block mt-0.5">Jl. Raya Ragunan No. 12, Pasar Minggu, Jakarta Selatan</span>
+</div>
+<span class="material-symbols-outlined text-status-success text-[24px]">verified</span>
+</div>';
+$sourceDist = str_replace($oldPinnedCard, $newPinnedCard, $sourceDist);
+
+$oldCardBottom = '<div class="flex justify-between text-label-sm font-label-sm text-on-surface-variant">
+<span>Distribusi Hari Ini: 2.550/3.000 porsi</span>
+<span class="font-semibold text-secondary">85%</span>
+</div>
+</div>';
+
+$newCardBottom = '<div class="flex justify-between text-label-sm font-label-sm text-on-surface-variant">
+<span id="pinnedSppgPortion">Distribusi Hari Ini: 2.550/3.000 porsi</span>
+<span id="pinnedSppgPct" class="font-semibold text-secondary">85%</span>
+</div>
+<a id="pinnedSppgMapLink" href="https://www.google.com/maps/search/?api=1&query=SPPG+Pasar+Minggu+Sentral+Jl.+Raya+Ragunan+No.+12+Jakarta+Selatan" target="_blank" class="w-full py-2 px-3 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm">
+  <span class="material-symbols-outlined text-[16px]">explore</span>
+  <span>Buka Lokasi SPPG di Google Maps</span>
+  <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+</a>
+</div>';
+$sourceDist = str_replace($oldCardBottom, $newCardBottom, $sourceDist);
+
+// Make directory SPPG cards link directly to Google Maps
+$sourceDist = str_replace(
+    '<span>Lihat Rute</span>' . "\n" . '</a>',
+    '<span>Rute Maps</span><span class="material-symbols-outlined text-[14px]">open_in_new</span>' . "\n" . '</a>',
+    $sourceDist
+);
+$sourceDist = preg_replace(
+    '/<a class="([^"]*text-secondary[^"]*)" href="#">(\s*<span class="material-symbols-outlined text-\[14px\]">route<\/span>\s*<span>Rute Maps<\/span>[\s\S]*?<\/a>)/',
+    '<a class="$1" href="https://www.google.com/maps/search/?api=1&query=Dapur+SPPG+Badan+Gizi+Nasional" target="_blank">$2',
+    $sourceDist
+);
+
+// Dynamic map switcher script for distribusi-sebaran-sppg.html
+$distScript = <<<HTML
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const provFilter = document.getElementById('filter-provinsi');
+    const pinnedCode = document.getElementById('pinnedSppgCode');
+    const pinnedTitle = document.getElementById('pinnedSppgTitle');
+    const pinnedAddr = document.getElementById('pinnedSppgAddress');
+    const pinnedLink = document.getElementById('pinnedSppgMapLink');
+    const filterMapLink = document.getElementById('btnFilterMapLink');
+    const filterMapText = document.getElementById('btnFilterMapLinkText');
+
+    const sppgRegionalData = {
+      "dki": {
+        code: "SPPG-JKTSEL-008",
+        name: "SPPG Pasar Minggu Sentral",
+        addr: "Jl. Raya Ragunan No. 12, Pasar Minggu, Jakarta Selatan",
+        query: "SPPG Pasar Minggu Sentral Jl Raya Ragunan Jakarta Selatan",
+        regionName: "DKI Jakarta"
+      },
+      "jabar": {
+        code: "SPPG-JBRBDG-003",
+        name: "SPPG Sukajadi Bandung Sentral",
+        addr: "Jl. Sukajadi No. 188, Sukajadi, Kota Bandung, Jawa Barat",
+        query: "SPPG Sukajadi No 188 Sukajadi Kota Bandung Jawa Barat",
+        regionName: "Jawa Barat"
+      },
+      "jateng": {
+        code: "SPPG-JTGSMG-005",
+        name: "SPPG Semarang Tengah",
+        addr: "Jl. Pemuda No. 70, Semarang Tengah, Kota Semarang, Jawa Tengah",
+        query: "SPPG Jl Pemuda No 70 Semarang Tengah Kota Semarang",
+        regionName: "Jawa Tengah"
+      },
+      "jatim": {
+        code: "SPPG-JTMSBY-002",
+        name: "SPPG Surabaya Rungkut Sentral",
+        addr: "Kawasan Industri SIER No. 12, Rungkut, Kota Surabaya, Jawa Timur",
+        query: "SPPG Kawasan Industri SIER No 12 Rungkut Surabaya",
+        regionName: "Jawa Timur"
+      },
+      "banten": {
+        code: "SPPG-BTNTGR-004",
+        name: "SPPG Cipocok Jaya Serang",
+        addr: "Jl. Raya Pandeglang No. 45, Cipocok Jaya, Kota Serang, Banten",
+        query: "SPPG Cipocok Jaya Kota Serang Banten",
+        regionName: "Banten"
+      },
+      "all": {
+        code: "SPPG-NASIONAL-001",
+        name: "Sentra SPPG Klaster Terpadu BGN",
+        addr: "Jaringan 840 Dapur SPPG Terakreditasi Seluruh Indonesia",
+        query: "Badan Gizi Nasional Indonesia",
+        regionName: "Seluruh Wilayah RI"
+      }
+    };
+
+    if (provFilter) {
+      provFilter.addEventListener('change', () => {
+        const val = provFilter.value;
+        const item = sppgRegionalData[val] || sppgRegionalData["all"];
+
+        if (pinnedCode) pinnedCode.textContent = item.code;
+        if (pinnedTitle) pinnedTitle.textContent = item.name;
+        if (pinnedAddr) pinnedAddr.textContent = item.addr;
+        if (pinnedLink) pinnedLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(item.query);
+        if (filterMapLink) filterMapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(item.query);
+        if (filterMapText) filterMapText.textContent = 'Buka ' + item.regionName + ' di Maps';
+      });
+    }
+  });
+</script>
+HTML;
+
+$sourceDist = str_replace('</body>', $distScript . "\n</body>", $sourceDist);
 file_put_contents(__DIR__ . '/distribusi-sebaran-sppg.html', $sourceDist);
 echo "distribusi-sebaran-sppg.html written successfully.\n";
 
+// =========================================================================
 // 4. BUILD standar-uji-akg.html
+// =========================================================================
 $sourceAkg = file_get_contents(__DIR__ . '/stitch_radar_mbg_redesign/stitch_radar_mbg_redesign/standar_uji_akg_radar_mbg/code.html');
 $sourceAkg = injectFaviconAndMeta($sourceAkg, 'Standar AKG & Uji Mutu Laboratorium - Radar MBG BGN');
 $sourceAkg = preg_replace('/<header[\s\S]*?<\/header>/', getHeader('standar'), $sourceAkg);
 $sourceAkg = preg_replace('/<footer[\s\S]*?<\/footer>[\s\S]*?<\/body>/', getFooter() . "\n</body>", $sourceAkg);
+
+// Standardize phone & email
+$sourceAkg = str_replace('aduan.mbg@bgn.go.id', 'halo@bgn.go.id', $sourceAkg);
+$sourceAkg = str_replace('081190000888', '081110008008', $sourceAkg);
 
 // Update "Kirim Laporan Cepat" link to laporan-aduan.html
 $sourceAkg = preg_replace(
@@ -1010,7 +1235,9 @@ $sourceAkg = preg_replace(
 file_put_contents(__DIR__ . '/standar-uji-akg.html', $sourceAkg);
 echo "standar-uji-akg.html written successfully.\n";
 
+// =========================================================================
 // 5. BUILD laporan-aduan.html
+// =========================================================================
 $aduanContent = <<<HTML
 <!DOCTYPE html>
 <html lang="id">
@@ -1157,9 +1384,9 @@ __HEADER__
             <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
               Kirimkan foto langsung ke operator siaga BGN melalui WhatsApp resmi bercentang hijau untuk verifikasi instan.
             </p>
-            <a href="https://wa.me/6281190000888?text=Halo%20Satgas%20MBG,%20saya%20ingin%20melaporkan%20terkait%20program%20MBG" target="_blank" class="py-3 px-4 rounded-xl bg-status-success hover:bg-status-success/90 text-on-secondary font-label-md text-label-md font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
+            <a href="https://wa.me/6281110008008?text=Halo%20Satgas%20MBG,%20saya%20ingin%20melaporkan%20terkait%20program%20MBG" target="_blank" class="py-3 px-4 rounded-xl bg-status-success hover:bg-status-success/90 text-on-primary font-label-md text-label-md font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
               <span class="material-symbols-outlined text-[20px]">chat</span>
-              <span>Chat WhatsApp: 0811-9000-0888</span>
+              <span>Chat WhatsApp: +62 811-1000-8008</span>
             </a>
           </div>
 
@@ -1176,7 +1403,7 @@ __HEADER__
             </div>
             <div class="p-4 rounded-2xl bg-surface-container-low flex items-center justify-between">
               <div class="flex flex-col">
-                <span class="text-headline-md font-bold text-primary">150-098</span>
+                <span class="text-headline-md font-bold text-primary">+62 811-1000-8008</span>
                 <span class="text-xs text-on-surface-variant">Senin - Minggu: 06.00 - 20.00 WIB</span>
               </div>
               <span class="material-symbols-outlined text-secondary text-[28px]">headset_mic</span>
@@ -1291,6 +1518,258 @@ $aduanContent = str_replace('__HEADER__', getHeader('aduan'), $aduanContent);
 $aduanContent = str_replace('__FOOTER__', getFooter(), $aduanContent);
 file_put_contents(__DIR__ . '/laporan-aduan.html', $aduanContent);
 echo "laporan-aduan.html written successfully.\n";
+
+// =========================================================================
+// 6. BUILD kebijakan-privasi.html
+// =========================================================================
+$privacyContent = <<<HTML
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Kebijakan Privasi &amp; Perlindungan Data - Radar MBG BGN</title>
+  <link rel="icon" type="image/webp" href="logo.webp"/>
+  <link rel="apple-touch-icon" href="logo.webp"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}}::-webkit-scrollbar{display:none;}</style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "background": "#f8f9ff", "on-tertiary-fixed-variant": "#005236", "surface": "#f8f9ff", "surface-container-lowest": "#ffffff", "surface-container": "#e5eeff", "border-subtle": "#E2E8F0", "on-error": "#ffffff", "primary": "#001026", "on-primary-container": "#778db2", "tertiary-fixed": "#6ffbbe", "tertiary-container": "#002b1b", "on-secondary": "#ffffff", "on-primary-fixed": "#001c3b", "on-error-container": "#93000a", "inverse-on-surface": "#eaf1ff", "border-focus": "#134074", "status-error": "#EF4444", "surface-container-low": "#eff4ff", "on-tertiary-container": "#009f6e", "secondary-fixed": "#d5e3ff", "inverse-surface": "#213145", "inverse-primary": "#b1c7f0", "on-tertiary-fixed": "#002113", "on-secondary-fixed": "#001c3b", "surface-tint": "#495f82", "outline-variant": "#c4c6cf", "on-primary": "#ffffff", "secondary-fixed-dim": "#a7c8ff", "on-background": "#0b1c30", "status-success": "#059669", "tertiary": "#00130a", "surface-card": "#FFFFFF", "surface-canvas": "#F8FAFC", "surface-variant": "#d3e4fe", "on-primary-fixed-variant": "#314769", "primary-fixed-dim": "#b1c7f0", "surface-container-high": "#dce9ff", "outline": "#74777f", "on-secondary-container": "#274f84", "on-surface": "#0b1c30", "error-container": "#ffdad6", "surface-dim": "#cbdbf5", "tertiary-fixed-dim": "#4edea3", "surface-bright": "#f8f9ff", "on-surface-variant": "#44474e", "surface-container-highest": "#d3e4fe", "on-secondary-fixed-variant": "#1d477c", "status-warning": "#F59E0B", "secondary-container": "#9dc3ff", "primary-container": "#0b2545", "secondary": "#395f95", "on-tertiary": "#ffffff", "error": "#ba1a1a", "primary-fixed": "#d5e3ff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "margin": "2rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "gutter-sm": "1rem", "gutter": "1.5rem", "margin-sm": "1rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-xl-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"] } } } };</script>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased selection:bg-secondary-container selection:text-on-secondary-container">
+__HEADER__
+<main class="w-full pt-20 bg-surface min-h-[calc(100vh-20rem)]">
+  <div class="flex flex-col w-full">
+    <!-- Hero Banner -->
+    <section class="w-full bg-primary text-on-primary py-space-xl px-space-md sm:px-space-lg relative overflow-hidden">
+      <div class="max-w-7xl mx-auto flex flex-col gap-space-md relative z-10">
+        <div class="flex items-center gap-space-xs">
+          <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-lowest/10 backdrop-blur-md">
+            <span class="w-2.5 h-2.5 rounded-full bg-status-success"></span>
+            <span class="font-label-sm text-label-sm text-surface-container-high tracking-wider uppercase">Dokumen Kepatuhan Hukum RI</span>
+          </span>
+          <span class="font-label-sm text-label-sm text-surface-container-high">• UU No. 27/2022 (PDP) &amp; Perpres No. 83/2024</span>
+        </div>
+        <h1 class="font-headline-xl text-headline-xl sm:text-[36px] font-bold tracking-tight">
+          Kebijakan Privasi &amp; Tata Kelola Data Pemantauan MBG
+        </h1>
+        <p class="font-body-lg text-body-lg text-surface-container-high/90 max-w-3xl leading-relaxed">
+          Badan Gizi Nasional (BGN) Republik Indonesia berkomitmen menjunjung transparansi publik dalam pelaksanaan program Makan Bergizi Gratis (MBG) sekaligus melindungi secara ketat kerahasiaan data pribadi siswa, guru, wali murid, dan pelapor aduan masyarakat.
+        </p>
+      </div>
+    </section>
+
+    <!-- Content Sections -->
+    <section class="w-full px-space-md sm:px-space-lg py-space-xl max-w-7xl mx-auto">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+        <!-- Main Policy Articles (8 Cols) -->
+        <div class="lg:col-span-8 flex flex-col gap-space-lg">
+          <!-- Article 1: Prinsip Keterbukaan Data Publik vs Data Terproteksi -->
+          <div class="bg-surface-card p-space-lg sm:p-space-xl rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
+            <div class="flex items-center gap-3 pb-space-sm border-b border-border-subtle">
+              <div class="w-10 h-10 rounded-xl bg-primary-container text-tertiary-fixed flex items-center justify-center">
+                <span class="material-symbols-outlined text-[24px]">policy</span>
+              </div>
+              <div>
+                <h2 class="font-headline-md text-headline-md text-primary font-bold">1. Kategori &amp; Klasifikasi Data</h2>
+                <span class="text-xs text-on-surface-variant">Prinsip keterbukaan informasi publik dan pelindungan data pribadi</span>
+              </div>
+            </div>
+            <p class="text-body-md text-on-surface-variant leading-relaxed">
+              Sesuai dengan Undang-Undang No. 14 Tahun 2008 tentang Keterbukaan Informasi Publik dan Undang-Undang No. 27 Tahun 2022 tentang Pelindungan Data Pribadi, sistem Radar MBG mengklasifikasikan data menjadi dua kategori utama:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-2">
+              <div class="p-4 rounded-2xl bg-surface-container-low flex flex-col gap-2 border border-border-subtle">
+                <div class="flex items-center gap-2 text-status-success font-bold text-label-md">
+                  <span class="material-symbols-outlined text-[18px]">public</span>
+                  <span>Data Terbuka Publik (Open Data)</span>
+                </div>
+                <ul class="text-body-sm text-on-surface-variant space-y-1 list-disc list-inside">
+                  <li>Nama sekolah, jenjang, dan jumlah target porsi siswa.</li>
+                  <li>Siklus menu harian dan rincian kandungan nutrisi (AKG).</li>
+                  <li>Sertifikasi SPPG penyedia dan hasil uji mikrobiologi lab.</li>
+                  <li>Statistik agregat realisasi distribusi per provinsi/kota.</li>
+                </ul>
+              </div>
+              <div class="p-4 rounded-2xl bg-surface-container-low flex flex-col gap-2 border border-border-subtle">
+                <div class="flex items-center gap-2 text-status-error font-bold text-label-md">
+                  <span class="material-symbols-outlined text-[18px]">lock</span>
+                  <span>Data Rahasia Terproteksi (PDP)</span>
+                </div>
+                <ul class="text-body-sm text-on-surface-variant space-y-1 list-disc list-inside">
+                  <li>Nama lengkap, identitas kontak pelapor aduan masyarakat.</li>
+                  <li>Data medis atau alergen spesifik anak/peserta didik.</li>
+                  <li>Nomor WhatsApp dan riwayat pelaporan aduan satgas.</li>
+                  <li>Identitas staf pengawas yang bertugas dalam investigasi rahasia.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Article 2: Whistleblower Protection -->
+          <div class="bg-surface-card p-space-lg sm:p-space-xl rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
+            <div class="flex items-center gap-3 pb-space-sm border-b border-border-subtle">
+              <div class="w-10 h-10 rounded-xl bg-status-success/15 text-status-success flex items-center justify-center">
+                <span class="material-symbols-outlined text-[24px]">security</span>
+              </div>
+              <div>
+                <h2 class="font-headline-md text-headline-md text-primary font-bold">2. Perlindungan Identitas Pelapor (Whistleblower)</h2>
+                <span class="text-xs text-on-surface-variant">Jaminan kerahasiaan bagi wali murid, guru, dan masyarakat</span>
+              </div>
+            </div>
+            <p class="text-body-md text-on-surface-variant leading-relaxed">
+              Badan Gizi Nasional memberlakukan standar kerahasiaan tinggi terhadap setiap laporan yang masuk melalui Portal Aduan maupun WhatsApp Hotline Siaga (+62 811-1000-8008):
+            </p>
+            <div class="flex flex-col gap-3">
+              <div class="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low">
+                <span class="material-symbols-outlined text-primary text-[20px] mt-0.5">verified_user</span>
+                <p class="text-body-sm text-on-surface-variant"><strong>Penyandian Enkripsi:</strong> Seluruh nomor kontak dan deskripsi pengaduan dienkripsi dengan protokol AES-256 dan hanya dapat diakses oleh tim investigasi Inspektorat BGN.</p>
+              </div>
+              <div class="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low">
+                <span class="material-symbols-outlined text-primary text-[20px] mt-0.5">visibility_off</span>
+                <p class="text-body-sm text-on-surface-variant"><strong>Opsi Anonim &amp; Inisial:</strong> Pelapor diizinkan mencantumkan inisial. Data pelapor tidak akan pernah diteruskan kepada pihak penyedia SPPG atau pihak sekolah yang dilaporkan.</p>
+              </div>
+              <div class="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low">
+                <span class="material-symbols-outlined text-primary text-[20px] mt-0.5">shield</span>
+                <p class="text-body-sm text-on-surface-variant"><strong>Perlindungan Saksi:</strong> Berdasarkan MoU dengan Lembaga Perlindungan Saksi dan Korban (LPSK), pelapor dugaan korupsi, manipulasi porsi, atau kelalaian higienitas fatal dilindungi dari intimidasi hukum maupun sosial.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Article 3: Telemetri IoT & GPS Armada -->
+          <div class="bg-surface-card p-space-lg sm:p-space-xl rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
+            <div class="flex items-center gap-3 pb-space-sm border-b border-border-subtle">
+              <div class="w-10 h-10 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center">
+                <span class="material-symbols-outlined text-[24px]">sensors</span>
+              </div>
+              <div>
+                <h2 class="font-headline-md text-headline-md text-primary font-bold">3. Penggunaan Data Telemetri IoT &amp; GPS</h2>
+                <span class="text-xs text-on-surface-variant">Pemantauan rantai termal makanan dan posisi armada pengantar</span>
+              </div>
+            </div>
+            <p class="text-body-md text-on-surface-variant leading-relaxed">
+              Data koordinat GPS armada dan sensor suhu termal (&gt;60°C) yang ditampilkan pada modul <a href="distribusi-sebaran-sppg.html" class="text-secondary hover:text-primary font-semibold underline">Distribusi &amp; Sebaran SPPG</a> hanya digunakan secara eksklusif untuk tujuan operasional mutu:
+            </p>
+            <ul class="text-body-sm text-on-surface-variant space-y-2 list-disc list-inside">
+              <li>Memastikan makanan tidak berada dalam rentang bahaya bakteri (Danger Zone: 5°C - 57°C) selama perjalanan dari dapur ke sekolah.</li>
+              <li>Menghitung estimasi ketibaan (ETA) agar siswa menerima makan siang tepat sebelum jam istirahat.</li>
+              <li>Data telemetri disimpan selama 90 hari untuk keperluan audit kepatuhan SLA mitra katering.</li>
+            </ul>
+          </div>
+
+          <!-- Article 4: Hak Pemilik Data -->
+          <div class="bg-surface-card p-space-lg sm:p-space-xl rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
+            <div class="flex items-center gap-3 pb-space-sm border-b border-border-subtle">
+              <div class="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center">
+                <span class="material-symbols-outlined text-[24px]">manage_accounts</span>
+              </div>
+              <div>
+                <h2 class="font-headline-md text-headline-md text-primary font-bold">4. Hak-Hak Pemilik Data Pribadi</h2>
+                <span class="text-xs text-on-surface-variant">Pasal 5 s.d Pasal 13 Undang-Undang No. 27 Tahun 2022</span>
+              </div>
+            </div>
+            <p class="text-body-md text-on-surface-variant leading-relaxed">
+              Setiap subjek data yang berinteraksi dengan portal Radar MBG memiliki hak konstitusional penuh:
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-body-sm text-on-surface-variant">
+              <div class="p-3 rounded-xl bg-surface-container-low flex flex-col gap-1">
+                <strong class="text-primary">Hak Akses &amp; Konfirmasi</strong>
+                <span>Mengetahui status pemrosesan aduan atau klarifikasi data sekolah yang terdaftar.</span>
+              </div>
+              <div class="p-3 rounded-xl bg-surface-container-low flex flex-col gap-1">
+                <strong class="text-primary">Hak Perbaikan Data</strong>
+                <span>Memperbarui nomor kontak pelaporan jika terjadi kesalahan pengetikan saat submit formulir.</span>
+              </div>
+              <div class="p-3 rounded-xl bg-surface-container-low flex flex-col gap-1">
+                <strong class="text-primary">Hak Penghapusan (Erasure)</strong>
+                <span>Memohon penghapusan nomor telepon dan foto bukti setelah investigasi aduan selesai dan ditutup.</span>
+              </div>
+              <div class="p-3 rounded-xl bg-surface-container-low flex flex-col gap-1">
+                <strong class="text-primary">Hak Keberatan</strong>
+                <span>Mengajukan keberatan jika terdapat indikasi penyalahgunaan data di luar ketentuan program MBG.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar Kontak PPID & Legal Notice (4 Cols) -->
+        <div class="lg:col-span-4 flex flex-col gap-space-lg">
+          <!-- PPID Contact Card -->
+          <div class="bg-surface-card p-space-lg rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-primary-container text-tertiary-fixed flex items-center justify-center">
+                <span class="material-symbols-outlined text-[24px]">contact_support</span>
+              </div>
+              <div>
+                <h3 class="font-headline-sm text-headline-sm text-primary font-bold">Layanan PPID BGN RI</h3>
+                <span class="font-body-sm text-body-sm text-on-surface-variant">Pejabat Pengelola Informasi &amp; Dokumentasi</span>
+              </div>
+            </div>
+            <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Untuk permohonan informasi publik resmi atau pengajuan terkait pelindungan data pribadi Anda:
+            </p>
+            <div class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
+              <div class="flex items-start gap-space-xs">
+                <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">call</span>
+                <div>
+                  <span class="font-label-md text-label-md text-primary block">Hotline PPID / WA:</span>
+                  <a href="https://wa.me/6281110008008" target="_blank" class="hover:text-primary font-semibold transition-colors">+62 811-1000-8008</a>
+                </div>
+              </div>
+              <div class="flex items-start gap-space-xs">
+                <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">mail</span>
+                <div>
+                  <span class="font-label-md text-label-md text-primary block">Email Resmi:</span>
+                  <a href="mailto:halo@bgn.go.id" class="hover:text-primary font-semibold transition-colors">halo@bgn.go.id</a>
+                </div>
+              </div>
+              <div class="flex items-start gap-space-xs">
+                <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">location_on</span>
+                <div>
+                  <span class="font-label-md text-label-md text-primary block">Kantor Pusat:</span>
+                  <span>Gedung Badan Gizi Nasional RI, Jl. Medan Merdeka Barat No. 8, Jakarta Pusat</span>
+                </div>
+              </div>
+            </div>
+            <a href="https://wa.me/6281110008008?text=Halo%20PPID%20BGN,%20saya%20ingin%20bertanya%20mengenai%20kebijakan%20privasi%20MBG" target="_blank" class="w-full py-3 px-4 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all flex items-center justify-center gap-2 shadow-sm">
+              <span class="material-symbols-outlined text-[18px]">chat</span>
+              <span>Hubungi Petugas PPID</span>
+            </a>
+          </div>
+
+          <!-- Document Validity Card -->
+          <div class="bg-surface-container-low p-space-lg rounded-3xl border border-border-subtle flex flex-col gap-space-sm">
+            <h4 class="font-label-lg text-label-lg text-primary font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-status-success text-[20px]">verified</span>
+              Status Validitas Dokumen
+            </h4>
+            <div class="flex flex-col gap-2 pt-1 text-body-sm text-on-surface-variant">
+              <div><strong>Versi Dokumen:</strong> 2.4.0 (Redesain 2026)</div>
+              <div><strong>Ditetapkan di:</strong> Jakarta, Republik Indonesia</div>
+              <div><strong>Pemberlakuan:</strong> Seluruh Satuan Pelayanan Pemenuhan Gizi (SPPG) Nasional</div>
+            </div>
+            <div class="pt-2 border-t border-border-subtle flex items-center justify-between">
+              <a href="standar-uji-akg.html" class="text-xs text-secondary hover:text-primary font-semibold flex items-center gap-1">
+                <span>Lihat Standar Mutu Pangan</span>
+                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+__FOOTER__
+</body>
+</html>
+HTML;
+
+$privacyContent = str_replace('__HEADER__', getHeader('standar'), $privacyContent);
+$privacyContent = str_replace('__FOOTER__', getFooter(), $privacyContent);
+file_put_contents(__DIR__ . '/kebijakan-privasi.html', $privacyContent);
+echo "kebijakan-privasi.html written successfully.\n";
 
 echo "ALL PAGES BUILT SUCCESSFULLY!\n";
 ?>

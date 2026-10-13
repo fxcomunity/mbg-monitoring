@@ -320,14 +320,33 @@
 <!-- Interactive Visual Telemetry & Map Panel -->
 <div class="lg:col-span-7 flex flex-col gap-space-md">
 <div class="p-space-lg rounded-2xl bg-surface-card shadow-sm flex flex-col gap-space-md">
-<div class="flex items-center justify-between">
-<div>
-<h3 class="font-headline-sm text-headline-sm text-primary font-bold">Peta Telemetri Wilayah Logistik MBG</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Titik sensor IoT suhu kendaraan van termal dan radius dapur SPPG</p>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+  <div>
+    <h3 class="font-headline-sm text-headline-sm text-primary font-bold flex items-center gap-2">
+      <span class="material-symbols-outlined text-secondary text-[22px]">map</span>
+      <span>Peta Telemetri Wilayah Logistik MBG</span>
+    </h3>
+    <p class="font-body-sm text-body-sm text-on-surface-variant">Titik sensor IoT suhu kendaraan van termal dan radius dapur SPPG</p>
+  </div>
+  <div class="flex items-center gap-2">
+    <span id="telemetryTempBadge" class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-sm text-label-sm font-semibold">
+      Rata-rata 64.2°C
+    </span>
+    <a id="btnMapGoogleLink" href="https://www.google.com/maps/search/?api=1&query=Badan+Gizi+Nasional+SPPG+DKI+Jakarta" target="_blank" class="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm">
+      <span class="material-symbols-outlined text-[16px]">location_on</span>
+      <span id="mapLinkText">Buka di Google Maps</span>
+      <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+    </a>
+  </div>
 </div>
-<span class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-sm text-label-sm">
-                Rata-rata 64.2°C
-              </span>
+<!-- Quick Region Telemetry Switcher -->
+<div class="flex flex-wrap items-center gap-2 pt-1 pb-1">
+  <span class="text-xs font-semibold text-primary">Pilih Wilayah Peta:</span>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm transition-all" data-region="dki" data-label="DKI Jakarta" data-query="Badan Gizi Nasional SPPG DKI Jakarta" data-temp="64.2°C">DKI Jakarta</button>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="jabar" data-label="Jawa Barat" data-query="Badan Gizi Nasional SPPG Kota Bandung Jawa Barat" data-temp="65.0°C">Jawa Barat</button>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="jateng" data-label="Jawa Tengah" data-query="Badan Gizi Nasional SPPG Kota Semarang Jawa Tengah" data-temp="63.8°C">Jawa Tengah</button>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="jatim" data-label="Jawa Timur" data-query="Badan Gizi Nasional SPPG Surabaya Jawa Timur" data-temp="66.1°C">Jawa Timur</button>
+  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="nasional" data-label="Seluruh Indonesia" data-query="Badan Gizi Nasional Indonesia" data-temp="64.5°C">Seluruh Indonesia</button>
 </div>
 <!-- Map View Container with data-location attribute -->
 <div class="relative w-full h-80 rounded-xl overflow-hidden bg-surface-dim shadow-inner flex flex-col justify-between p-space-md" data-location="Indonesia" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDJnRd8kac4McuixyaWiYvaPtIRqRF8Fb8JfaZHEQRT25H05hXD5HUVdp4l-Y1WB2-17OTKeOZN54XrVew285Ltp6YsB9HYE3YTm_Pgy8JQCXv2dSrHe67-C8JWatIq3MjtgJeIYimOGtARyTIdfYgm36SLihaetFCooF6xOyl8vdCxKn-Ftdv6Od5BhYajXadBPoUFcHM3h2gcr46wfQlUkkILobWxFqzdzJQm6-YJ1p4RSWW06gnY')">
@@ -680,7 +699,7 @@
 </div>
 <div class="lg:col-span-4 flex flex-col gap-space-sm sm:flex-row lg:flex-col">
 <a class="px-space-lg py-3.5 rounded-xl bg-tertiary-fixed text-on-tertiary-fixed hover:bg-tertiary-fixed-dim transition-colors font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 shadow-md" href="laporan-aduan.html"><span class="material-symbols-outlined text-[20px]">send</span><span>Buat Laporan / Aduan Baru</span></a>
-<a class="px-space-lg py-3.5 rounded-xl bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 transition-colors text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 backdrop-blur-sm" href="https://wa.me/6281190000888" target="_blank">
+<a class="px-space-lg py-3.5 rounded-xl bg-surface-container-lowest/10 hover:bg-surface-container-lowest/20 transition-colors text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 backdrop-blur-sm" href="https://wa.me/6281110008008" target="_blank">
 <span class="material-symbols-outlined text-tertiary-fixed text-[20px]">chat</span>
 <span>WhatsApp Siaga MBG RI</span>
 </a>
@@ -830,14 +849,14 @@
             <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">call</span>
             <div>
               <span class="font-label-md text-label-md text-primary block">Halo MBG RI:</span>
-              <span>150-098 / (021) 3456-7890</span>
+              <a href="https://wa.me/6281110008008" target="_blank" class="hover:text-primary font-semibold transition-colors">+62 811-1000-8008</a>
             </div>
           </div>
           <div class="flex items-start gap-space-xs">
             <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">mail</span>
             <div>
               <span class="font-label-md text-label-md text-primary block">Surat Elektronik:</span>
-              <span>aduan.mbg@bgn.go.id</span>
+              <a href="mailto:halo@bgn.go.id" class="hover:text-primary font-semibold transition-colors">halo@bgn.go.id</a>
             </div>
           </div>
           <div class="flex items-start gap-space-xs">
@@ -862,7 +881,7 @@
       <div class="flex flex-col gap-space-sm">
         <span class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Transparansi &amp; Partisipasi</span>
         <div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-          <span class="font-label-md text-label-md text-primary">Audit Publik Mandiri</span>
+          <span class="font-label-md text-label-md text-primary font-bold">Audit Publik Mandiri</span>
           <p class="font-body-sm text-body-sm text-on-surface-variant">
             Masyarakat berhak memantau komposisi nutrisi, asal suplai pangan lokal, dan verifikasi Satuan Pelayanan Pemenuhan Gizi (SPPG).
           </p>
@@ -873,9 +892,12 @@
       </div>
     </div>
     <div class="pt-space-lg border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-sm text-body-sm">
-      <span>© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi Undang-Undang.</span>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-sm font-semibold tracking-wide">Redesain</span>
+        <span>© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi Undang-Undang.</span>
+      </div>
       <div class="flex items-center gap-space-lg font-label-md text-label-md">
-        <a class="hover:text-primary transition-colors" href="standar-uji-akg.html">Kebijakan Privasi</a>
+        <a class="hover:text-primary transition-colors" href="kebijakan-privasi.html">Kebijakan Privasi</a>
         <a class="hover:text-primary transition-colors" href="standar-uji-akg.html">Standar Kualitas Pangan</a>
         <a class="hover:text-primary transition-colors" href="index.html">Keterbukaan Informasi Publik</a>
       </div>
@@ -964,5 +986,30 @@
       window.location.href = 'menu-hari-ini.html?q=' + encodeURIComponent(q);
     });
   }
+
+  // Region Telemetry Interactivity with Google Maps
+  const regionBtns = document.querySelectorAll('.region-telemetry-btn');
+  const btnMapGoogleLink = document.getElementById('btnMapGoogleLink');
+  const telemetryTempBadge = document.getElementById('telemetryTempBadge');
+
+  regionBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      regionBtns.forEach(b => {
+        b.className = 'region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all';
+      });
+      btn.className = 'region-telemetry-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm transition-all';
+
+      const q = btn.getAttribute('data-query');
+      const temp = btn.getAttribute('data-temp');
+      const label = btn.getAttribute('data-label');
+
+      if (btnMapGoogleLink && q) {
+        btnMapGoogleLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+      }
+      if (telemetryTempBadge && temp) {
+        telemetryTempBadge.textContent = 'Rata-rata ' + temp;
+      }
+    });
+  });
 </script>
 </body></html>

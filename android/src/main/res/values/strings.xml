@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Identity -->
+    <string name="app_name">Radar MBG</string>
+    <string name="app_full_name">Radar MBG Nasional</string>
+    <string name="bgn_institution_name">Badan Gizi Nasional Republik Indonesia</string>
+    <string name="app_tagline">Transparansi &amp; Pengawasan Makan Bergizi Gratis</string>
+    <string name="copyright_text">Redesain | © 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi Undang-Undang.</string>
+
+    <!-- Hotline & Contact -->
+    <string name="hotline_phone">+62 811-1000-8008</string>
+    <string name="hotline_phone_clean">6281110008008</string>
+    <string name="hotline_email">halo@bgn.go.id</string>
+    <string name="hotline_hours">Senin - Minggu: 06.00 - 20.00 WIB</string>
+    <string name="whatsapp_url">https://wa.me/6281110008008</string>
+    <string name="email_uri">mailto:halo@bgn.go.id</string>
+
+    <!-- URLs for Radar MBG Modules (10.0.2.2 is Android Emulator localhost, or use LAN/domain) -->
+    <string name="base_url">http://10.0.2.2/MBG-MONITORING/</string>
+    <string name="url_home">http://10.0.2.2/MBG-MONITORING/index.html</string>
+    <string name="url_menu">http://10.0.2.2/MBG-MONITORING/menu-hari-ini.html</string>
+    <string name="url_distribusi">http://10.0.2.2/MBG-MONITORING/distribusi-sebaran-sppg.html</string>
+    <string name="url_standar">http://10.0.2.2/MBG-MONITORING/standar-uji-akg.html</string>
+    <string name="url_aduan">http://10.0.2.2/MBG-MONITORING/laporan-aduan.html</string>
+    <string name="url_privacy">http://10.0.2.2/MBG-MONITORING/kebijakan-privasi.html</string>
+
+    <!-- Navigation Bar Titles -->
+    <string name="nav_beranda">Beranda</string>
+    <string name="nav_menu">Menu Hari Ini</string>
+    <string name="nav_distribusi">Distribusi SPPG</string>
+    <string name="nav_laporan">Lapor Satgas</string>
+
+    <!-- UI Action Labels -->
+    <string name="action_open_maps">Buka di Google Maps</string>
+    <string name="action_refresh">Muat Ulang</string>
+    <string name="action_call_hotline">Hubungi Halo MBG</string>
+    <string name="action_chat_whatsapp">WhatsApp Siaga</string>
+    <string name="action_retry">Coba Lagi</string>
+
+    <!-- Error States -->
+    <string name="network_error_title">Koneksi Internet Terputus</string>
+    <string name="network_error_message">Periksa kembali koneksi internet seluler atau Wi-Fi perangkat Anda untuk memuat data pemantauan real-time.</string>
+</resources>
