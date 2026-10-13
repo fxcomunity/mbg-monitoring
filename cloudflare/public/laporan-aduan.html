@@ -161,13 +161,37 @@
               </div>
               <input type="file" id="photoInput" class="hidden" accept="image/*"/>
               <span id="fileChosenLabel" class="text-xs text-status-success font-semibold hidden"></span>
+              <img id="photoPreview" src="" alt="Preview foto" class="hidden mt-2 max-h-36 rounded-xl object-cover border border-border-subtle shadow-sm pointer-events-none"/>
             </div>
 
-            <button type="submit" class="w-full py-3.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 mt-2">
-              <span class="material-symbols-outlined text-[20px]">send</span>
-              <span>Kirimkan Aduan Resmi ke Satgas BGN</span>
+            <!-- Error alert -->
+            <div id="formError" class="hidden px-4 py-3 rounded-xl bg-error-container text-on-error-container font-body-sm text-body-sm flex items-start gap-2">
+              <span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
+              <span id="formErrorMsg"></span>
+            </div>
+
+            <button type="submit" id="btnSubmit" class="w-full py-3.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-60 disabled:cursor-not-allowed">
+              <span class="material-symbols-outlined text-[20px]" id="btnSubmitIcon">send</span>
+              <span id="btnSubmitLabel">Kirimkan Aduan Resmi ke Satgas BGN</span>
             </button>
           </form>
+
+          <!-- ── Cek Status Tiket ─────────────────────────── -->
+          <div class="mt-space-md pt-space-md border-t border-border-subtle flex flex-col gap-space-sm">
+            <h3 class="font-label-lg text-label-lg text-primary font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-secondary text-[20px]">manage_search</span>
+              Cek Status Laporan
+            </h3>
+            <div class="flex gap-2">
+              <input id="ticketCheckInput" type="text" placeholder="TKT-BGN-YYYYMMDD-XXXX"
+                class="flex-1 px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none font-mono text-sm uppercase"/>
+              <button id="btnCheckTicket" class="px-4 py-2.5 rounded-xl bg-secondary text-on-secondary font-label-md font-semibold hover:opacity-90 transition-opacity flex items-center gap-1.5 whitespace-nowrap">
+                <span class="material-symbols-outlined text-[18px]">search</span>
+                <span>Cek</span>
+              </button>
+            </div>
+            <div id="ticketCheckResult" class="hidden p-space-md rounded-2xl bg-surface-container-low border border-border-subtle flex flex-col gap-2 text-sm"></div>
+          </div>
         </div>
 
         <!-- Sidebar Bantuan & Saluran Alternatif (5 Cols) -->
@@ -262,44 +286,103 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Set default incident date to today
+    // ── Default date ──────────────────────────────────────
     const dateInput = document.getElementById('incidentDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-    // Dropzone upload simulation
-    const dropzone = document.getElementById('uploadDropzone');
+    // ── Dropzone & photo preview ──────────────────────────
+    const dropzone   = document.getElementById('uploadDropzone');
     const photoInput = document.getElementById('photoInput');
-    const fileLabel = document.getElementById('fileChosenLabel');
+    const fileLabel  = document.getElementById('fileChosenLabel');
+    const photoPreview = document.getElementById('photoPreview');
 
     if (dropzone && photoInput) {
       dropzone.addEventListener('click', () => photoInput.click());
       photoInput.addEventListener('change', () => {
         if (photoInput.files.length > 0) {
-          fileLabel.innerText = 'Foto terpilih: ' + photoInput.files[0].name;
+          const file = photoInput.files[0];
+          fileLabel.innerText = '✓ ' + file.name;
           fileLabel.classList.remove('hidden');
+          // Show preview
+          const reader = new FileReader();
+          reader.onload = e => {
+            photoPreview.src = e.target.result;
+            photoPreview.classList.remove('hidden');
+          };
+          reader.readAsDataURL(file);
         }
       });
     }
 
-    // Form submit
-    const form = document.getElementById('complaintForm');
-    const modal = document.getElementById('ticketModal');
-    const btnClose = document.getElementById('btnCloseTicketModal');
+    // ── Form submit → aduan.php ───────────────────────────
+    const form          = document.getElementById('complaintForm');
+    const modal         = document.getElementById('ticketModal');
+    const btnClose      = document.getElementById('btnCloseTicketModal');
     const ticketDisplay = document.getElementById('ticketNumberDisplay');
+    const btnSubmit     = document.getElementById('btnSubmit');
+    const btnIcon       = document.getElementById('btnSubmitIcon');
+    const btnLabel      = document.getElementById('btnSubmitLabel');
+    const errBox        = document.getElementById('formError');
+    const errMsg        = document.getElementById('formErrorMsg');
+
+    function showError(msg) {
+      errMsg.innerText = msg;
+      errBox.classList.remove('hidden');
+      errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function hideError() {
+      errBox.classList.add('hidden');
+    }
+    function setLoading(on) {
+      btnSubmit.disabled = on;
+      if (on) {
+        btnIcon.innerText  = 'hourglass_top';
+        btnLabel.innerText = 'Mengirim laporan...';
+      } else {
+        btnIcon.innerText  = 'send';
+        btnLabel.innerText = 'Kirimkan Aduan Resmi ke Satgas BGN';
+      }
+    }
 
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const randId = Math.floor(1000 + Math.random() * 9000);
-        const now = new Date();
-        const dateStr = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
-        const ticketCode = 'TKT-BGN-' + dateStr + '-' + randId;
-        
-        ticketDisplay.innerText = ticketCode;
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        form.reset();
-        if (fileLabel) fileLabel.classList.add('hidden');
+        hideError();
+        setLoading(true);
+
+        const fd = new FormData();
+        fd.append('reporter_name',  document.getElementById('reporterName').value.trim());
+        fd.append('reporter_phone', document.getElementById('reporterPhone').value.trim());
+        fd.append('reporter_role',  document.getElementById('reporterRole').value);
+        fd.append('issue_category', document.getElementById('issueCategory').value);
+        fd.append('school_target',  document.getElementById('schoolTarget').value.trim());
+        fd.append('incident_date',  document.getElementById('incidentDate').value);
+        fd.append('description',    document.getElementById('reportDescription').value.trim());
+        if (photoInput && photoInput.files.length > 0) {
+          fd.append('photo', photoInput.files[0]);
+        }
+
+        try {
+          const res  = await fetch('aduan.php', { method: 'POST', body: fd });
+          const json = await res.json();
+
+          if (res.ok && json.status === 'success') {
+            ticketDisplay.innerText = json.ticket_code || 'TKT-BGN-XXXXXXXX';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            form.reset();
+            dateInput.value = new Date().toISOString().split('T')[0];
+            if (fileLabel)  fileLabel.classList.add('hidden');
+            if (photoPreview) { photoPreview.classList.add('hidden'); photoPreview.src = ''; }
+          } else {
+            const detail = json.errors ? json.errors.join(' ') : (json.message || 'Terjadi kesalahan. Silakan coba lagi.');
+            showError(detail);
+          }
+        } catch (err) {
+          showError('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+        } finally {
+          setLoading(false);
+        }
       });
     }
 
@@ -307,6 +390,66 @@
       btnClose.addEventListener('click', () => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+      });
+    }
+
+    // ── Cek Status Tiket ──────────────────────────────────
+    const btnCheck    = document.getElementById('btnCheckTicket');
+    const ticketInput = document.getElementById('ticketCheckInput');
+    const checkResult = document.getElementById('ticketCheckResult');
+
+    const statusColors = {
+      masuk:      'bg-surface-container-high text-on-surface',
+      verifikasi: 'bg-secondary-fixed text-on-secondary-fixed',
+      proses:     'bg-tertiary-container text-tertiary-fixed',
+      selesai:    'bg-status-success/15 text-status-success',
+      ditolak:    'bg-error-container text-on-error-container',
+    };
+    const statusIcons = {
+      masuk: 'inbox', verifikasi: 'fact_check', proses: 'pending_actions',
+      selesai: 'check_circle', ditolak: 'cancel',
+    };
+
+    if (btnCheck && ticketInput && checkResult) {
+      btnCheck.addEventListener('click', async () => {
+        const code = ticketInput.value.trim().toUpperCase();
+        if (!code) { ticketInput.focus(); return; }
+
+        checkResult.classList.remove('hidden');
+        checkResult.innerHTML = '<span class="text-on-surface-variant animate-pulse">Mencari tiket...</span>';
+
+        try {
+          const res  = await fetch('aduan.php?ticket=' + encodeURIComponent(code));
+          const json = await res.json();
+
+          if (res.ok && json.status === 'success') {
+            const d   = json.data;
+            const col = statusColors[d.status] || 'bg-surface-container text-on-surface';
+            const ico = statusIcons[d.status]  || 'info';
+            checkResult.innerHTML = `
+              <div class="flex items-center gap-2 ${col} px-3 py-2 rounded-xl font-semibold">
+                <span class="material-symbols-outlined text-[18px]">${ico}</span>
+                <span>${d.status_label}</span>
+              </div>
+              <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-on-surface-variant mt-1">
+                <span class="font-semibold text-primary">Tiket:</span><span class="font-mono">${d.ticket_code}</span>
+                <span class="font-semibold text-primary">Sekolah:</span><span>${d.school_target}</span>
+                <span class="font-semibold text-primary">Kategori:</span><span>${d.issue_category}</span>
+                <span class="font-semibold text-primary">Tanggal:</span><span>${d.incident_date}</span>
+                <span class="font-semibold text-primary">Dikirim:</span><span>${d.created_at.slice(0,10)}</span>
+                <span class="font-semibold text-primary">Diperbarui:</span><span>${d.updated_at.slice(0,10)}</span>
+              </div>`;
+          } else {
+            checkResult.innerHTML = `<div class="flex items-center gap-2 text-on-error-container bg-error-container px-3 py-2 rounded-xl font-semibold"><span class="material-symbols-outlined text-[18px]">search_off</span><span>${json.message || 'Tiket tidak ditemukan.'}</span></div>`;
+          }
+        } catch {
+          checkResult.innerHTML = '<span class="text-status-error font-semibold">Gagal terhubung ke server.</span>';
+        }
+      });
+
+      // Tekan Enter di input tiket
+      ticketInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') btnCheck.click();
       });
     }
   });
