@@ -67,6 +67,10 @@ function getHeader($activePage = 'index') {
         <span class="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
         <span>Status MBG Hari Ini</span>
       </a>
+      <a class="hidden md:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs transition-colors border border-border-subtle shadow-sm" href="login.php">
+        <span class="material-symbols-outlined text-[18px] text-secondary">admin_panel_settings</span>
+        <span>Portal Masuk</span>
+      </a>
       <!-- Mobile menu button -->
       <button id="btnMobileNavToggle" class="xl:hidden w-10 h-10 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary flex items-center justify-center transition-colors">
         <span class="material-symbols-outlined text-[24px]">menu</span>
@@ -81,6 +85,10 @@ function getHeader($activePage = 'index') {
       <a class="flex items-center justify-center gap-space-xs px-4 py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-label-md shadow-sm" href="menu-hari-ini.html">
         <span class="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
         <span>Status MBG Hari Ini</span>
+      </a>
+      <a class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs border border-border-subtle shadow-sm" href="login.php">
+        <span class="material-symbols-outlined text-[18px] text-secondary">admin_panel_settings</span>
+        <span>Portal Masuk (User, SPPG & Admin)</span>
       </a>
     </div>
   </div>

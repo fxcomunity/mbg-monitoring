@@ -1,0 +1,65 @@
+/**
+ * theme.css — Badan Gizi Nasional (BGN) Radar MBG Theme Tokens
+ * Standar Identitas Visual & Aksesibilitas Nasional
+ */
+:root {
+  /* Brand Palette */
+  --bgn-primary: #001026;
+  --bgn-primary-container: #0b2545;
+  --bgn-on-primary: #ffffff;
+  --bgn-secondary: #395f95;
+  --bgn-secondary-container: #9dc3ff;
+  --bgn-tertiary: #006b3c;
+  --bgn-tertiary-container: #002b1b;
+  --bgn-tertiary-fixed: #6ffbbe;
+  
+  /* Surface & Background */
+  --bgn-background: #f8f9ff;
+  --bgn-surface: #f8f9ff;
+  --bgn-surface-lowest: #ffffff;
+  --bgn-surface-low: #eff4ff;
+  --bgn-surface-container: #e5eeff;
+  --bgn-surface-high: #dce9ff;
+  --bgn-surface-card: #ffffff;
+  
+  /* Text & Typography */
+  --bgn-on-surface: #0b1c30;
+  --bgn-on-surface-variant: #44474e;
+  --bgn-outline: #74777f;
+  --bgn-outline-variant: #c4c6cf;
+  
+  /* Status Indicators */
+  --bgn-success: #059669;
+  --bgn-success-bg: #ecfdf5;
+  --bgn-warning: #f59e0b;
+  --bgn-warning-bg: #fffbeb;
+  --bgn-danger: #ef4444;
+  --bgn-danger-bg: #fef2f2;
+  --bgn-info: #0284c7;
+  --bgn-info-bg: #f0f9ff;
+  
+  /* Borders & Shadows */
+  --bgn-border: #e2e8f0;
+  --bgn-border-focus: #134074;
+  --bgn-radius-sm: 0.375rem;
+  --bgn-radius-md: 0.75rem;
+  --bgn-radius-lg: 1rem;
+  --bgn-radius-full: 9999px;
+  --bgn-shadow-sm: 0 1px 3px rgba(0, 16, 38, 0.05);
+  --bgn-shadow-md: 0 4px 12px rgba(0, 16, 38, 0.08);
+  --bgn-shadow-lg: 0 10px 25px rgba(0, 16, 38, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bgn-background: #070e17;
+    --bgn-surface: #0b1523;
+    --bgn-surface-lowest: #0e1c2e;
+    --bgn-surface-low: #13243a;
+    --bgn-surface-container: #1a2f4c;
+    --bgn-on-surface: #f1f5f9;
+    --bgn-on-surface-variant: #94a3b8;
+    --bgn-border: #1e293b;
+    --bgn-surface-card: #0f172a;
+  }
+}

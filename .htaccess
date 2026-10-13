@@ -1,0 +1,27 @@
+# ============================================================
+# .htaccess — Apache Configuration for Radar MBG (Laragon/Prod)
+# ============================================================
+
+RewriteEngine On
+RewriteBase /MBG-MONITORING/
+
+# Custom Error Handlers
+ErrorDocument 404 /MBG-MONITORING/errors/404.php
+ErrorDocument 500 /MBG-MONITORING/errors/500.php
+ErrorDocument 503 /MBG-MONITORING/errors/503.php
+
+# Prevent Directory Browsing
+Options -Indexes
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Fallback for missing pages / non-existent routes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ errors/404.php [L]

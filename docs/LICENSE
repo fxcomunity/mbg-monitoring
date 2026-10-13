@@ -1,0 +1,72 @@
+================================================================================
+BADAN GIZI NASIONAL REPUBLIK INDONESIA
+SISTEM INFORMASI MONITORING & TRANSPARANSI MAKAN BERGIZI GRATIS (RADAR MBG)
+================================================================================
+
+LISENSI RESMI PERANGKAT LUNAK & KETERBUKAAN DATA PUBLIK
+OFFICIAL SOFTWARE LICENSE & PUBLIC DATA ACCESS CHARTER
+
+Hak Cipta (c) 2026 Badan Gizi Nasional Republik Indonesia (BGN RI).
+Hak Cipta Arsitektur & Redesain Sistem (c) 2026 SiPalingJack.
+Seluruh Hak Dilindungi Undang-Undang Republik Indonesia.
+
+--------------------------------------------------------------------------------
+KETENTUAN HUKUM DAN LISENSI TERBUKA (TERMS & OPEN SOURCE LICENSE)
+--------------------------------------------------------------------------------
+
+Dengan ini diberikan izin, bebas biaya, kepada siapa pun yang memperoleh salinan
+perangkat lunak ini beserta seluruh berkas dokumentasi terkait ("Perangkat Lunak"),
+untuk memanfaatkan Perangkat Lunak ini tanpa pembatasan, termasuk namun tidak
+terbatas pada hak untuk menggunakan, menyalin, memodifikasi, menggabungkan,
+menerbitkan, mendistribusikan, mensublisensikan, dan/atau menjual salinan Perangkat
+Lunak, dengan mematuhi ketentuan-ketentuan berikut:
+
+1. ATRIBUSI DAN HAK CIPTA:
+   Pemberitahuan hak cipta di atas serta pernyataan izin ini wajib disertakan dalam
+   semua salinan atau bagian substansial dari Perangkat Lunak, baik dalam bentuk kode
+   sumber maupun biner.
+
+2. INTEGRITAS DATA & KEPATUHAN STANDAR GIZI NASIONAL:
+   Penggunaan kode atau data yang bersumber dari basis data Badan Gizi Nasional tidak
+   boleh dimanipulasi atau disajikan secara keliru untuk tujuan disinformasi publik
+   terkait program pemenuhan gizi nasional, standar AKG (Angka Kecukupan Gizi),
+   maupun logistik Satuan Pelayanan Pemenuhan Gizi (SPPG).
+
+3. BATASAN TANGGUNG JAWAB (DISCLAIMER OF WARRANTY):
+   PERANGKAT LUNAK INI DISEDIAKAN "SEBAGAIMANA ADANYA" (AS IS), TANPA JAMINAN APA PUN,
+   BAIK TERSURAT MAUPUN TERSIRAT, TERMASUK NAMUN TIDAK TERBATAS PADA JAMINAN KELAYAKAN
+   JUAL, KESESUAIAN UNTUK TUJUAN TERTENTU, DAN KETIADAAN PELANGGARAN HAK PIHAK LAIN.
+   DALAM KEADAAN APA PUN, PENCIPTA MAUPUN PEMEGANG HAK CIPTA TIDAK BERTANGGUNG JAWAB
+   ATAS KLAIM, KERUSAKAN, ATAU KEWAJIBAN LAINNYA, BAIK DALAM TINDAKAN KONTRAK, KELALAIAN,
+   ATAU LAINNYA, YANG TIMBUL DARI ATAU SEHUBUNGAN DENGAN PENGGUNAAN PERANGKAT LUNAK ATAU
+   HUBUNGAN LAIN DENGAN PERANGKAT LUNAK INI.
+
+--------------------------------------------------------------------------------
+ENGLISH SUMMARY (MIT VARIANT WITH INSTITUTIONAL ATTRIBUTION)
+--------------------------------------------------------------------------------
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the conditions stated herein:
+
+The above copyright notices and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+================================================================================
+Kontak Resmi:
+Badan Gizi Nasional Republik Indonesia
+Kompleks Perkantoran Pemerintah RI, Jakarta
+Surel: halo@bgn.go.id | Hotline: +62 811-1000-8008
+Portal: https://bgn.go.id | Radar MBG: https://mbg.jack-ai.my.id
+================================================================================

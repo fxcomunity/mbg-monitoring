@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240" viewBox="0 0 400 240" fill="none">
+  <rect width="400" height="240" fill="#F1F5F9"/>
+  <rect x="20" y="20" width="360" height="200" rx="16" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="6 6"/>
+  <circle cx="200" cy="105" r="42" fill="#006B3C" fill-opacity="0.1"/>
+  <path d="M190 85C190 82.2386 192.239 80 195 80H205C207.761 80 210 82.2386 210 85V125H190V85Z" fill="#006B3C"/>
+  <circle cx="200" cy="98" r="8" fill="#FFFFFF"/>
+  <path d="M178 95C178 91 182 85 186 85V125H178V95Z" fill="#006B3C" fill-opacity="0.7"/>
+  <path d="M222 95C222 91 218 85 214 85V125H222V95Z" fill="#006B3C" fill-opacity="0.7"/>
+  <text x="200" y="165" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#334155" text-anchor="middle">Dokumentasi Menu BGN</text>
+  <text x="200" y="185" font-family="system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle">Foto Menu Resmi Terverifikasi SPPG</text>
+</svg>

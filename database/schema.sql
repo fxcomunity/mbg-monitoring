@@ -89,3 +89,49 @@ VALUES
    'Pengantaran terlambat lebih dari 90 menit tanpa pemberitahuan.',
    'proses', 'sedang', '127.0.0.1')
 ON CONFLICT (ticket_code) DO NOTHING;
+
+-- ----------------------------------------------------------------
+-- Tabel: data_penerima_mbg (8 Jenjang BGN Pusat 2026)
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS data_penerima_mbg (
+  id                 INT PRIMARY KEY,
+  year               INT NOT NULL DEFAULT 2026,
+  level              VARCHAR(20) NOT NULL,
+  province_code      VARCHAR(20),
+  regency_code       VARCHAR(20),
+  district_code      VARCHAR(20),
+  education_units    INT DEFAULT 0,
+  male_students      INT DEFAULT 0,
+  female_students    INT DEFAULT 0,
+  beneficiaries      INT DEFAULT 0,
+  allergies          INT DEFAULT 0,
+  phobias            INT DEFAULT 0,
+  intolerances       INT DEFAULT 0,
+  special_conditions INT DEFAULT 0,
+  public_units       INT DEFAULT 0,
+  private_units      INT DEFAULT 0,
+  source_pulled_at   TIMESTAMPTZ,
+  source_url         TEXT,
+  created_at         TIMESTAMPTZ DEFAULT NOW(),
+  updated_at         TIMESTAMPTZ DEFAULT NOW(),
+  regency_name       VARCHAR(255)
+);
+
+CREATE INDEX IF NOT EXISTS idx_mbg_level ON data_penerima_mbg(level);
+CREATE INDEX IF NOT EXISTS idx_mbg_province ON data_penerima_mbg(province_code);
+CREATE INDEX IF NOT EXISTS idx_mbg_regency ON data_penerima_mbg(regency_code);
+
+-- ----------------------------------------------------------------
+-- Tabel: dokumen_juknis (Petunjuk Teknis Resmi BGN RI)
+-- ----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS dokumen_juknis (
+  id             SERIAL PRIMARY KEY,
+  judul          VARCHAR(500) NOT NULL,
+  deskripsi      TEXT,
+  pdf_url        TEXT NOT NULL,
+  sumber         VARCHAR(200) DEFAULT 'Badan Gizi Nasional (BGN)',
+  kategori       VARCHAR(100) DEFAULT 'Petunjuk Teknis',
+  tanggal_terbit DATE,
+  created_at     TIMESTAMPTZ DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ DEFAULT NOW()
+);

@@ -10,6 +10,10 @@
  */
 
 require_once __DIR__ . '/database/db.php';
+require_once __DIR__ . '/database/security.php';
+
+// Anti-Exploit WAF Inspection
+Security::inspectRequest(true);
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: ' . (defined('ALLOWED_ORIGIN') ? ALLOWED_ORIGIN : '*'));
