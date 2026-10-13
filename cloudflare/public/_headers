@@ -14,3 +14,9 @@
 
 /logo.webp
   Cache-Control: public, max-age=604800, immutable
+
+/og-preview.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/assets/images/og-preview.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
