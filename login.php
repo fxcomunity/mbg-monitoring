@@ -157,27 +157,7 @@ if (Auth::check()) {
         </button>
       </form>
 
-      <!-- Akun Uji Coba Cepat (Demo Access Cards) -->
-      <div class="mt-8 pt-6 border-t border-slate-100">
-        <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block text-center mb-3">Akun Akses Resmi (Demo Ready)</span>
-        <div class="grid grid-cols-3 gap-2 text-center text-xs">
-          <button type="button" onclick="fillCreds('admin', 'admin123')"
-                  class="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all flex flex-col items-center">
-            <span class="font-bold text-primary">Admin Satgas</span>
-            <span class="text-[10px] text-slate-500 font-mono">admin / admin123</span>
-          </button>
-          <button type="button" onclick="fillCreds('sppg', 'sppg123')"
-                  class="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all flex flex-col items-center">
-            <span class="font-bold text-blue-700">Mitra SPPG</span>
-            <span class="text-[10px] text-slate-500 font-mono">sppg / sppg123</span>
-          </button>
-          <button type="button" onclick="fillCreds('user', 'user123')"
-                  class="p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all flex flex-col items-center">
-            <span class="font-bold text-emerald-700">Wali Murid</span>
-            <span class="text-[10px] text-slate-500 font-mono">user / user123</span>
-          </button>
-        </div>
-      </div>
+
     </div>
   </main>
 

@@ -3,6 +3,9 @@
 # ============================================================
 
 RewriteEngine On
+# Ensure PHP files are processed by the server
+AddHandler application/x-httpd-php .php
+AddType application/x-httpd-php .php
 RewriteBase /MBG-MONITORING/
 
 # Custom Error Handlers
