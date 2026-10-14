@@ -1,0 +1,8 @@
+# Cloudflare Pages (hosting statis, tidak menjalankan PHP).
+# Semua link lama ke halaman login PHP diarahkan ke panel login statis.
+/login.php            /login.html              301
+/auth/login.php       /login.html              301
+/register.php         /login.html?tab=register 301
+/auth/register.php    /login.html?tab=register 301
+/features/login.php   /login.html              301
+/pages/login.php      /login.html              301
