@@ -44,12 +44,30 @@
       -webkit-backdrop-filter: blur(16px);
     }
   </style>
+  <!-- Auto-redirect: kalau sesi masih aktif, langsung ke dashboard sesuai role (admin / sppg / user) -->
+  <script>
+    (function () {
+      try {
+        var K = 'mbg_session';
+        function clr() { localStorage.removeItem(K); sessionStorage.removeItem(K); }
+        var q = new URLSearchParams(location.search);
+        if (q.has('logout') || q.has('switch')) { clr(); return; }
+        var s = JSON.parse(localStorage.getItem(K) || sessionStorage.getItem(K) || 'null');
+        if (!s) return;
+        if (s.exp && s.exp < Date.now()) { clr(); return; }
+        if (['admin', 'sppg', 'user'].indexOf(s.role) >= 0) {
+          document.documentElement.style.visibility = 'hidden';
+          location.replace('dashboard/' + s.role + '/');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body class="relative bg-[#001026] font-sans text-primary min-h-screen flex flex-col justify-between selection:bg-[#6ffbbe] selection:text-[#001026] overflow-x-hidden">
 
   <!-- Fullscreen Video Background -->
   <div class="fixed inset-0 overflow-hidden pointer-events-none -z-20">
-    <video autoplay muted loop playsinline preload="auto" class="w-full h-full object-cover">
+    <video autoplay muted loop playsinline preload="metadata" class="w-full h-full object-cover">
       <source src="https://res.cloudinary.com/dgenxagit/video/upload/v1791923878/gemini_generated_video_22b0321d.mp4" type="video/mp4">
     </video>
   </div>
@@ -61,7 +79,7 @@
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <a href="index.html" class="flex items-center gap-3 group">
         <div class="relative">
-          <img src="assets/images/logo.webp" alt="Logo BGN" class="h-10 w-auto object-contain transition-transform group-hover:scale-105" onerror="this.src='logo.webp'">
+          <img src="assets/images/logo.webp" alt="Logo BGN" class="h-10 w-auto object-contain transition-transform group-hover:scale-105" onerror="this.src='assets/images/logo.webp'">
         </div>
         <div>
           <div class="flex items-center gap-1.5">
@@ -395,7 +413,7 @@
         if (json.status === 'success' && json.user) {
           showAlert('success', 'Berhasil', 'Login sukses, mengarahkan ke dashboard...');
           const role = json.user.role;
-          try { const _s = JSON.stringify({ name: json.user.full_name || u, role: role }); sessionStorage.setItem('mbg_session', _s); localStorage.setItem('mbg_session', _s); } catch (_) {}
+          try { const _s = JSON.stringify({ name: json.user.full_name || u, role: role, exp: Date.now() + 12 * 3600 * 1000 }); sessionStorage.setItem('mbg_session', _s); localStorage.setItem('mbg_session', _s); } catch (_) {}
           setTimeout(() => {
             if (role === 'admin') window.location.href = 'dashboard/admin/';
             else if (role === 'sppg') window.location.href = 'dashboard/sppg/';
@@ -410,7 +428,7 @@
         // Fallback untuk static demo jika backend offline
         const lu = u.toLowerCase();
         const role = lu.includes('admin') ? 'admin' : (lu.includes('sppg') ? 'sppg' : 'user');
-        try { const _s = JSON.stringify({ name: u, role: role, demo: true }); sessionStorage.setItem('mbg_session', _s); localStorage.setItem('mbg_session', _s); } catch (_) {}
+        try { const _s = JSON.stringify({ name: u, role: role, demo: true, exp: Date.now() + 12 * 3600 * 1000 }); sessionStorage.setItem('mbg_session', _s); localStorage.setItem('mbg_session', _s); } catch (_) {}
         window.location.href = 'dashboard/' + role + '/';
       }
     }

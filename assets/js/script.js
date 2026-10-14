@@ -1,5 +1,5 @@
-/**
- * script.js — Interaktivitas Utama Radar MBG Nasional
+﻿/**
+ * script.js â€” Interaktivitas Utama Radar MBG Nasional
  * Terintegrasi penuh dengan Database Riil & Validasi Anti-Exploit
  */
 document.addEventListener('DOMContentLoaded', function() {
@@ -113,7 +113,7 @@ async function initTelemetriAndDistribusi() {
         if (elSppg) elSppg.textContent = Number(d.sppg_aktif).toLocaleString('id-ID');
         if (elSekolah) elSekolah.textContent = Number(d.sekolah_terlayani).toLocaleString('id-ID');
         if (elAkg) elAkg.textContent = `${d.kepatuhan_akg}%`;
-        if (elSuhu) elSuhu.textContent = `${d.suhu_rata_rata}°C`;
+        if (elSuhu) elSuhu.textContent = `${d.suhu_rata_rata}Â°C`;
         if (elUpdate && d.pembaruan_teks) elUpdate.textContent = `Pembaruan: ${d.pembaruan_teks}`;
         if (elSla && d.sla_distribusi) elSla.textContent = `${d.sla_distribusi}% Tepat Waktu`;
       }
@@ -249,7 +249,7 @@ function renderEmptyState(container, searchKeyword = '') {
         <a href="menu-hari-ini.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition-colors">
           Reset Filter
         </a>
-        <a href="login.php" class="px-4 py-2 bg-primary hover:bg-primary-container text-white text-xs font-semibold rounded-xl transition-colors">
+        <a href="login.html" class="px-4 py-2 bg-primary hover:bg-primary-container text-white text-xs font-semibold rounded-xl transition-colors">
           Masuk ke Portal SPPG
         </a>
       </div>
@@ -310,19 +310,81 @@ function renderMenuItems(container, items) {
 }
 
 /**
+ * Sesi statis (Cloudflare Pages / tanpa PHP): dibaca dari localStorage 'mbg_session'
+ * yang diisi login.html. Dipakai untuk semua role: admin, sppg, user.
+ */
+function clearStaticSession() {
+  try { localStorage.removeItem('mbg_session'); sessionStorage.removeItem('mbg_session'); } catch (_) {}
+}
+
+function readStaticSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem('mbg_session') || sessionStorage.getItem('mbg_session') || 'null');
+    if (!s || !['admin', 'sppg', 'user'].includes(s.role)) return null;
+    if (s.exp && s.exp < Date.now()) { clearStaticSession(); return null; }
+    return s;
+  } catch (_) { return null; }
+}
+
+/**
+ * Ganti tombol "Portal Masuk" di navbar (desktop + mobile) jadi
+ * tombol "Dashboard" + "Keluar" kalau sesi statis masih aktif.
+ * Return true kalau berhasil diterapkan.
+ */
+function applyStaticSessionFallback() {
+  const s = readStaticSession();
+  if (!s) return false;
+
+  const labels = { admin: 'Admin Satgas BGN', sppg: 'Mitra SPPG', user: 'Wali Murid / Publik' };
+  const anchors = new Set(document.querySelectorAll('header a[href*="login.html"]:not([href*="logout"]), #mobileNavMenu a[href*="login.html"]:not([href*="logout"])'));
+
+  anchors.forEach(a => {
+    if (a.dataset.staticSession) return;
+    const isDesktopOnly = a.classList.contains('hidden');
+
+    const wrap = document.createElement('div');
+    wrap.className = isDesktopOnly ? 'hidden md:flex items-center gap-2' : 'flex items-center gap-2 w-full';
+    wrap.dataset.staticSessionWrap = '1';
+
+    a.href = 'dashboard/' + s.role + '/';
+    a.dataset.staticSession = '1';
+    a.title = (s.name || labels[s.role]) + ' â€” ' + labels[s.role];
+    a.classList.remove('hidden', 'md:flex');
+    a.classList.add('flex');
+    if (!isDesktopOnly) a.classList.add('flex-1');
+    a.innerHTML = '<span class="material-symbols-outlined text-[18px] text-secondary">dashboard</span><span>Dashboard</span>';
+
+    const out = document.createElement('button');
+    out.type = 'button';
+    out.className = 'flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs border border-red-200 whitespace-nowrap transition-colors';
+    out.innerHTML = '<span class="material-symbols-outlined text-[18px]">logout</span><span>Keluar</span>';
+    out.addEventListener('click', () => {
+      clearStaticSession();
+      location.href = 'login.html?logout=1';
+    });
+
+    a.replaceWith(wrap);
+    wrap.append(a, out);
+  });
+  return anchors.size > 0;
+}
+
+/**
  * Cek status autentikasi aktif via API dan render Profil Avatar + Dropdown jika login
  */
 async function initUserAuthStatus() {
+  // Sesi statis (login.html) punya prioritas; kalau ada, tidak perlu cek PHP
+  if (applyStaticSessionFallback()) return;
   try {
     const res = await fetch('api/auth_user.php', { credentials: 'same-origin' });
-    if (!res.ok) return;
+    if (!res.ok) { applyStaticSessionFallback(); return; }
     const data = await res.json();
 
-    if (!data.logged_in || !data.user) return;
+    if (!data.logged_in || !data.user) { applyStaticSessionFallback(); return; }
 
     const u = data.user;
-    const desktopLoginLink = document.querySelector('header nav + div a[href*="login.php"], header a[href*="login.php"]:not(#mobileNavMenu a)');
-    const mobileLoginLink = document.querySelector('#mobileNavMenu a[href*="login.php"]');
+    const desktopLoginLink = document.querySelector('header nav + div a[href*="login.html"], header a[href*="login.html"]:not(#mobileNavMenu a)');
+    const mobileLoginLink = document.querySelector('#mobileNavMenu a[href*="login.html"]');
 
     // Desktop Profile Dropdown
     if (desktopLoginLink) {
@@ -351,48 +413,48 @@ async function initUserAuthStatus() {
           </div>
 
           <div class="py-1">
-            <a href="dashboard/${u.role}/index.php" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="dashboard/${u.role}/" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-blue-600">dashboard</span>
               <span>Dashboard ${u.role.toUpperCase()}</span>
             </a>
             ${u.role === 'admin' ? `
-            <a href="dashboard/admin/index.php#telemetry-manager" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="dashboard/admin/#telemetry-manager" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-emerald-600">monitoring</span>
               <span>Panel Input Telemetri & KPI</span>
             </a>
-            <a href="dashboard/admin/index.php#maintenance-panel" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="dashboard/admin/#maintenance-panel" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-purple-600">admin_panel_settings</span>
               <span>Panel Pemeliharaan Sistem</span>
             </a>
             ` : ''}
             ${u.role === 'sppg' ? `
-            <a href="dashboard/sppg/index.php#input-menu" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="dashboard/sppg/#input-menu" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-emerald-600">soup_kitchen</span>
               <span>Panel Dapur SPPG & Input Menu</span>
             </a>
-            <a href="dashboard/sppg/index.php#uji-akg" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="dashboard/sppg/#uji-akg" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-amber-600">biotech</span>
               <span>Uji Sampel & AKG Makanan</span>
             </a>
             ` : ''}
             ${u.role === 'user' ? `
-            <a href="dashboard/user/index.php#riwayat-aduan" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="dashboard/user/#riwayat-aduan" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-amber-600">receipt_long</span>
               <span>Status Aduan Saya</span>
             </a>
             ` : ''}
-            <a href="dashboard/${u.role}/index.php#pengaturan-profil" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="dashboard/${u.role}/#pengaturan-profil" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-indigo-600">account_circle</span>
               <span>Atur Foto / Logo Profil</span>
             </a>
-            <a href="dashboard/${u.role}/index.php#ganti-password" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="dashboard/${u.role}/#ganti-password" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-amber-600">key</span>
               <span>Ganti Kata Sandi</span>
             </a>
           </div>
 
           <div class="pt-1 border-t border-slate-100">
-            <a href="login.php?action=logout" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors">
+            <a href="login.html?logout=1" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-red-500">logout</span>
               <span>Keluar (Logout)</span>
             </a>
@@ -432,31 +494,31 @@ async function initUserAuthStatus() {
           </div>
         </div>
         <div class="flex flex-col gap-1 pt-2 border-t border-border-subtle">
-          <a href="dashboard/${u.role}/index.php" class="px-3 py-1.5 text-xs font-bold text-primary rounded-lg bg-surface-container-high flex items-center gap-2">
+          <a href="dashboard/${u.role}/" class="px-3 py-1.5 text-xs font-bold text-primary rounded-lg bg-surface-container-high flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px]">dashboard</span>
             <span>Buka Dashboard</span>
           </a>
           ${u.role === 'admin' ? `
-          <a href="dashboard/admin/index.php#maintenance-panel" class="px-3 py-1.5 text-xs font-bold text-purple-700 rounded-lg bg-purple-50 flex items-center gap-2">
+          <a href="dashboard/admin/#maintenance-panel" class="px-3 py-1.5 text-xs font-bold text-purple-700 rounded-lg bg-purple-50 flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
             <span>Panel Pemeliharaan Sistem</span>
           </a>
           ` : ''}
           ${u.role === 'sppg' ? `
-          <a href="dashboard/sppg/index.php#input-menu" class="px-3 py-1.5 text-xs font-bold text-emerald-700 rounded-lg bg-emerald-50 flex items-center gap-2">
+          <a href="dashboard/sppg/#input-menu" class="px-3 py-1.5 text-xs font-bold text-emerald-700 rounded-lg bg-emerald-50 flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px]">soup_kitchen</span>
             <span>Panel Dapur SPPG</span>
           </a>
           ` : ''}
-          <a href="dashboard/${u.role}/index.php#pengaturan-profil" class="px-3 py-1.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-surface-container-high flex items-center gap-2">
+          <a href="dashboard/${u.role}/#pengaturan-profil" class="px-3 py-1.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-surface-container-high flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px] text-indigo-600">account_circle</span>
             <span>Atur Foto / Logo</span>
           </a>
-          <a href="dashboard/${u.role}/index.php#ganti-password" class="px-3 py-1.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-surface-container-high flex items-center gap-2">
+          <a href="dashboard/${u.role}/#ganti-password" class="px-3 py-1.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-surface-container-high flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px] text-amber-600">key</span>
             <span>Ganti Kata Sandi</span>
           </a>
-          <a href="login.php?action=logout" class="px-3 py-1.5 text-xs font-bold text-red-600 rounded-lg hover:bg-red-50 flex items-center gap-2">
+          <a href="login.html?logout=1" class="px-3 py-1.5 text-xs font-bold text-red-600 rounded-lg hover:bg-red-50 flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px]">logout</span>
             <span>Keluar (Logout)</span>
           </a>
@@ -466,6 +528,7 @@ async function initUserAuthStatus() {
     }
   } catch (err) {
     console.warn('Gagal memuat status autentikasi:', err);
+    applyStaticSessionFallback();
   }
 }
 
@@ -522,7 +585,7 @@ function initNotificationBell() {
         let itemsHtml = '';
         if (data.pending_sppg_logos > 0) {
           itemsHtml += `
-            <a href="dashboard/admin/index.php#verifikasi-logo-sppg" class="block px-4 py-3 hover:bg-amber-50/70 transition-colors bg-amber-50/30">
+            <a href="dashboard/admin/#verifikasi-logo-sppg" class="block px-4 py-3 hover:bg-amber-50/70 transition-colors bg-amber-50/30">
               <div class="flex items-start gap-2.5">
                 <span class="material-symbols-outlined text-amber-600 text-[20px] shrink-0">verified_user</span>
                 <div>
@@ -538,7 +601,7 @@ function initNotificationBell() {
           data.latest_reports.forEach(r => {
             const timeAgo = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : 'Baru saja';
             itemsHtml += `
-              <a href="dashboard/admin/index.php" class="block px-4 py-2.5 hover:bg-slate-50 transition-colors">
+              <a href="dashboard/admin/" class="block px-4 py-2.5 hover:bg-slate-50 transition-colors">
                 <div class="flex items-start gap-2.5">
                   <span class="material-symbols-outlined text-red-500 text-[18px] shrink-0">report_problem</span>
                   <div class="flex-1 min-w-0">
@@ -611,11 +674,11 @@ function initInteractiveTelemetryMap() {
 
   // Data Stasiun Dapur SPPG & Titik Sekolah
   const sppgStations = [
-    { name: 'SPPG Satgas DKI Jakarta Pusat', lat: -6.1824, lng: 106.8290, radius: 4500, porsi: '34.200 porsi/hari', temp: '65.4°C' },
-    { name: 'SPPG Satgas Jakarta Selatan', lat: -6.2615, lng: 106.8106, radius: 4000, porsi: '28.500 porsi/hari', temp: '64.8°C' },
-    { name: 'SPPG Satgas Bandung Raya (Jabar)', lat: -6.9175, lng: 107.6191, radius: 5000, porsi: '41.100 porsi/hari', temp: '66.2°C' },
-    { name: 'SPPG Satgas Semarang (Jateng)', lat: -6.9932, lng: 110.4203, radius: 4200, porsi: '31.800 porsi/hari', temp: '65.1°C' },
-    { name: 'SPPG Satgas Surabaya (Jatim)', lat: -7.2575, lng: 112.7521, radius: 4800, porsi: '39.000 porsi/hari', temp: '65.9°C' }
+    { name: 'SPPG Satgas DKI Jakarta Pusat', lat: -6.1824, lng: 106.8290, radius: 4500, porsi: '34.200 porsi/hari', temp: '65.4Â°C' },
+    { name: 'SPPG Satgas Jakarta Selatan', lat: -6.2615, lng: 106.8106, radius: 4000, porsi: '28.500 porsi/hari', temp: '64.8Â°C' },
+    { name: 'SPPG Satgas Bandung Raya (Jabar)', lat: -6.9175, lng: 107.6191, radius: 5000, porsi: '41.100 porsi/hari', temp: '66.2Â°C' },
+    { name: 'SPPG Satgas Semarang (Jateng)', lat: -6.9932, lng: 110.4203, radius: 4200, porsi: '31.800 porsi/hari', temp: '65.1Â°C' },
+    { name: 'SPPG Satgas Surabaya (Jatim)', lat: -7.2575, lng: 112.7521, radius: 4800, porsi: '39.000 porsi/hari', temp: '65.9Â°C' }
   ];
 
   // Render Dapur SPPG & Radius Distribusi
@@ -669,7 +732,7 @@ function initInteractiveTelemetryMap() {
       className: 'custom-van-icon',
       html: `
         <div class="van-marker-inner" style="background:#2563EB; color:#fff; width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 6px rgba(37,99,235,0.4); border:2px solid #fff; font-size:10px; font-weight:bold;">
-          🚚
+          ðŸšš
         </div>
       `,
       iconSize: [28, 28],
@@ -683,7 +746,7 @@ function initInteractiveTelemetryMap() {
         <h4 style="margin:2px 0; font-size:12px; font-weight:700; color:#0f172a;">${v.id}</h4>
         <div style="font-size:11px; color:#475569; margin-top:4px;">
           <div>Tujuan: <strong>${v.dest}</strong></div>
-          <div>Suhu Termal: <strong style="color:#d97706;" class="van-temp-label">${v.temp}°C</strong> (&gt;60°C Aman)</div>
+          <div>Suhu Termal: <strong style="color:#d97706;" class="van-temp-label">${v.temp}Â°C</strong> (&gt;60Â°C Aman)</div>
           <div>Status: <span style="color:#059669; font-weight:600;">${v.status}</span></div>
         </div>
       </div>
@@ -707,7 +770,7 @@ function initInteractiveTelemetryMap() {
       item.data.lng = newLng;
       item.marker.setLatLng([newLat, newLng]);
 
-      // Fluktuasi suhu rantai hangat (antara 63.5°C - 66.8°C)
+      // Fluktuasi suhu rantai hangat (antara 63.5Â°C - 66.8Â°C)
       const tempDelta = (Math.random() - 0.5) * 0.3;
       item.data.temp = Math.round((item.data.temp + tempDelta) * 10) / 10;
       if (item.data.temp < 62.0) item.data.temp = 64.5;
@@ -737,3 +800,4 @@ function initInteractiveTelemetryMap() {
     });
   });
 }
+

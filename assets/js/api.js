@@ -38,7 +38,7 @@ const BGNApi = (function() {
    */
   async function cekTiketAduan(nomorTiket) {
     try {
-      const endpoint = `api.php?action=cek_tiket&tiket=${encodeURIComponent(nomorTiket)}`;
+      const endpoint = `${BASE_URL}?action=cek_tiket&tiket=${encodeURIComponent(nomorTiket)}`;
       const response = await fetch(endpoint);
       return await response.json();
     } catch (error) {

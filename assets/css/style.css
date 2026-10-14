@@ -169,6 +169,10 @@ html, body {
   background: var(--bgn-surface-high);
 }
 
+/* Hide scrollbar for horizontal scroll containers while keeping functionality */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Smooth Pulse Animation */
 @keyframes bgnPulse {
   0%, 100% { opacity: 1; transform: scale(1); }

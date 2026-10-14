@@ -6,3 +6,10 @@
 /auth/register.php    /login.html?tab=register 301
 /features/login.php   /login.html              301
 /pages/login.php      /login.html              301
+
+# Root PHP files — tidak dieksekusi di Cloudflare Pages
+/aduan.php                /laporan-aduan.html             301
+/generate_og_image.php    /assets/images/og-preview.png  301
+/api.php                  /                               301
+/build.php                /                               301
+/auth/logout.php          /login.html?logout=1            301
