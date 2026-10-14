@@ -198,7 +198,11 @@ class Auth {
      */
     public static function requireRole(string|array $roles): void {
         if (!self::check()) {
-            header('Location: login.php?msg=silakan_login');
+            $docRoot = realpath($_SERVER['DOCUMENT_ROOT'] ?? '') ?: '';
+            $proj    = realpath(__DIR__ . '/..') ?: '';
+            $base    = ($docRoot !== '' && str_starts_with($proj, $docRoot))
+                ? str_replace('\\', '/', substr($proj, strlen($docRoot))) : '';
+            header('Location: ' . $base . '/auth/login.php?msg=silakan_login');
             exit;
         }
 

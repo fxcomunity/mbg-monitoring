@@ -25,11 +25,11 @@ if ((isset($_GET['action']) && $_GET['action'] === 'logout') || isset($_GET['log
 if (Auth::check()) {
     $role = $_SESSION['role'] ?? 'user';
     if ($role === 'admin') {
-        header('Location: ../../dashboard/admin/');
+        header('Location: ../dashboard/admin/');
     } elseif ($role === 'sppg') {
-        header('Location: ../../dashboard/sppg/');
+        header('Location: ../dashboard/sppg/');
     } else {
-        header('Location: ../../dashboard/user/');
+        header('Location: ../dashboard/user/');
     }
     exit;
 }
@@ -46,11 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($res['status']) {
             $role = $res['user']['role'];
             if ($role === 'admin') {
-                header('Location: ../../dashboard/admin/');
+                header('Location: ../dashboard/admin/');
             } elseif ($role === 'sppg') {
-                header('Location: ../../dashboard/sppg/');
+                header('Location: ../dashboard/sppg/');
             } else {
-                header('Location: ../../dashboard/user/');
+                header('Location: ../dashboard/user/');
             }
             exit;
         } else {
@@ -213,7 +213,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <!-- TAB 1: FORM LOGIN -->
         <div id="formSectionLogin" class="<?= $activeTab === 'login' ? '' : 'hidden' ?>">
-          <form action="auth/login.php" method="POST" class="space-y-4">
+          <form action="login.php" method="POST" class="space-y-4">
             <input type="hidden" name="form_type" value="login">
             <!-- Username or Email -->
             <div>
@@ -260,7 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <!-- TAB 2: FORM REGISTER -->
         <div id="formSectionRegister" class="<?= $activeTab === 'register' ? '' : 'hidden' ?>">
-          <form action="auth/login.php" method="POST" class="space-y-3.5">
+          <form action="login.php" method="POST" class="space-y-3.5">
             <input type="hidden" name="form_type" value="register">
             <!-- Role Selector -->
             <div>
