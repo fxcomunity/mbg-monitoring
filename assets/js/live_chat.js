@@ -7,7 +7,7 @@
  */
 
 (function() {
-  'use strict';
+const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
 
   document.addEventListener('DOMContentLoaded', initLiveChatWidget);
 

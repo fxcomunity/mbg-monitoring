@@ -14,12 +14,22 @@ CREATE TABLE IF NOT EXISTS users (
   full_name     VARCHAR(120) NOT NULL,
   role          VARCHAR(20) NOT NULL DEFAULT 'user'
                   CHECK (role IN ('admin', 'sppg', 'user')),
-  sppg_name     VARCHAR(150),
-  sppg_code     VARCHAR(50),
-  phone         VARCHAR(25),
-  is_active     BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  sppg_name              VARCHAR(150),
+  sppg_code              VARCHAR(50),
+  phone                  VARCHAR(25),
+  nib                    VARCHAR(30),
+  no_slhs                VARCHAR(100),
+  dokumen_legalitas_url  TEXT,
+  nama_dietisien         VARCHAR(120),
+  alamat_dapur           TEXT,
+  kapasitas_porsi        INT DEFAULT 500,
+  status_verifikasi      VARCHAR(30) DEFAULT 'approved',
+  avatar_url             TEXT,
+  avatar_pending_url     TEXT,
+  avatar_status          VARCHAR(30) DEFAULT 'approved',
+  is_active              BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);

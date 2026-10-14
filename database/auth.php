@@ -72,9 +72,22 @@ class Auth {
     }
 
     /**
-     * Registrasi akun baru (User Wali Murid, Sekolah, atau Mitra SPPG)
+     * Registrasi akun baru (User Wali Murid, Sekolah, atau Mitra SPPG dengan Dokumen Legalitas)
      */
-    public static function register(string $fullName, string $email, string $username, string $password, string $role = 'user', ?string $sppgName = null): array {
+    public static function register(
+        string $fullName,
+        string $email,
+        string $username,
+        string $password,
+        string $role = 'user',
+        ?string $sppgName = null,
+        ?string $nib = null,
+        ?string $noSlhs = null,
+        ?string $dokumenLegalitasUrl = null,
+        ?string $namaDietisien = null,
+        ?string $alamatDapur = null,
+        int $kapasitasPorsi = 500
+    ): array {
         $fullName = trim($fullName);
         $email    = strtolower(trim($email));
         $username = strtolower(trim($username));
@@ -96,6 +109,21 @@ class Auth {
             return ['status' => false, 'message' => 'Kata sandi minimal 6 karakter.'];
         }
 
+        // Validasi khusus Mitra SPPG sesuai SOP BGN
+        if ($role === 'sppg') {
+            if (empty($sppgName)) {
+                return ['status' => false, 'message' => 'Nama Dapur SPPG wajib diisi.'];
+            }
+            if (empty($nib)) {
+                return ['status' => false, 'message' => 'Nomor Induk Berusaha (NIB) SPPG wajib diisi sesuai standar BGN.'];
+            }
+            if (empty($noSlhs)) {
+                return ['status' => false, 'message' => 'Nomor Sertifikat Laik Higiene Sanitasi (SLHS) Dinkes wajib diisi.'];
+            }
+        }
+
+        $statusVerifikasi = ($role === 'sppg') ? 'pending_review' : 'approved';
+
         try {
             $pdo = getDB();
             $check = $pdo->prepare('SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1');
@@ -106,14 +134,36 @@ class Auth {
 
             $hash = password_hash($password, PASSWORD_BCRYPT);
             $stmt = $pdo->prepare('
-                INSERT INTO users (username, email, password_hash, full_name, role, sppg_name, is_active, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, TRUE, NOW())
+                INSERT INTO users (
+                    username, email, password_hash, full_name, role, sppg_name,
+                    nib, no_slhs, dokumen_legalitas_url, nama_dietisien, alamat_dapur, kapasitas_porsi,
+                    status_verifikasi, is_active, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW())
             ');
-            $stmt->execute([$username, $email, $hash, $fullName, $role, $sppgName]);
+            $stmt->execute([
+                $username,
+                $email,
+                $hash,
+                $fullName,
+                $role,
+                $sppgName,
+                $nib ?: null,
+                $noSlhs ?: null,
+                $dokumenLegalitasUrl ?: null,
+                $namaDietisien ?: null,
+                $alamatDapur ?: null,
+                $kapasitasPorsi > 0 ? $kapasitasPorsi : 500,
+                $statusVerifikasi
+            ]);
+
+            $successMsg = ($role === 'sppg')
+                ? 'Registrasi Dapur SPPG berhasil dikirim! Dokumen legalitas (NIB & SLHS) Anda sedang dalam peninjauan Satgas BGN. Silakan masuk.'
+                : 'Registrasi akun berhasil! Silakan masuk dengan akun baru Anda.';
 
             return [
                 'status'  => true,
-                'message' => 'Registrasi akun berhasil! Silakan masuk dengan akun baru Anda.'
+                'message' => $successMsg
             ];
         } catch (Throwable $e) {
             error_log('[Auth Register Error] ' . $e->getMessage());
