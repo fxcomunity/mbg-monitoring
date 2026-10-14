@@ -33,10 +33,12 @@
         <div class="bg-[#001026] text-white px-3.5 py-2.5 flex items-center justify-between border-b border-white/10 shrink-0">
           <div class="flex items-center gap-1.5 p-1 bg-white/10 rounded-xl">
             <button id="btnTabSatgas" type="button" class="py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-[#001026] shadow-sm">
-              <span>🏛️ Satgas BGN</span>
+              <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+              <span>Satgas BGN</span>
             </button>
             <button id="btnTabSppg" type="button" class="py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white">
-              <span>🍲 Mitra SPPG</span>
+              <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+              <span>Mitra SPPG</span>
             </button>
           </div>
 
@@ -92,14 +94,17 @@
           <div class="p-2 bg-white border-t border-slate-100 flex flex-col gap-1 shrink-0">
             <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider px-1">Pertanyaan Cepat Satgas:</span>
             <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 text-[10px] font-medium transition-all" data-target="admin" data-msg="Bagaimana standar gizi AKG MBG nasional hari ini?">
-                📊 Standar AKG Nasional
+              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 text-[10px] font-medium transition-all flex items-center gap-1" data-target="admin" data-msg="Bagaimana standar gizi AKG MBG nasional hari ini?">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                <span>Standar AKG Nasional</span>
               </button>
-              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 text-[10px] font-medium transition-all" data-target="admin" data-msg="Bagaimana prosedur lapor jika makanan tiba dalam keadaan dingin?">
-                🚨 Prosedur Makanan Dingin
+              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 text-[10px] font-medium transition-all flex items-center gap-1" data-target="admin" data-msg="Bagaimana prosedur lapor jika makanan tiba dalam keadaan dingin?">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                <span>Prosedur Makanan Dingin</span>
               </button>
-              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 text-[10px] font-medium transition-all" data-target="admin" data-msg="Apakah seluruh dapur SPPG sudah memiliki sertifikat higiene SLHS?">
-                🛡️ Sertifikat Higiene SLHS
+              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 text-[10px] font-medium transition-all flex items-center gap-1" data-target="admin" data-msg="Apakah seluruh dapur SPPG sudah memiliki sertifikat higiene SLHS?">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>Sertifikat Higiene SLHS</span>
               </button>
             </div>
           </div>
@@ -170,14 +175,17 @@
           <div class="p-2 bg-white border-t border-slate-100 flex flex-col gap-1 shrink-0">
             <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider px-1">Pertanyaan Cepat Dapur SPPG:</span>
             <div class="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-medium transition-all" data-target="sppg" data-msg="Menu makanan hari ini apa ya min?">
-                🍛 Menu Hari Ini Apa?
+              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-medium transition-all flex items-center gap-1" data-target="sppg" data-msg="Menu makanan hari ini apa ya min?">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                <span>Menu Hari Ini Apa?</span>
               </button>
-              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-medium transition-all" data-target="sppg" data-msg="Apakah sajian hari ini bebas dari alergen kacang atau seafood?">
-                ⚠️ Bebas Alergen Kacang?
+              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-medium transition-all flex items-center gap-1" data-target="sppg" data-msg="Apakah sajian hari ini bebas dari alergen kacang atau seafood?">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                <span>Bebas Alergen Kacang?</span>
               </button>
-              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-medium transition-all" data-target="sppg" data-msg="Pukul berapa estimasi pengantaran tiba di sekolah kami?">
-                ⏱️ Jam Berapa Tiba?
+              <button type="button" class="quick-chip whitespace-nowrap px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-medium transition-all flex items-center gap-1" data-target="sppg" data-msg="Pukul berapa estimasi pengantaran tiba di sekolah kami?">
+                <span class="w-1.5 h-1.5 rounded-full bg-teal-600"></span>
+                <span>Jam Berapa Tiba?</span>
               </button>
             </div>
           </div>
@@ -364,9 +372,9 @@
 
       let badgeHtml = '';
       if (msg.sender_type === 'admin') {
-        badgeHtml = `<span class="px-1 rounded bg-blue-100 text-blue-800 text-[9px] font-bold">🏛️ Satgas BGN</span>`;
+        badgeHtml = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-[9px] font-bold"><svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>Satgas BGN</span>`;
       } else if (msg.sender_type === 'sppg') {
-        badgeHtml = `<span class="px-1 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold">🍲 Mitra SPPG</span>`;
+        badgeHtml = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold"><svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.06 23h1.66c.84 0 1.53-.65 1.63-1.48L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.06zM1 22c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-4H1v4zm14-7H1V9c0-1.66 1.34-3 3-3h8c1.66 0 3 1.34 3 3v6z"/></svg>Mitra SPPG</span>`;
       }
 
       const content = `

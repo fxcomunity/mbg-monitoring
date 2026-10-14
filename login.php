@@ -136,10 +136,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   </style>
 </head>
-<body class="bg-surface bg-grid-pattern font-sans text-primary min-h-screen flex flex-col justify-between selection:bg-[#6ffbbe] selection:text-[#001026]">
+<body class="relative bg-[#001026] font-sans text-primary min-h-screen flex flex-col justify-between selection:bg-[#6ffbbe] selection:text-[#001026] overflow-x-hidden">
+
+  <!-- Fullscreen Video Background -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none -z-20">
+    <video autoplay muted loop playsinline preload="auto" class="w-full h-full object-cover">
+      <source src="https://res.cloudinary.com/dgenxagit/video/upload/v1791923878/gemini_generated_video_22b0321d.mp4" type="video/mp4">
+    </video>
+  </div>
+  <!-- High Contrast Dark Glass Overlay -->
+  <div class="fixed inset-0 bg-gradient-to-b from-[#001026]/85 via-[#001026]/75 to-[#001026]/90 backdrop-blur-[2px] pointer-events-none -z-10"></div>
 
   <!-- TOP HEADER -->
-  <header class="w-full bg-white/80 backdrop-blur-md border-b border-slate-200/80 py-3.5 px-4 sm:px-8 sticky top-0 z-40 transition-all">
+  <header class="w-full bg-[#001026]/80 backdrop-blur-md border-b border-white/10 py-3.5 px-4 sm:px-8 sticky top-0 z-40 transition-all">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <a href="index.html" class="flex items-center gap-3 group">
         <div class="relative">
@@ -147,15 +156,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div>
           <div class="flex items-center gap-1.5">
-            <span class="font-extrabold text-base sm:text-lg text-primary tracking-tight">Radar MBG</span>
-            <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold tracking-wide border border-emerald-200">PORTAL RESMI</span>
+            <span class="font-extrabold text-base sm:text-lg text-white tracking-tight">Radar MBG</span>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold tracking-wide border border-emerald-400/30">PORTAL RESMI</span>
           </div>
-          <p class="text-[11px] text-slate-500 font-medium hidden sm:block">Badan Gizi Nasional Republik Indonesia</p>
+          <p class="text-[11px] text-slate-300 font-medium hidden sm:block">Badan Gizi Nasional Republik Indonesia</p>
         </div>
       </a>
 
       <div class="flex items-center gap-3">
-        <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-primary px-3 py-1.5 rounded-xl hover:bg-slate-100 transition-all">
+        <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-200 hover:text-white px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 transition-all">
           <span class="material-symbols-outlined text-[18px]">arrow_back</span>
           <span>Kembali ke Beranda</span>
         </a>
@@ -165,10 +174,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <!-- MAIN CONTAINER -->
   <main class="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8 relative">
-    
-    <!-- Ambient Blur Orbs -->
-    <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
-    <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
     <div class="w-full max-w-[480px]">
       
@@ -228,22 +233,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div id="formSectionLogin" class="<?= $activeTab === 'login' ? '' : 'hidden' ?>">
           <form action="login.php" method="POST" class="space-y-4">
             <input type="hidden" name="form_type" value="login">
-
-            <!-- Quick Demo Credentials Helper -->
-            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
-              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">⚡ Akses Cepat Pengujian (1-Klik Isi):</span>
-              <div class="grid grid-cols-3 gap-1.5">
-                <button type="button" onclick="fillDemo('admin')" class="py-1.5 px-2 rounded-xl bg-white hover:bg-blue-50 hover:text-blue-700 border border-slate-200 text-[10px] font-bold text-slate-700 transition-all text-center">
-                  🏛️ Admin BGN
-                </button>
-                <button type="button" onclick="fillDemo('sppg')" class="py-1.5 px-2 rounded-xl bg-white hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-[10px] font-bold text-slate-700 transition-all text-center">
-                  🍲 Dapur SPPG
-                </button>
-                <button type="button" onclick="fillDemo('user')" class="py-1.5 px-2 rounded-xl bg-white hover:bg-purple-50 hover:text-purple-700 border border-slate-200 text-[10px] font-bold text-slate-700 transition-all text-center">
-                  👨‍👩‍👧 Wali Murid
-                </button>
-              </div>
-            </div>
 
             <!-- Username or Email -->
             <div>
@@ -465,24 +454,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         field.classList.add('hidden');
         input.required = false;
       }
-    }
-
-    // Demo Auto-Filler for Instant Testing
-    function fillDemo(role) {
-      switchAuthTab('login');
-      const u = document.getElementById('loginUsername');
-      const p = document.getElementById('loginPassword');
-      if (role === 'admin') {
-        u.value = 'admin_bgn';
-        p.value = 'admin1234';
-      } else if (role === 'sppg') {
-        u.value = 'sppg_kebayoran';
-        p.value = 'sppg1234';
-      } else {
-        u.value = 'budi_wali';
-        p.value = 'user1234';
-      }
-      u.focus();
     }
   </script>
 </body>

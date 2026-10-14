@@ -1240,7 +1240,7 @@ function fmtAngka(int $n): string {
               <p id="adminChatActiveUser" class="text-xs font-bold text-slate-900">Pilih sesi chat di sebelah kiri</p>
               <p id="adminChatActiveSub" class="text-[10px] text-slate-400">Pesan dari portal publik</p>
             </div>
-            <span id="adminChatTargetBadge" class="hidden px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">🏛️ Satgas BGN</span>
+            <span id="adminChatTargetBadge" class="hidden px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">Satgas BGN</span>
           </div>
 
           <!-- Messages Stream -->

@@ -861,6 +861,7 @@
 </div>
 </div>
 <script>
+(function() {
   // Region Table Filter Logic
   const regionButtons = document.querySelectorAll('.region-filter-btn');
   const tableRows = document.querySelectorAll('#tableRegionalBody tr');
@@ -895,20 +896,23 @@
   const searchInput = document.getElementById('schoolSearchInput');
 
   function openModal() {
-    modalBackdrop.classList.remove('hidden');
-    modalBackdrop.classList.add('flex');
+    if (modalBackdrop) {
+      modalBackdrop.classList.remove('hidden');
+      modalBackdrop.classList.add('flex');
+    }
   }
 
   function closeModal() {
-    modalBackdrop.classList.add('hidden');
-    modalBackdrop.classList.remove('flex');
+    if (modalBackdrop) {
+      modalBackdrop.classList.add('hidden');
+      modalBackdrop.classList.remove('flex');
+    }
   }
 
   if (openModalBtn) openModalBtn.addEventListener('click', openModal);
   if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
   if (confirmModalBtn) confirmModalBtn.addEventListener('click', closeModal);
 
-  // Close when clicking outside of modal card
   if (modalBackdrop) {
     modalBackdrop.addEventListener('click', (e) => {
       if (e.target === modalBackdrop) closeModal();
@@ -926,6 +930,7 @@
       }
     });
   });
+})();
 </script></main><footer class="w-full bg-surface-container-lowest border-t border-border-subtle mt-space-xl">
   <div class="w-full px-space-lg py-space-xl">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-xl mb-space-xl">
@@ -1005,65 +1010,71 @@
   </div>
 </footer>
 <script>
-  // Mobile Nav Toggle
-  document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('btnMobileNavToggle');
-    const menu = document.getElementById('mobileNavMenu');
-    if (btn && menu) {
-      btn.addEventListener('click', () => {
-        menu.classList.toggle('hidden');
-      });
-    }
+(function() {
+  // Global Nav Search handler
+  const navSearch = document.getElementById('navGlobalSearch');
+  if (navSearch) {
+    navSearch.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const q = encodeURIComponent(navSearch.value.trim());
+        if (q) window.location.href = 'menu-hari-ini.html?q=' + q;
+      }
+    });
+  }
 
-    // Global Nav Search
-    const navSearch = document.getElementById('navGlobalSearch');
-    if (navSearch) {
-      navSearch.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          const q = encodeURIComponent(navSearch.value.trim());
-          if (q) window.location.href = 'menu-hari-ini.html?q=' + q;
-        }
-      });
-    }
-  });
-</script>
-<script>
-  // Enhanced dynamic search via api.php
+  // School lookup modal logic
   const schoolSearchInput = document.getElementById('schoolSearchInput');
   const modalSchoolQuery = document.getElementById('modalSchoolQuery');
   const btnSchoolModal = document.getElementById('btnSchoolModal');
   const modalBackdrop = document.getElementById('schoolModalBackdrop');
-  const btnCloseModal = document.getElementById('btnCloseModal');
   const btnConfirmModal = document.getElementById('btnConfirmModal');
   const modalResultContainer = modalBackdrop ? modalBackdrop.querySelector('.p-space-md.rounded-xl.bg-surface-container-low') : null;
 
   function fetchSchoolData(query) {
     if (!query) query = 'SDN 01 Senayan';
-    fetch('api.php?school=' + encodeURIComponent(query))
-      .then(r => r.json())
+    const apiEndpoint = 'api/menu.php?q=' + encodeURIComponent(query);
+    fetch(apiEndpoint)
+      .then(r => r.ok ? r.json() : Promise.reject())
       .then(res => {
-        if (res.data && res.data.length > 0) {
+        if (res.data && res.data.length > 0 && modalResultContainer) {
           const item = res.data[0];
-          if (modalResultContainer) {
-            modalResultContainer.innerHTML = `
-              <div class="flex items-center justify-between">
-                <span class="font-label-sm text-label-sm text-status-success font-bold flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[16px]">check_circle</span> Terjadwal Salur Pukul ${item.time || '10.30 WIB'}
-                </span>
-                <span class="font-label-sm text-label-sm text-secondary">${item.sppg ? item.sppg.name : 'SPPG Kebayoran 02'}</span>
-              </div>
-              <span class="font-headline-sm text-headline-sm text-primary font-bold">${item.school} - ${item.menu}</span>
-              <p class="font-body-sm text-body-sm text-on-surface-variant">${item.description || 'Porsi standar dengan gizi seimbang.'}</p>
-              <div class="flex flex-wrap gap-2 pt-1 border-t border-border-subtle mt-1 text-[11px] text-on-surface-variant">
-                <span>Kalori: <strong class="text-primary">${item.calories || item.nutrition.energi}</strong></span> •
-                <span>Suhu: <strong class="text-status-success">${item.temperature || '68°C'}</strong></span> •
-                <span>Dietisien: <strong class="text-secondary">${item.sppg ? item.sppg.dietitian : 'Terverifikasi'}</strong></span>
-              </div>
-            `;
-          }
+          modalResultContainer.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="font-label-sm text-label-sm text-status-success font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">check_circle</span> Terjadwal Salur Pukul ${item.time || '10.30 WIB'}
+              </span>
+              <span class="font-label-sm text-label-sm text-secondary">${item.sppg ? item.sppg.name : 'SPPG Kebayoran 02'}</span>
+            </div>
+            <span class="font-headline-sm text-headline-sm text-primary font-bold">${item.school || item.name} - ${item.menu || item.packageName || 'Menu MBG'}</span>
+            <p class="font-body-sm text-body-sm text-on-surface-variant">${item.description || item.desc || 'Porsi standar gizi seimbang BGN.'}</p>
+            <div class="flex flex-wrap gap-2 pt-1 border-t border-border-subtle mt-1 text-[11px] text-on-surface-variant">
+              <span>Kalori: <strong class="text-primary">${item.calories || '629 kkal'}</strong></span> •
+              <span>Suhu: <strong class="text-status-success">${item.temperature || '66.8°C'}</strong></span> •
+              <span>Dietisien: <strong class="text-secondary">${item.sppg ? item.sppg.dietitian : 'Terverifikasi'}</strong></span>
+            </div>
+          `;
         }
       })
-      .catch(e => console.error('Fetch error:', e));
+      .catch(() => {
+        // Fallback data jika offline / static hosting
+        if (modalResultContainer) {
+          modalResultContainer.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="font-label-sm text-label-sm text-status-success font-bold flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">check_circle</span> Terjadwal Salur Pukul 10.30 WIB
+              </span>
+              <span class="font-label-sm text-label-sm text-secondary">SPPG Terverifikasi BGN</span>
+            </div>
+            <span class="font-headline-sm text-headline-sm text-primary font-bold">${query} - Paket Menu Bergizi</span>
+            <p class="font-body-sm text-body-sm text-on-surface-variant">Nasi putih, ayam bumbu rempah, tempe ongseng, tumis sayuran segar, dan buah lokal.</p>
+            <div class="flex flex-wrap gap-2 pt-1 border-t border-border-subtle mt-1 text-[11px] text-on-surface-variant">
+              <span>Kalori: <strong class="text-primary">629 kkal</strong></span> •
+              <span>Suhu: <strong class="text-status-success">66.8°C</strong></span> •
+              <span>Dietisien: <strong class="text-secondary">Nutrisionis Satgas</strong></span>
+            </div>
+          `;
+        }
+      });
   }
 
   if (btnSchoolModal) {
@@ -1087,7 +1098,7 @@
     });
   }
 
-  // Region Telemetry Button Styling (flyTo handled by script.js initInteractiveTelemetryMap)
+  // Region Telemetry Button Styling
   const regionBtns = document.querySelectorAll('.region-telemetry-btn');
   const telemetryTempBadge = document.getElementById('telemetryTempBadge');
 
@@ -1104,6 +1115,7 @@
       }
     });
   });
+})();
 </script>
 <script src="assets/js/security.js"></script>
 <script src="assets/js/api.js"></script>

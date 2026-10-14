@@ -395,6 +395,76 @@ $sppgAvatarStatus = $sppgAvatarData['avatar_status'] ?? 'approved';
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- KOTAK MASUK LIVE CHAT DAPUR MITRA SPPG (DUAL-WAY REPLY) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="live-chat-sppg-panel" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">forum</span>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-primary flex items-center gap-2">
+              <span>Live Chat Konsultasi Mitra SPPG</span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">2-Way Active</span>
+            </h2>
+            <p class="text-xs text-slate-500">Balas pertanyaan langsung dari wali murid, guru, atau penerima manfaat untuk dapur Anda.</p>
+          </div>
+        </div>
+        <button type="button" onclick="loadSppgChatSessions()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5 self-start sm:self-auto">
+          <span class="material-symbols-outlined text-sm">refresh</span>
+          <span>Segarkan Pesan</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[460px]">
+        <!-- Sesi Chat Masuk (List) -->
+        <div class="lg:col-span-4 border border-slate-200/90 rounded-2xl p-3 bg-slate-50/70 flex flex-col h-[460px]">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
+            <span>Daftar Sesi Masuk:</span>
+            <span id="sppgSessionCountBadge" class="px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[10px]">0</span>
+          </div>
+          <div id="sppgChatSessionsList" class="flex-grow overflow-y-auto space-y-2 pr-1">
+            <p class="text-xs text-slate-400 p-4 text-center">Memuat daftar sesi...</p>
+          </div>
+        </div>
+
+        <!-- Ruang Percakapan & Reply Box -->
+        <div class="lg:col-span-8 border border-slate-200/90 rounded-2xl bg-white flex flex-col h-[460px] overflow-hidden">
+          <!-- Room Header -->
+          <div id="sppgChatRoomHeader" class="p-3.5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+            <div>
+              <p id="sppgChatActiveUser" class="text-xs font-bold text-slate-900">Pilih sesi chat di sebelah kiri</p>
+              <p id="sppgChatActiveSub" class="text-[10px] text-slate-400">Pesan dari portal publik</p>
+            </div>
+            <span id="sppgChatTargetBadge" class="hidden px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Mitra SPPG</span>
+          </div>
+
+          <!-- Messages Stream -->
+          <div id="sppgChatTranscript" class="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50/40 text-xs">
+            <div class="h-full flex items-center justify-center text-center text-slate-400">
+              <div>
+                <span class="material-symbols-outlined text-4xl block mb-2 text-slate-300">chat_bubble</span>
+                <p class="text-xs">Klik salah satu pengguna di sebelah kiri untuk melihat percakapan dan membalas.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reply Form -->
+          <form id="sppgReplyForm" onsubmit="sendSppgReply(event)" class="p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0">
+            <input type="hidden" id="sppgReplySessionId" value="">
+            <input type="text" id="sppgReplyInput" disabled placeholder="Pilih sesi terlebih dahulu untuk membalas..."
+                   class="flex-grow px-3.5 py-2.5 bg-slate-100 text-slate-900 placeholder:text-slate-400 rounded-xl text-xs border border-transparent focus:bg-white focus:border-emerald-600 focus:outline-none transition-all">
+            <button type="submit" id="sppgReplyBtn" disabled class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1">
+              <span>Kirim</span>
+              <span class="material-symbols-outlined text-xs">send</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <!-- PENGATURAN AKUN SPPG -->
     <div id="ganti-password" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       <!-- Ganti Kata Sandi SPPG -->
@@ -501,6 +571,148 @@ $sppgAvatarStatus = $sppgAvatarData['avatar_status'] ?? 'approved';
     <span>Redesain | © 2026 Badan Gizi Nasional Republik Indonesia. Dilengkapi BGN Shield Anti-Exploit.</span>
   </footer>
 
+<script>
+  let currentSppgSessionId = null;
+
+  async function loadSppgChatSessions() {
+    const listEl = document.getElementById('sppgChatSessionsList');
+    const badgeEl = document.getElementById('sppgSessionCountBadge');
+    if (!listEl) return;
+    try {
+      const res = await fetch('../../api/live_chat.php?action=sppg_sessions');
+      const json = await res.json();
+      if (json.status === 'success' && json.data) {
+        if (badgeEl) badgeEl.textContent = json.data.length;
+        if (json.data.length === 0) {
+          listEl.innerHTML = '<p class="text-xs text-slate-400 p-4 text-center">Belum ada sesi percakapan untuk SPPG Anda.</p>';
+          return;
+        }
+        listEl.innerHTML = '';
+        json.data.forEach(s => {
+          const item = document.createElement('div');
+          const isSelected = s.session_id === currentSppgSessionId;
+          item.className = `p-3 rounded-xl border transition-all cursor-pointer ${isSelected ? 'bg-emerald-50 border-emerald-400 shadow-sm' : 'bg-white border-slate-200/80 hover:bg-slate-100'}`;
+          item.onclick = () => selectSppgSession(s.session_id, s.user_name || 'Pengguna Publik');
+          item.innerHTML = `
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="font-bold text-xs text-slate-900 truncate">${escapeSppgHtml(s.user_name || 'Masyarakat')}</span>
+              <span class="text-[9px] text-slate-400">${formatTimeChatSppg(s.last_time)}</span>
+            </div>
+            <p class="text-[11px] text-slate-600 truncate">${escapeSppgHtml(s.last_message || '-')}</p>
+            <div class="flex items-center justify-between mt-1 text-[9px] text-slate-400">
+              <span>${s.total_messages} Pesan</span>
+              <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-mono">${s.session_id.substring(0, 14)}...</span>
+            </div>
+          `;
+          listEl.appendChild(item);
+        });
+      }
+    } catch (e) {
+      if (listEl) listEl.innerHTML = '<p class="text-xs text-red-500 p-2">Gagal memuat sesi chat.</p>';
+    }
+  }
+
+  async function selectSppgSession(sessionId, userName) {
+    currentSppgSessionId = sessionId;
+    document.getElementById('sppgReplySessionId').value = sessionId;
+    document.getElementById('sppgChatActiveUser').textContent = userName;
+    document.getElementById('sppgChatActiveSub').textContent = `Sesi ID: ${sessionId}`;
+    document.getElementById('sppgChatTargetBadge').classList.remove('hidden');
+
+    const input = document.getElementById('sppgReplyInput');
+    const btn = document.getElementById('sppgReplyBtn');
+    input.disabled = false;
+    btn.disabled = false;
+    input.placeholder = `Balas ke ${userName} sebagai Mitra Dapur SPPG...`;
+    input.focus();
+
+    await loadSppgSessionTranscript(sessionId);
+    loadSppgChatSessions();
+  }
+
+  async function loadSppgSessionTranscript(sessionId) {
+    const box = document.getElementById('sppgChatTranscript');
+    if (!box) return;
+    box.innerHTML = '<p class="text-xs text-slate-400 p-4 text-center">Memuat riwayat percakapan...</p>';
+    try {
+      const res = await fetch(`../../api/live_chat.php?action=history&session_id=${encodeURIComponent(sessionId)}&target_type=sppg`);
+      const json = await res.json();
+      if (json.status === 'success' && json.messages) {
+        box.innerHTML = '';
+        json.messages.forEach(m => {
+          const isUser = m.sender_type === 'user';
+          const div = document.createElement('div');
+          div.className = isUser ? 'flex items-start gap-2' : 'flex items-start justify-end gap-2';
+          div.innerHTML = `
+            <div class="${isUser ? 'bg-white text-slate-800 rounded-tl-none border border-slate-200' : 'bg-emerald-700 text-white rounded-tr-none'} p-3 rounded-2xl shadow-sm max-w-[80%] text-xs">
+              <div class="flex items-center gap-1.5 mb-1 ${isUser ? '' : 'justify-end'}">
+                <span class="font-bold text-[11px] ${isUser ? 'text-emerald-800' : 'text-emerald-200'}">${escapeSppgHtml(m.sender_name)}</span>
+                <span class="text-[9px] ${isUser ? 'text-slate-400' : 'text-emerald-200'}">${m.sender_type}</span>
+              </div>
+              <p class="leading-relaxed whitespace-pre-wrap">${escapeSppgHtml(m.message)}</p>
+              <span class="text-[9px] ${isUser ? 'text-slate-400' : 'text-emerald-200'} mt-1 block text-right">${formatTimeChatSppg(m.created_at)}</span>
+            </div>
+          `;
+          box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+      }
+    } catch (e) {
+      box.innerHTML = '<p class="text-xs text-red-500 p-2">Gagal memuat pesan.</p>';
+    }
+  }
+
+  async function sendSppgReply(e) {
+    e.preventDefault();
+    const sessionId = document.getElementById('sppgReplySessionId').value;
+    const input = document.getElementById('sppgReplyInput');
+    const msg = input.value.trim();
+    if (!sessionId || !msg) return;
+
+    input.value = '';
+    input.disabled = true;
+
+    try {
+      const fd = new FormData();
+      fd.append('action', 'reply');
+      fd.append('session_id', sessionId);
+      fd.append('message', msg);
+      fd.append('target_type', 'sppg');
+
+      const res = await fetch('../../api/live_chat.php', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (json.status === 'success') {
+        await loadSppgSessionTranscript(sessionId);
+        loadSppgChatSessions();
+      } else {
+        alert(json.message || 'Gagal mengirim balasan.');
+      }
+    } catch (err) {
+      alert('Koneksi gagal saat mengirim balasan.');
+    } finally {
+      input.disabled = false;
+      input.focus();
+    }
+  }
+
+  function escapeSppgHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatTimeChatSppg(isoStr) {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return ''; }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadSppgChatSessions();
+    setInterval(loadSppgChatSessions, 15000);
+  });
+</script>
 <script src="../../assets/js/security.js"></script>
 <script src="../../assets/js/live_chat.js"></script>
 </body>

@@ -9,7 +9,7 @@ AddType application/x-httpd-php .php
 RewriteBase /MBG-MONITORING/
 
 # Custom Error Handlers
-ErrorDocument 404 /MBG-MONITORING/errors/404.php
+ErrorDocument 404 /MBG-MONITORING/404.html
 ErrorDocument 500 /MBG-MONITORING/errors/500.php
 ErrorDocument 503 /MBG-MONITORING/errors/503.php
 
@@ -42,4 +42,4 @@ Options -Indexes
 # Fallback for missing pages / non-existent routes
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ errors/404.php [L]
+RewriteRule ^(.*)$ 404.html [L]

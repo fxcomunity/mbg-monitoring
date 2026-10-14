@@ -4,4 +4,8 @@
 /standar /standar-uji-akg.html 301
 /aduan /laporan-aduan.html 301
 /privasi /kebijakan-privasi.html 301
-/* /index.html 200
+/login.php /login.html 301
+/register.php /login.html?tab=register 301
+/login /login.html 200
+/register /login.html?tab=register 200
+/404 /404.html 200
