@@ -38,6 +38,19 @@
   <!-- Navbar Dashboard -->
   <header class="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-6 sm:px-12 py-3.5 flex items-center justify-between">
     <div class="flex items-center gap-3">
+      <div class="relative" id="mbgBellWrap">
+        <button id="mbgBellBtn" type="button" title="Notifikasi" aria-haspopup="true" aria-expanded="false" class="relative p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          <span id="mbgBellBadge" class="absolute -top-1 -right-1 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black border border-white">0</span>
+        </button>
+        <div id="mbgBellPanel" class="hidden absolute right-0 mt-2 w-80 max-w-[90vw] bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <span class="font-bold text-sm">Notifikasi Terkini</span>
+            <button id="mbgBellRead" type="button" class="text-[11px] font-semibold text-blue-700 hover:underline">Tandai dibaca</button>
+          </div>
+          <div id="mbgBellList" class="max-h-72 overflow-y-auto divide-y divide-slate-100"></div>
+        </div>
+      </div>
       <img src="../../assets/images/logo.webp" alt="Logo BGN" class="h-9 w-auto">
       <div>
         <div class="flex items-center gap-2">
@@ -577,6 +590,26 @@
 </script>
 <script src="../../assets/js/security.js"></script>
 <script src="../../assets/js/live_chat.js"></script>
-</body>
+<script>
+(function(){
+  var N=[["error", "Aduan baru untuk dapur Anda", "SMPN 3 Surabaya - pengiriman terlambat 20 menit", "10 menit lalu", ""], ["restaurant", "Menu besok belum diinput", "Lengkapi menu 16 Okt 2026 sebelum pukul 15.00", "2 jam lalu", ""], ["check_circle", "Logo SPPG disetujui", "Logo baru Anda sudah disetujui Satgas BGN", "Kemarin", ""]];
+  var wrap=document.getElementById('mbgBellWrap'),btn=document.getElementById('mbgBellBtn'),panel=document.getElementById('mbgBellPanel'),badge=document.getElementById('mbgBellBadge'),list=document.getElementById('mbgBellList');
+  if(!wrap)return;
+  var unread=N.length;
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function render(){
+    badge.textContent=unread;badge.style.display=unread>0?'':'none';
+    list.innerHTML=N.map(function(n,i){var dot=i<unread?'<span class="w-2 h-2 rounded-full bg-red-500 shrink-0 mt-1.5"></span>':'<span class="w-2 h-2 shrink-0"></span>';
+      var tag=n[4]?'a href="'+n[4]+'"':'div';var end=n[4]?'a':'div';
+      return '<'+tag+' class="flex gap-3 px-4 py-3 hover:bg-slate-50 text-left">'+dot+'<span class="material-symbols-outlined text-[20px] text-slate-500 shrink-0">'+n[0]+'</span><span class="flex-1 min-w-0"><span class="block text-xs font-bold">'+esc(n[1])+'</span><span class="block text-[11px] text-slate-500">'+esc(n[2])+'</span><span class="block text-[10px] text-slate-400 mt-0.5">'+esc(n[3])+'</span></span></'+end+'>';}).join('');
+  }
+  btn.addEventListener('click',function(e){e.stopPropagation();var open=panel.classList.toggle('hidden')===false;btn.setAttribute('aria-expanded',open)});
+  panel.addEventListener('click',function(e){e.stopPropagation();if(e.target.closest('a'))panel.classList.add('hidden')});
+  document.getElementById('mbgBellRead').addEventListener('click',function(){unread=0;render()});
+  document.addEventListener('click',function(){panel.classList.add('hidden')});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')panel.classList.add('hidden')});
+  render();
+})();
+</script></body>
 </html>
 
