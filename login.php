@@ -1,65 +1,104 @@
 <?php
 /**
- * login.php - Portal Autentikasi Terpadu Radar MBG
- * Multi-Role: Administrator BGN, Dapur SPPG, dan Pengguna / Wali Murid
+ * login.php — Portal Autentikasi & Registrasi Terpadu Radar MBG
+ * Badan Gizi Nasional Republik Indonesia
+ * Multi-Role: Administrator Satgas BGN, Mitra Dapur SPPG, dan Wali Murid / Sekolah
  */
 
 require_once __DIR__ . '/database/auth.php';
 require_once __DIR__ . '/database/security.php';
 
-// Jalankan inspeksi keamanan (Anti-XSS & Anti-SQLi)
+// Inspeksi Anti-Exploit
 Security::inspectRequest(true);
 
-$errorMsg = '';
+$errorMsg   = '';
 $successMsg = '';
+$activeTab  = isset($_GET['tab']) && $_GET['tab'] === 'register' ? 'register' : 'login';
 
-if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+// Aksi Logout
+if ((isset($_GET['action']) && $_GET['action'] === 'logout') || isset($_GET['logout'])) {
     Auth::logout();
-    $successMsg = 'Anda telah berhasil keluar dari sesi.';
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-
-    $res = Auth::login($username, $password);
-    if ($res['status']) {
-        $role = $res['user']['role'];
-        if ($role === 'admin') {
-            header('Location: dashboard/admin/');
-        } elseif ($role === 'sppg') {
-            header('Location: dashboard/sppg/');
-        } else {
-            header('Location: dashboard/user/');
-        }
-        exit;
-    } else {
-        $errorMsg = $res['message'];
-    }
+    $successMsg = 'Anda telah berhasil keluar dari sistem.';
 }
 
 // Redirect jika sudah login
 if (Auth::check()) {
     $role = $_SESSION['role'] ?? 'user';
-    if ($role === 'admin') header('Location: dashboard/admin/');
-    elseif ($role === 'sppg') header('Location: dashboard/sppg/');
-    else header('Location: dashboard/user/');
+    if ($role === 'admin') {
+        header('Location: dashboard/admin/');
+    } elseif ($role === 'sppg') {
+        header('Location: dashboard/sppg/');
+    } else {
+        header('Location: dashboard/user/');
+    }
     exit;
+}
+
+// Handle Form Submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $formType = $_POST['form_type'] ?? 'login';
+
+    if ($formType === 'login') {
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        $res = Auth::login($username, $password);
+        if ($res['status']) {
+            $role = $res['user']['role'];
+            if ($role === 'admin') {
+                header('Location: dashboard/admin/');
+            } elseif ($role === 'sppg') {
+                header('Location: dashboard/sppg/');
+            } else {
+                header('Location: dashboard/user/');
+            }
+            exit;
+        } else {
+            $errorMsg  = $res['message'];
+            $activeTab = 'login';
+        }
+    } elseif ($formType === 'register') {
+        $fullName = trim($_POST['full_name'] ?? '');
+        $email    = trim($_POST['email'] ?? '');
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $cfmPass  = $_POST['confirm_password'] ?? '';
+        $role     = trim($_POST['role'] ?? 'user');
+        $sppgName = trim($_POST['sppg_name'] ?? '');
+
+        if ($password !== $cfmPass) {
+            $errorMsg  = 'Konfirmasi kata sandi tidak cocok.';
+            $activeTab = 'register';
+        } else {
+            $regRes = Auth::register($fullName, $email, $username, $password, $role, $sppgName ?: null);
+            if ($regRes['status']) {
+                $successMsg = 'Registrasi berhasil! Silakan masuk menggunakan akun baru Anda.';
+                $activeTab  = 'login';
+            } else {
+                $errorMsg  = $regRes['message'];
+                $activeTab = 'register';
+            }
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="h-full">
 <head>
   <meta charset="utf-8"/>
-  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>Masuk Portal Terpadu - Radar MBG Badan Gizi Nasional</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Portal Autentikasi MBG — Badan Gizi Nasional RI</title>
   <link rel="icon" type="image/webp" href="assets/images/logo.webp"/>
+  <link rel="apple-touch-icon" href="assets/images/logo.webp"/>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preconnect" href="https://cdn.tailwindcss.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
-  <script src="https://cdn.tailwindcss.com" defer></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -68,6 +107,7 @@ if (Auth::check()) {
             primary: '#001026',
             'primary-container': '#0b2545',
             secondary: '#395f95',
+            'secondary-container': '#134074',
             'tertiary-fixed': '#6ffbbe',
             surface: '#f8f9ff',
             'surface-card': '#ffffff',
@@ -75,106 +115,375 @@ if (Auth::check()) {
             'status-error': '#ef4444'
           },
           fontFamily: {
-            sans: ['Plus Jakarta Sans', 'sans-serif']
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif']
           }
         }
       }
     }
   </script>
-<link rel="stylesheet" href="assets/css/style.css"/>
-<link rel="stylesheet" href="assets/css/security.css"/>
+  <style>
+    /* Background grid subtle effect */
+    .bg-grid-pattern {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(11, 37, 69, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(11, 37, 69, 0.05) 1px, transparent 1px);
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+  </style>
 </head>
-<body class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
+<body class="bg-surface bg-grid-pattern font-sans text-primary min-h-screen flex flex-col justify-between selection:bg-[#6ffbbe] selection:text-[#001026]">
 
-  <!-- Header Mini -->
-  <header class="w-full bg-white/90 backdrop-blur-md border-b border-slate-200 py-4 px-6 sm:px-12 flex items-center justify-between">
-    <a href="index.html" class="flex items-center gap-3">
-      <img src="assets/images/logo.webp" alt="Logo BGN" class="h-10 w-auto object-contain">
-      <div>
-        <div class="flex items-center gap-1.5">
-          <span class="font-bold text-lg text-primary tracking-tight">Radar MBG</span>
-          <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">Portal Masuk</span>
+  <!-- TOP HEADER -->
+  <header class="w-full bg-white/80 backdrop-blur-md border-b border-slate-200/80 py-3.5 px-4 sm:px-8 sticky top-0 z-40 transition-all">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-3 group">
+        <div class="relative">
+          <img src="assets/images/logo.webp" alt="Logo BGN" class="h-10 w-auto object-contain transition-transform group-hover:scale-105" onerror="this.src='logo.webp'">
         </div>
-        <p class="text-xs text-slate-500 font-medium">Badan Gizi Nasional Republik Indonesia</p>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold text-base sm:text-lg text-primary tracking-tight">Radar MBG</span>
+            <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold tracking-wide border border-emerald-200">PORTAL RESMI</span>
+          </div>
+          <p class="text-[11px] text-slate-500 font-medium hidden sm:block">Badan Gizi Nasional Republik Indonesia</p>
+        </div>
+      </a>
+
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-primary px-3 py-1.5 rounded-xl hover:bg-slate-100 transition-all">
+          <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+          <span>Kembali ke Beranda</span>
+        </a>
       </div>
-    </a>
-    <a href="index.html" class="text-xs font-semibold text-secondary hover:text-primary flex items-center gap-1 transition-colors">
-      <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-      <span>Kembali ke Beranda</span>
-    </a>
+    </div>
   </header>
 
-  <!-- Login Container -->
-  <main class="flex-grow flex items-center justify-center p-4 sm:p-6 my-6">
-    <div class="w-full max-w-md bg-surface-card rounded-3xl shadow-xl border border-slate-200/80 p-8 relative overflow-hidden">
-      <!-- Glow background accent -->
-      <div class="absolute -top-20 -right-20 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+  <!-- MAIN CONTAINER -->
+  <main class="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8 relative">
+    
+    <!-- Ambient Blur Orbs -->
+    <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-400/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <div class="w-full max-w-[480px]">
       
-      <div class="text-center mb-8">
-        <div class="w-14 h-14 rounded-2xl bg-primary text-tertiary-fixed flex items-center justify-center mx-auto mb-3 shadow-md shadow-primary/20">
-          <span class="material-symbols-outlined text-3xl">lock_open</span>
+      <!-- AUTH CARD -->
+      <div class="glass-card rounded-3xl shadow-2xl shadow-slate-900/10 border border-slate-200/90 p-6 sm:p-8 relative overflow-hidden">
+        
+        <!-- Top Accent Bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#001026] via-[#134074] to-[#6ffbbe]"></div>
+
+        <!-- HEADER TITLE -->
+        <div class="text-center mb-6 pt-1">
+          <div class="inline-flex p-3 rounded-2xl bg-gradient-to-br from-[#001026] to-[#0b2545] text-[#6ffbbe] shadow-lg shadow-slate-900/20 mb-3">
+            <span class="material-symbols-outlined text-2xl">shield_person</span>
+          </div>
+          <h1 class="text-xl sm:text-2xl font-extrabold text-primary tracking-tight">Portal Akses Radar MBG</h1>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">Satu pintu pemantauan Makan Bergizi Gratis Nasional</p>
         </div>
-        <h1 class="text-2xl font-bold text-primary tracking-tight">Login Portal Terpadu</h1>
-        <p class="text-sm text-slate-500 mt-1">Akses Dashboard User, SPPG, dan Satgas Admin</p>
+
+        <!-- NOTIFICATION ALERTS -->
+        <?php if (!empty($errorMsg)): ?>
+          <div class="mb-5 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5 shadow-sm animate-shake">
+            <span class="material-symbols-outlined text-lg text-red-600 shrink-0 mt-0.5">error</span>
+            <div class="flex-1">
+              <span class="font-bold">Gagal: </span>
+              <span><?= htmlspecialchars($errorMsg, ENT_QUOTES, 'UTF-8') ?></span>
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <?php if (!empty($successMsg)): ?>
+          <div class="mb-5 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2.5 shadow-sm">
+            <span class="material-symbols-outlined text-lg text-emerald-600 shrink-0 mt-0.5">check_circle</span>
+            <div class="flex-1">
+              <span class="font-bold">Berhasil: </span>
+              <span><?= htmlspecialchars($successMsg, ENT_QUOTES, 'UTF-8') ?></span>
+            </div>
+          </div>
+        <?php endif; ?>
+
+        <!-- TABS SWITCHER: MASUK vs DAFTAR -->
+        <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-2xl mb-6 border border-slate-200/80">
+          <button type="button" id="tabBtnLogin" onclick="switchAuthTab('login')"
+                  class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 <?= $activeTab === 'login' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-primary' ?>">
+            <span class="material-symbols-outlined text-[18px]">login</span>
+            <span>Masuk Akun</span>
+          </button>
+          <button type="button" id="tabBtnRegister" onclick="switchAuthTab('register')"
+                  class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 <?= $activeTab === 'register' ? 'bg-white text-primary shadow-sm' : 'text-slate-600 hover:text-primary' ?>">
+            <span class="material-symbols-outlined text-[18px]">how_to_reg</span>
+            <span>Daftar Akun</span>
+          </button>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAB 1: FORM LOGIN -->
+        <!-- ======================================================== -->
+        <div id="formSectionLogin" class="<?= $activeTab === 'login' ? '' : 'hidden' ?>">
+          <form action="login.php" method="POST" class="space-y-4">
+            <input type="hidden" name="form_type" value="login">
+
+            <!-- Quick Demo Credentials Helper -->
+            <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">⚡ Akses Cepat Pengujian (1-Klik Isi):</span>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button type="button" onclick="fillDemo('admin')" class="py-1.5 px-2 rounded-xl bg-white hover:bg-blue-50 hover:text-blue-700 border border-slate-200 text-[10px] font-bold text-slate-700 transition-all text-center">
+                  🏛️ Admin BGN
+                </button>
+                <button type="button" onclick="fillDemo('sppg')" class="py-1.5 px-2 rounded-xl bg-white hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-[10px] font-bold text-slate-700 transition-all text-center">
+                  🍲 Dapur SPPG
+                </button>
+                <button type="button" onclick="fillDemo('user')" class="py-1.5 px-2 rounded-xl bg-white hover:bg-purple-50 hover:text-purple-700 border border-slate-200 text-[10px] font-bold text-slate-700 transition-all text-center">
+                  👨‍👩‍👧 Wali Murid
+                </button>
+              </div>
+            </div>
+
+            <!-- Username or Email -->
+            <div>
+              <label for="loginUsername" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Username atau Alamat Email
+              </label>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <span class="material-symbols-outlined text-[20px]">person</span>
+                </div>
+                <input type="text" id="loginUsername" name="username" required autocomplete="username"
+                       placeholder="Contoh: admin_bgn atau email@bgn.go.id"
+                       class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] focus:border-transparent transition-all shadow-sm">
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="loginPassword" class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Kata Sandi
+                </label>
+                <a href="laporan-aduan.html" class="text-[11px] font-semibold text-secondary hover:underline">
+                  Butuh Bantuan?
+                </a>
+              </div>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <span class="material-symbols-outlined text-[20px]">lock</span>
+                </div>
+                <input type="password" id="loginPassword" name="password" required autocomplete="current-password"
+                       placeholder="Masukkan kata sandi akun"
+                       class="w-full pl-10 pr-11 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] focus:border-transparent transition-all shadow-sm">
+                <button type="button" onclick="togglePasswordVisibility('loginPassword', 'eyeIconLogin')" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600">
+                  <span id="eyeIconLogin" class="material-symbols-outlined text-[20px]">visibility</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#001026] via-[#0b2545] to-[#134074] hover:from-[#0b2545] hover:to-[#001026] text-white font-bold text-xs sm:text-sm shadow-md shadow-slate-900/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+              <span>Masuk ke Dashboard</span>
+              <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- TAB 2: FORM REGISTER -->
+        <!-- ======================================================== -->
+        <div id="formSectionRegister" class="<?= $activeTab === 'register' ? '' : 'hidden' ?>">
+          <form action="login.php" method="POST" class="space-y-3.5">
+            <input type="hidden" name="form_type" value="register">
+
+            <!-- Role Selector -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Pilih Jenis Akun
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="cursor-pointer border border-slate-200 rounded-2xl p-2.5 flex items-center gap-2 hover:bg-slate-50 has-[:checked]:border-[#001026] has-[:checked]:bg-blue-50/50 transition-all">
+                  <input type="radio" name="role" value="user" checked onchange="toggleSppgField(false)" class="text-[#001026] focus:ring-0">
+                  <div>
+                    <span class="block text-xs font-bold text-slate-900">Wali Murid / Umum</span>
+                    <span class="text-[10px] text-slate-500">Masyarakat & Komite</span>
+                  </div>
+                </label>
+                <label class="cursor-pointer border border-slate-200 rounded-2xl p-2.5 flex items-center gap-2 hover:bg-slate-50 has-[:checked]:border-[#059669] has-[:checked]:bg-emerald-50/50 transition-all">
+                  <input type="radio" name="role" value="sppg" onchange="toggleSppgField(true)" class="text-emerald-600 focus:ring-0">
+                  <div>
+                    <span class="block text-xs font-bold text-slate-900">Mitra SPPG</span>
+                    <span class="text-[10px] text-slate-500">Dapur Pangan Lokal</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Full Name -->
+            <div>
+              <label for="regFullName" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Nama Lengkap / Penanggung Jawab
+              </label>
+              <input type="text" id="regFullName" name="full_name" required autocomplete="name"
+                     placeholder="Contoh: Budi Santoso"
+                     class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] transition-all shadow-sm">
+            </div>
+
+            <!-- SPPG Kitchen Name (Conditional) -->
+            <div id="fieldSppgName" class="hidden">
+              <label for="regSppgName" class="block text-xs font-bold text-emerald-800 uppercase tracking-wider mb-1">
+                Nama Dapur SPPG
+              </label>
+              <input type="text" id="regSppgName" name="sppg_name"
+                     placeholder="Contoh: SPPG Bangli Landih Bali"
+                     class="w-full px-3.5 py-2.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all shadow-sm">
+            </div>
+
+            <!-- Email & Username in Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="regEmail" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Alamat Email
+                </label>
+                <input type="email" id="regEmail" name="email" required autocomplete="email"
+                       placeholder="email@anda.com"
+                       class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] transition-all shadow-sm">
+              </div>
+              <div>
+                <label for="regUsername" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Username
+                </label>
+                <input type="text" id="regUsername" name="username" required autocomplete="username" minlength="3"
+                       placeholder="huruf/angka"
+                       class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] transition-all shadow-sm">
+              </div>
+            </div>
+
+            <!-- Password & Confirm Password -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label for="regPassword" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Kata Sandi
+                </label>
+                <div class="relative">
+                  <input type="password" id="regPassword" name="password" required minlength="6"
+                         placeholder="Min 6 karakter"
+                         class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] transition-all shadow-sm">
+                </div>
+              </div>
+              <div>
+                <label for="regCfmPassword" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Ulangi Sandi
+                </label>
+                <div class="relative">
+                  <input type="password" id="regCfmPassword" name="confirm_password" required minlength="6"
+                         placeholder="Ketik ulang"
+                         class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] transition-all shadow-sm">
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Register -->
+            <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-700/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2">
+              <span class="material-symbols-outlined text-[18px]">verified_user</span>
+              <span>Daftarkan Akun Sekarang</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- FOOTER INFO -->
+        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+          <span class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px] text-emerald-600">lock</span>
+            Enkripsi TLS & Anti-Tamper
+          </span>
+          <a href="kebijakan-privasi.html" class="hover:underline hover:text-slate-600">Kebijakan Privasi</a>
+        </div>
+
       </div>
-
-      <?php if (!empty($errorMsg)): ?>
-        <div class="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-          <span class="material-symbols-outlined text-lg text-red-600">error</span>
-          <span><?= htmlspecialchars($errorMsg, ENT_QUOTES, 'UTF-8') ?></span>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($successMsg)): ?>
-        <div class="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
-          <span class="material-symbols-outlined text-lg text-emerald-600">check_circle</span>
-          <span><?= htmlspecialchars($successMsg, ENT_QUOTES, 'UTF-8') ?></span>
-        </div>
-      <?php endif; ?>
-
-      <form action="login.php" method="POST" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Username / Email Resmi</label>
-          <div class="relative">
-            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">person</span>
-            <input type="text" name="username" required autocomplete="username"
-                   placeholder="Masukkan username atau email"
-                   class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Kata Sandi (Password)</label>
-          <div class="relative">
-            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">key</span>
-            <input type="password" name="password" required autocomplete="current-password"
-                   placeholder="••••••••••••"
-                   class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
-          </div>
-        </div>
-
-        <button type="submit" 
-                class="w-full py-3 px-4 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 mt-2">
-          <span>Masuk ke Dashboard</span>
-          <span class="material-symbols-outlined text-sm">arrow_forward</span>
-        </button>
-      </form>
-
 
     </div>
   </main>
 
-  <!-- Footer Mini -->
-  <footer class="py-4 text-center text-xs text-slate-400 border-t border-slate-200">
-    <span>Redesain | © 2026 Badan Gizi Nasional Republik Indonesia. Dilengkapi BGN Shield Anti-Exploit.</span>
+  <!-- MINI FOOTER -->
+  <footer class="w-full py-4 text-center text-xs text-slate-400">
+    <p>© 2026 Badan Gizi Nasional (BGN) Republik Indonesia. Seluruh hak cipta dilindungi.</p>
   </footer>
 
+  <!-- SCRIPT INTERAKSI -->
   <script>
-    function fillCreds(u, p) {
-      document.querySelector('input[name="username"]').value = u;
-      document.querySelector('input[name="password"]').value = p;
+    // Tab switcher
+    function switchAuthTab(tab) {
+      const loginSection = document.getElementById('formSectionLogin');
+      const regSection = document.getElementById('formSectionRegister');
+      const tabLogin = document.getElementById('tabBtnLogin');
+      const tabReg = document.getElementById('tabBtnRegister');
+
+      if (tab === 'register') {
+        loginSection.classList.add('hidden');
+        regSection.classList.remove('hidden');
+
+        tabReg.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 bg-white text-primary shadow-sm';
+        tabLogin.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-primary';
+
+        // Update URL hash/query without reload
+        window.history.replaceState(null, '', '?tab=register');
+      } else {
+        regSection.classList.add('hidden');
+        loginSection.classList.remove('hidden');
+
+        tabLogin.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 bg-white text-primary shadow-sm';
+        tabReg.className = 'py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-primary';
+
+        window.history.replaceState(null, '', '?tab=login');
+      }
+    }
+
+    // Toggle Password Visibility
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = 'visibility_off';
+      } else {
+        input.type = 'password';
+        icon.textContent = 'visibility';
+      }
+    }
+
+    // Toggle SPPG Name field on Register
+    function toggleSppgField(show) {
+      const field = document.getElementById('fieldSppgName');
+      const input = document.getElementById('regSppgName');
+      if (show) {
+        field.classList.remove('hidden');
+        input.required = true;
+      } else {
+        field.classList.add('hidden');
+        input.required = false;
+      }
+    }
+
+    // Demo Auto-Filler for Instant Testing
+    function fillDemo(role) {
+      switchAuthTab('login');
+      const u = document.getElementById('loginUsername');
+      const p = document.getElementById('loginPassword');
+      if (role === 'admin') {
+        u.value = 'admin_bgn';
+        p.value = 'admin1234';
+      } else if (role === 'sppg') {
+        u.value = 'sppg_kebayoran';
+        p.value = 'sppg1234';
+      } else {
+        u.value = 'budi_wali';
+        p.value = 'user1234';
+      }
+      u.focus();
     }
   </script>
-<script src="assets/js/security.js"></script>
 </body>
 </html>

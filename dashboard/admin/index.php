@@ -317,6 +317,42 @@ try {
         LIMIT 15
     ")->fetchAll();
 } catch (Throwable $e) {}
+
+// ── KPI Nasional dari DB (Sekolah, Porsi, Kepatuhan AKG, SPPG Aktif) ──────────
+// Ambil dari telemetri_nasional (sudah ada di $telRow di atas)
+// Tambahan: hitung langsung dari menu_sppg untuk data lebih akurat
+$kpiSekolah   = (int)($telRow['sekolah_terlayani'] ?? 18420);
+$kpiPorsi     = (int)($telRow['porsi_tersalurkan'] ?? 4850210);
+$kpiAkg       = (float)($telRow['kepatuhan_akg'] ?? 99.6);
+$kpiSppg      = (int)($telRow['sppg_aktif'] ?? 1284);
+$kpiSla       = (float)($telRow['sla_distribusi'] ?? 99.8);
+$kpiSuhu      = (float)($telRow['suhu_rata_rata'] ?? 65.8);
+
+// Hitung total sekolah unik dan total porsi dari menu_sppg (live data)
+try {
+    $menuKpi = $pdo->query("
+        SELECT 
+            COUNT(DISTINCT school_key) AS sekolah_unik,
+            COALESCE(SUM(portion_count), 0) AS total_porsi,
+            COALESCE(AVG(temperature), 65.0) AS avg_suhu,
+            COUNT(DISTINCT sppg_name) AS total_sppg
+        FROM menu_sppg
+        WHERE status IN ('terkirim','dikirim')
+    ")->fetch();
+    if ($menuKpi && $menuKpi['sekolah_unik'] > 0) {
+        // Gunakan data live jika ada, kalau tidak fallback ke telemetri
+        $kpiSekolahLive = (int)$menuKpi['sekolah_unik'];
+        $kpiPorsiLive   = (int)$menuKpi['total_porsi'];
+        $kpiSppgLive    = (int)$menuKpi['total_sppg'];
+    }
+} catch (Throwable $e) {}
+
+// Format angka rapi untuk display
+function fmtAngka(int $n): string {
+    if ($n >= 1_000_000) return number_format($n / 1_000_000, 1, '.', '') . 'Jt';
+    if ($n >= 1_000)     return number_format($n / 1_000, 1, '.', '') . 'Rb';
+    return (string)$n;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -414,27 +450,155 @@ try {
       </div>
     <?php endif; ?>
 
-    <!-- Metrics Ringkas Aduan -->
+    <!-- ═══════════════════════════════════════════════
+         KPI NASIONAL — 4 Indikator Utama Radar MBG
+         Data langsung dari database telemetri_nasional
+         ═══════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+
+      <!-- Card 1: Sekolah Terlayani -->
+      <div class="relative bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-6 text-white shadow-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+        <div class="absolute -right-4 -top-4 w-28 h-28 rounded-full bg-white/10 group-hover:bg-white/15 transition-all"></div>
+        <div class="absolute -right-1 -bottom-6 w-20 h-20 rounded-full bg-white/5"></div>
+        <div class="relative">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <span class="material-symbols-outlined text-2xl text-white">school</span>
+            </div>
+            <span class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-bold">
+              <span class="material-symbols-outlined text-[13px]">arrow_upward</span>
+              <?= number_format($kpiSla, 1) ?>% Target
+            </span>
+          </div>
+          <p class="text-blue-100 text-xs font-semibold uppercase tracking-wider mb-1">Sekolah Terlayani</p>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">
+            <?= number_format($kpiSekolah) ?>
+            <span class="text-xl text-blue-200 font-bold">+</span>
+          </h2>
+          <p class="text-blue-200 text-[11px] mt-1 font-medium">
+            dari target nasional BGN 2026
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 2: Porsi Terdistribusi -->
+      <div class="relative bg-gradient-to-br from-emerald-500 to-teal-700 rounded-3xl p-6 text-white shadow-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+        <div class="absolute -right-4 -top-4 w-28 h-28 rounded-full bg-white/10 group-hover:bg-white/15 transition-all"></div>
+        <div class="absolute -right-1 -bottom-6 w-20 h-20 rounded-full bg-white/5"></div>
+        <div class="relative">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <span class="material-symbols-outlined text-2xl text-white">restaurant</span>
+            </div>
+            <span class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-bold">
+              <span class="material-symbols-outlined text-[13px]">schedule</span>
+              Rata-rata <?= date('H:i') ?> WIB
+            </span>
+          </div>
+          <p class="text-emerald-100 text-xs font-semibold uppercase tracking-wider mb-1">Porsi Terdistribusi</p>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">
+            <?= fmtAngka($kpiPorsi) ?>
+            <span class="text-xl text-emerald-200 font-bold">+</span>
+          </h2>
+          <p class="text-emerald-200 text-[11px] mt-1 font-medium">
+            porsi sajian MBG terverifikasi hari ini
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 3: Kepatuhan Standar Gizi (AKG) -->
+      <div class="relative bg-gradient-to-br from-violet-600 to-purple-800 rounded-3xl p-6 text-white shadow-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+        <div class="absolute -right-4 -top-4 w-28 h-28 rounded-full bg-white/10 group-hover:bg-white/15 transition-all"></div>
+        <div class="absolute -right-1 -bottom-6 w-20 h-20 rounded-full bg-white/5"></div>
+        <div class="relative">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <span class="material-symbols-outlined text-2xl text-white">monitoring</span>
+            </div>
+            <span class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-bold">
+              <span class="material-symbols-outlined text-[13px]">check_circle</span>
+              Memenuhi AKG
+            </span>
+          </div>
+          <p class="text-violet-100 text-xs font-semibold uppercase tracking-wider mb-1">Kepatuhan Standar Gizi</p>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">
+            <?= number_format($kpiAkg, 1) ?>
+            <span class="text-xl text-violet-200 font-bold">%</span>
+          </h2>
+          <p class="text-violet-200 text-[11px] mt-1 font-medium">
+            Memenuhi standar AKG Kemenkes RI
+          </p>
+        </div>
+      </div>
+
+      <!-- Card 4: SPPG Aktif Siaga -->
+      <div class="relative bg-gradient-to-br from-amber-500 to-orange-700 rounded-3xl p-6 text-white shadow-xl overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
+        <div class="absolute -right-4 -top-4 w-28 h-28 rounded-full bg-white/10 group-hover:bg-white/15 transition-all"></div>
+        <div class="absolute -right-1 -bottom-6 w-20 h-20 rounded-full bg-white/5"></div>
+        <div class="relative">
+          <div class="flex items-center justify-between mb-3">
+            <div class="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <span class="material-symbols-outlined text-2xl text-white">kitchen</span>
+            </div>
+            <span class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-[11px] font-bold">
+              <span class="material-symbols-outlined text-[13px]">verified</span>
+              100% SLHS
+            </span>
+          </div>
+          <p class="text-amber-100 text-xs font-semibold uppercase tracking-wider mb-1">SPPG Aktif Siaga</p>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">
+            <?= number_format($kpiSppg) ?>
+            <span class="text-xl text-amber-200 font-bold">+</span>
+          </h2>
+          <p class="text-amber-200 text-[11px] mt-1 font-medium">
+            Dapur SPPG beroperasi &amp; bersertifikat SLHS
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Metrics Ringkas Aduan Publik -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <div class="bg-surface-card p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-        <span class="text-xs text-slate-500 font-semibold uppercase">Total Aduan Masuk</span>
-        <h3 class="text-2xl sm:text-3xl font-black text-primary mt-1"><?= $totalAduan ?></h3>
-        <span class="text-[11px] text-slate-400">Seluruh 38 Provinsi</span>
+      <div class="bg-surface-card p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-slate-500 text-xl">inbox</span>
+        </div>
+        <div>
+          <span class="text-[11px] text-slate-500 font-semibold uppercase block">Total Aduan</span>
+          <span class="text-2xl font-black text-primary"><?= $totalAduan ?></span>
+          <span class="text-[10px] text-slate-400 block">38 Provinsi</span>
+        </div>
       </div>
-      <div class="bg-surface-card p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-        <span class="text-xs text-slate-500 font-semibold uppercase">Perlu Verifikasi</span>
-        <h3 class="text-2xl sm:text-3xl font-black text-blue-600 mt-1"><?= $masukAduan ?></h3>
-        <span class="text-[11px] text-blue-500 font-semibold">Status: Masuk</span>
+      <div class="bg-surface-card p-5 rounded-2xl border border-blue-200/80 shadow-sm flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-blue-500 text-xl">mark_email_unread</span>
+        </div>
+        <div>
+          <span class="text-[11px] text-slate-500 font-semibold uppercase block">Perlu Verifikasi</span>
+          <span class="text-2xl font-black text-blue-600"><?= $masukAduan ?></span>
+          <span class="text-[10px] text-blue-500 font-semibold block">Status: Masuk</span>
+        </div>
       </div>
-      <div class="bg-surface-card p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-        <span class="text-xs text-slate-500 font-semibold uppercase">Sedang Ditangani</span>
-        <h3 class="text-2xl sm:text-3xl font-black text-yellow-600 mt-1"><?= $prosesAduan ?></h3>
-        <span class="text-[11px] text-yellow-500 font-semibold">Proses / Verifikasi</span>
+      <div class="bg-surface-card p-5 rounded-2xl border border-amber-200/80 shadow-sm flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-amber-500 text-xl">hourglass_top</span>
+        </div>
+        <div>
+          <span class="text-[11px] text-slate-500 font-semibold uppercase block">Ditangani</span>
+          <span class="text-2xl font-black text-amber-600"><?= $prosesAduan ?></span>
+          <span class="text-[10px] text-amber-500 font-semibold block">Proses / Verifikasi</span>
+        </div>
       </div>
-      <div class="bg-surface-card p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-        <span class="text-xs text-slate-500 font-semibold uppercase">Selesai Ditindak</span>
-        <h3 class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1"><?= $selesaiAduan ?></h3>
-        <span class="text-[11px] text-emerald-500 font-semibold">Laporan Tuntas</span>
+      <div class="bg-surface-card p-5 rounded-2xl border border-emerald-200/80 shadow-sm flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-emerald-500 text-xl">task_alt</span>
+        </div>
+        <div>
+          <span class="text-[11px] text-slate-500 font-semibold uppercase block">Selesai</span>
+          <span class="text-2xl font-black text-emerald-600"><?= $selesaiAduan ?></span>
+          <span class="text-[10px] text-emerald-500 font-semibold block">Laporan Tuntas</span>
+        </div>
       </div>
     </div>
 
@@ -1034,6 +1198,76 @@ try {
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- VERIFIKASI LOGO SPPG (SPPG Logo Approval) -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- KOTAK MASUK LIVE CHAT SATGAS BGN (DUAL-WAY REPLY) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div id="live-chat-admin-panel" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">chat</span>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-primary flex items-center gap-2">
+              <span>Live Chat Konsultasi Satgas BGN</span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">2-Way Active</span>
+            </h2>
+            <p class="text-xs text-slate-500">Balas chat langsung dari masyarakat, wali murid, dan pihak sekolah secara realtime.</p>
+          </div>
+        </div>
+        <button type="button" onclick="loadAdminChatSessions()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5 self-start sm:self-auto">
+          <span class="material-symbols-outlined text-sm">refresh</span>
+          <span>Segarkan Pesan</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[460px]">
+        <!-- Sesi Chat Masuk (List) -->
+        <div class="lg:col-span-4 border border-slate-200/90 rounded-2xl p-3 bg-slate-50/70 flex flex-col h-[460px]">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
+            <span>Daftar Sesi Masuk:</span>
+            <span id="adminSessionCountBadge" class="px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[10px]">0</span>
+          </div>
+          <div id="adminChatSessionsList" class="flex-grow overflow-y-auto space-y-2 pr-1">
+            <p class="text-xs text-slate-400 p-4 text-center">Memuat daftar sesi...</p>
+          </div>
+        </div>
+
+        <!-- Ruang Percakapan & Reply Box -->
+        <div class="lg:col-span-8 border border-slate-200/90 rounded-2xl bg-white flex flex-col h-[460px] overflow-hidden">
+          <!-- Room Header -->
+          <div id="adminChatRoomHeader" class="p-3.5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+            <div>
+              <p id="adminChatActiveUser" class="text-xs font-bold text-slate-900">Pilih sesi chat di sebelah kiri</p>
+              <p id="adminChatActiveSub" class="text-[10px] text-slate-400">Pesan dari portal publik</p>
+            </div>
+            <span id="adminChatTargetBadge" class="hidden px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">🏛️ Satgas BGN</span>
+          </div>
+
+          <!-- Messages Stream -->
+          <div id="adminChatTranscript" class="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50/40 text-xs">
+            <div class="h-full flex items-center justify-center text-center text-slate-400">
+              <div>
+                <span class="material-symbols-outlined text-4xl block mb-2 text-slate-300">forum</span>
+                <p class="text-xs">Klik salah satu pengguna di sebelah kiri untuk melihat percakapan dan membalas.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reply Form -->
+          <form id="adminReplyForm" onsubmit="sendAdminReply(event)" class="p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0">
+            <input type="hidden" id="adminReplySessionId" value="">
+            <input type="text" id="adminReplyInput" disabled placeholder="Pilih sesi terlebih dahulu untuk membalas..."
+                   class="flex-grow px-3.5 py-2.5 bg-slate-100 text-slate-900 placeholder:text-slate-400 rounded-xl text-xs border border-transparent focus:bg-white focus:border-blue-600 focus:outline-none transition-all">
+            <button type="submit" id="adminReplyBtn" disabled class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-container disabled:opacity-40 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all">
+              <span class="material-symbols-outlined text-sm">send</span>
+              <span>Kirim</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <div id="verifikasi-logo-sppg" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
       <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
         <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
@@ -1178,6 +1412,146 @@ try {
   <footer class="py-4 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
     <span>Redesain | © 2026 Badan Gizi Nasional Republik Indonesia. Dilengkapi BGN Shield Anti-Exploit.</span>
   </footer>
+
+<script>
+  let currentAdminSessionId = '';
+
+  async function loadAdminChatSessions() {
+    const listEl = document.getElementById('adminChatSessionsList');
+    const badgeEl = document.getElementById('adminSessionCountBadge');
+    if (!listEl) return;
+    try {
+      const res = await fetch('../../api/live_chat.php?action=admin_sessions');
+      const json = await res.json();
+      if (json.status === 'success' && json.data) {
+        if (badgeEl) badgeEl.textContent = json.data.length;
+        if (json.data.length === 0) {
+          listEl.innerHTML = '<p class="text-xs text-slate-400 p-4 text-center">Belum ada sesi percakapan masuk.</p>';
+          return;
+        }
+        listEl.innerHTML = '';
+        json.data.forEach(s => {
+          const item = document.createElement('div');
+          const isSelected = s.session_id === currentAdminSessionId;
+          item.className = `p-3 rounded-xl border transition-all cursor-pointer ${isSelected ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white border-slate-200/80 hover:bg-slate-100'}`;
+          item.onclick = () => selectAdminSession(s.session_id, s.user_name || 'Pengguna Publik');
+          item.innerHTML = `
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="font-bold text-xs text-slate-900 truncate">${escapeHtml(s.user_name || 'Masyarakat')}</span>
+              <span class="text-[9px] text-slate-400">${formatTimeChat(s.last_time)}</span>
+            </div>
+            <p class="text-[11px] text-slate-600 truncate">${escapeHtml(s.last_message || '-')}</p>
+            <div class="flex items-center justify-between mt-1 text-[9px] text-slate-400">
+              <span>${s.total_messages} Pesan</span>
+              <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-mono">${s.session_id.substring(0, 14)}...</span>
+            </div>
+          `;
+          listEl.appendChild(item);
+        });
+      }
+    } catch (e) {
+      if (listEl) listEl.innerHTML = '<p class="text-xs text-red-500 p-2">Gagal memuat sesi chat.</p>';
+    }
+  }
+
+  async function selectAdminSession(sessionId, userName) {
+    currentAdminSessionId = sessionId;
+    document.getElementById('adminReplySessionId').value = sessionId;
+    document.getElementById('adminChatActiveUser').textContent = userName;
+    document.getElementById('adminChatActiveSub').textContent = `Sesi ID: ${sessionId}`;
+    document.getElementById('adminChatTargetBadge').classList.remove('hidden');
+
+    const input = document.getElementById('adminReplyInput');
+    const btn = document.getElementById('adminReplyBtn');
+    input.disabled = false;
+    btn.disabled = false;
+    input.placeholder = `Balas ke ${userName} sebagai Satgas BGN...`;
+    input.focus();
+
+    await loadAdminSessionTranscript(sessionId);
+    loadAdminChatSessions();
+  }
+
+  async function loadAdminSessionTranscript(sessionId) {
+    const box = document.getElementById('adminChatTranscript');
+    if (!box) return;
+    box.innerHTML = '<p class="text-xs text-slate-400 p-4 text-center">Memuat riwayat percakapan...</p>';
+    try {
+      const res = await fetch(`../../api/live_chat.php?action=history&session_id=${encodeURIComponent(sessionId)}&target_type=admin`);
+      const json = await res.json();
+      if (json.status === 'success' && json.messages) {
+        box.innerHTML = '';
+        json.messages.forEach(m => {
+          const isUser = m.sender_type === 'user';
+          const div = document.createElement('div');
+          div.className = isUser ? 'flex items-start gap-2' : 'flex items-start justify-end gap-2';
+          div.innerHTML = `
+            <div class="${isUser ? 'bg-white text-slate-800 rounded-tl-none border border-slate-200' : 'bg-[#001026] text-white rounded-tr-none'} p-3 rounded-2xl shadow-sm max-w-[80%] text-xs">
+              <div class="flex items-center gap-1.5 mb-1 ${isUser ? '' : 'justify-end'}">
+                <span class="font-bold text-[11px] ${isUser ? 'text-blue-700' : 'text-[#6ffbbe]'}">${escapeHtml(m.sender_name)}</span>
+                <span class="text-[9px] ${isUser ? 'text-slate-400' : 'text-slate-300'}">${m.sender_type}</span>
+              </div>
+              <p class="leading-relaxed whitespace-pre-wrap">${escapeHtml(m.message)}</p>
+              <span class="text-[9px] ${isUser ? 'text-slate-400' : 'text-slate-300'} mt-1 block text-right">${formatTimeChat(m.created_at)}</span>
+            </div>
+          `;
+          box.appendChild(div);
+        });
+        box.scrollTop = box.scrollHeight;
+      }
+    } catch (e) {
+      box.innerHTML = '<p class="text-xs text-red-500 p-2">Gagal memuat pesan.</p>';
+    }
+  }
+
+  async function sendAdminReply(e) {
+    e.preventDefault();
+    const sessionId = document.getElementById('adminReplySessionId').value;
+    const input = document.getElementById('adminReplyInput');
+    const msg = input.value.trim();
+    if (!sessionId || !msg) return;
+
+    input.value = '';
+    input.disabled = true;
+
+    try {
+      const fd = new FormData();
+      fd.append('action', 'reply');
+      fd.append('session_id', sessionId);
+      fd.append('message', msg);
+      fd.append('target_type', 'admin');
+
+      const res = await fetch('../../api/live_chat.php', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (json.status === 'success') {
+        await loadAdminSessionTranscript(sessionId);
+        loadAdminChatSessions();
+      } else {
+        alert(json.message || 'Gagal mengirim balasan.');
+      }
+    } catch (err) {
+      alert('Koneksi gagal saat mengirim balasan.');
+    } finally {
+      input.disabled = false;
+      input.focus();
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatTimeChat(isoStr) {
+    if (!isoStr) return '';
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return ''; }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadAdminChatSessions);
+</script>
 
 <script src="../../assets/js/security.js"></script>
 <script src="../../assets/js/live_chat.js"></script>

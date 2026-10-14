@@ -72,6 +72,56 @@ class Auth {
     }
 
     /**
+     * Registrasi akun baru (User Wali Murid, Sekolah, atau Mitra SPPG)
+     */
+    public static function register(string $fullName, string $email, string $username, string $password, string $role = 'user', ?string $sppgName = null): array {
+        $fullName = trim($fullName);
+        $email    = strtolower(trim($email));
+        $username = strtolower(trim($username));
+        $role     = in_array($role, ['user', 'sppg'], true) ? $role : 'user';
+
+        if (empty($fullName) || empty($email) || empty($username) || empty($password)) {
+            return ['status' => false, 'message' => 'Seluruh kolom pendaftaran wajib diisi lengkap.'];
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return ['status' => false, 'message' => 'Format alamat email tidak valid.'];
+        }
+
+        if (strlen($username) < 3 || !preg_match('/^[a-zA-Z0-9_.-]+$/', $username)) {
+            return ['status' => false, 'message' => 'Username minimal 3 karakter (hanya huruf, angka, titik, strip).'];
+        }
+
+        if (strlen($password) < 6) {
+            return ['status' => false, 'message' => 'Kata sandi minimal 6 karakter.'];
+        }
+
+        try {
+            $pdo = getDB();
+            $check = $pdo->prepare('SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1');
+            $check->execute([$username, $email]);
+            if ($check->fetch()) {
+                return ['status' => false, 'message' => 'Username atau email tersebut telah terdaftar sebelumnya.'];
+            }
+
+            $hash = password_hash($password, PASSWORD_BCRYPT);
+            $stmt = $pdo->prepare('
+                INSERT INTO users (username, email, password_hash, full_name, role, sppg_name, is_active, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, TRUE, NOW())
+            ');
+            $stmt->execute([$username, $email, $hash, $fullName, $role, $sppgName]);
+
+            return [
+                'status'  => true,
+                'message' => 'Registrasi akun berhasil! Silakan masuk dengan akun baru Anda.'
+            ];
+        } catch (Throwable $e) {
+            error_log('[Auth Register Error] ' . $e->getMessage());
+            return ['status' => false, 'message' => 'Gagal mendaftarkan akun: ' . $e->getMessage()];
+        }
+    }
+
+    /**
      * Cek apakah user sedang login
      */
     public static function check(): bool {

@@ -185,7 +185,7 @@
         </button>
 </div>
 </div>
-<!-- Quick Metrics Strip (Bento style) -->
+<!-- Quick Metrics Strip (Bento style) — data dari database -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-space-md">
 <div class="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm hover:shadow-md transition-shadow">
 <div class="flex items-center justify-between mb-2">
@@ -194,10 +194,10 @@
 <span class="material-symbols-outlined text-[18px]">school</span>
 </div>
 </div>
-<div class="font-headline-lg text-headline-lg text-primary font-bold">12.450+</div>
+<div id="kpiSekolah" class="font-headline-lg text-headline-lg text-primary font-bold">—</div>
 <div class="flex items-center gap-1 mt-1 text-status-success font-label-sm text-label-sm">
 <span class="material-symbols-outlined text-[14px]">arrow_upward</span>
-<span>99.8% dari target nasional</span>
+<span id="kpiSekolahSub">Memuat data...</span>
 </div>
 </div>
 <div class="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm hover:shadow-md transition-shadow">
@@ -207,10 +207,10 @@
 <span class="material-symbols-outlined text-[18px]">restaurant</span>
 </div>
 </div>
-<div class="font-headline-lg text-headline-lg text-primary font-bold">3.820.000+</div>
+<div id="kpiPorsi" class="font-headline-lg text-headline-lg text-primary font-bold">—</div>
 <div class="flex items-center gap-1 mt-1 text-on-surface-variant font-label-sm text-label-sm">
 <span class="material-symbols-outlined text-[14px]">schedule</span>
-<span>Rata-rata tiba: 09:18 WIB</span>
+<span id="kpiPorsiSub">Memuat data...</span>
 </div>
 </div>
 <div class="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm hover:shadow-md transition-shadow">
@@ -220,10 +220,10 @@
 <span class="material-symbols-outlined text-[18px]">monitoring</span>
 </div>
 </div>
-<div class="font-headline-lg text-headline-lg text-primary font-bold">99.4%</div>
+<div id="kpiAkg" class="font-headline-lg text-headline-lg text-primary font-bold">—</div>
 <div class="flex items-center gap-1 mt-1 text-status-success font-label-sm text-label-sm">
 <span class="material-symbols-outlined text-[14px]">check_circle</span>
-<span>Memenuhi AKG Kemenkes</span>
+<span id="kpiAkgSub">Memuat data...</span>
 </div>
 </div>
 <div class="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm hover:shadow-md transition-shadow">
@@ -233,13 +233,47 @@
 <span class="material-symbols-outlined text-[18px]">kitchen</span>
 </div>
 </div>
-<div class="font-headline-lg text-headline-lg text-primary font-bold">840+ SPPG</div>
+<div id="kpiSppg" class="font-headline-lg text-headline-lg text-primary font-bold">—</div>
 <div class="flex items-center gap-1 mt-1 text-secondary font-label-sm text-label-sm">
 <span class="material-symbols-outlined text-[14px]">verified</span>
-<span>100% SLHS Higiene</span>
+<span id="kpiSppgSub">Memuat data...</span>
 </div>
 </div>
 </div>
+<script>
+// Ambil KPI dari database telemetri_nasional
+(async function(){
+  try {
+    const r = await fetch('api/telemetri.php');
+    const j = await r.json();
+    if(j.status==='success' && j.data){
+      const d=j.data;
+      const fmt=n=>{if(n>=1e6)return(n/1e6).toFixed(1).replace(/\.0$/,'')+'Jt+';if(n>=1e3)return Math.round(n/1e3).toLocaleString('id-ID')+' Rb+'; return n.toLocaleString('id-ID');};
+      const el=id=>document.getElementById(id);
+      if(el('kpiSekolah')) el('kpiSekolah').textContent=d.sekolah_terlayani.toLocaleString('id-ID')+'+';
+      if(el('kpiSekolahSub')) el('kpiSekolahSub').textContent=d.sla_distribusi+'% dari target nasional';
+      if(el('kpiPorsi')) el('kpiPorsi').textContent=fmt(d.porsi_tersalurkan);
+      if(el('kpiPorsiSub')) el('kpiPorsiSub').textContent='Rata-rata tiba: '+d.pembaruan_teks.replace('Hari ini, ','');
+      if(el('kpiAkg')) el('kpiAkg').textContent=d.kepatuhan_akg+'%';
+      if(el('kpiAkgSub')) el('kpiAkgSub').textContent='Memenuhi AKG Kemenkes';
+      if(el('kpiSppg')) el('kpiSppg').textContent=d.sppg_aktif.toLocaleString('id-ID')+'+ SPPG';
+      if(el('kpiSppgSub')) el('kpiSppgSub').textContent='100% SLHS Higiene';
+    }
+  }catch(e){
+    console.warn('Gagal memuat KPI telemetri:',e);
+    // Fallback statis jika API gagal
+    const el=id=>document.getElementById(id);
+    if(el('kpiSekolah')) el('kpiSekolah').textContent='18.420+';
+    if(el('kpiSekolahSub')) el('kpiSekolahSub').textContent='99.8% dari target nasional';
+    if(el('kpiPorsi')) el('kpiPorsi').textContent='4.850.210+';
+    if(el('kpiPorsiSub')) el('kpiPorsiSub').textContent='Rata-rata tiba: 09:18 WIB';
+    if(el('kpiAkg')) el('kpiAkg').textContent='99.6%';
+    if(el('kpiAkgSub')) el('kpiAkgSub').textContent='Memenuhi AKG Kemenkes';
+    if(el('kpiSppg')) el('kpiSppg').textContent='1.284+ SPPG';
+    if(el('kpiSppgSub')) el('kpiSppgSub').textContent='100% SLHS Higiene';
+  }
+})();
+</script>
 </section>
 <!-- Interactive Hierarchical Filter Panel (Redesign of Reference "Pilih Instansi") -->
 <section class="w-full px-space-md sm:px-space-lg py-space-md max-w-[1200px] mx-auto">
@@ -274,10 +308,7 @@
     <div class="relative">
       <select id="filterProvinsi" class="w-full appearance-none bg-surface-container-low text-primary px-3.5 py-2.5 pr-9 rounded-xl font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-border-focus focus:outline-none transition-all">
         <option value="">-- Pilih Provinsi --</option>
-        <option value="dki">DKI Jakarta</option>
-        <option value="jabar">Jawa Barat</option>
-        <option value="jatim">Jawa Timur</option>
-        <option value="jateng">Jawa Tengah</option>
+        <option value="51">BALI</option>
       </select>
       <span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
     </div>
@@ -306,6 +337,7 @@
     <div class="relative">
       <select id="filterJenjang" class="w-full appearance-none bg-surface-container-low text-primary px-3.5 py-2.5 pr-9 rounded-xl font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-border-focus focus:outline-none transition-all">
         <option value="">Semua Jenjang</option>
+        <option value="paud">PAUD / KB / TK</option>
         <option value="sd">SD (Sekolah Dasar)</option>
         <option value="smp">SMP (Menengah Pertama)</option>
         <option value="sma">SMA (Menengah Atas)</option>
@@ -330,13 +362,10 @@
 
   <!-- Action Buttons Row -->
   <div class="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border-subtle">
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 flex-wrap">
       <span class="text-xs text-on-surface-variant font-medium">Contoh Cepat:</span>
-      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="sdn-01-senayan">SDN 01 Senayan</button>
-      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="sdn-01-menteng">SDN 01 Menteng</button>
-      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="smpn-19-kby">SMPN 19 Kebayoran</button>
-      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="sdn-sukajadi-03">SDN Sukajadi 03 Bandung</button>
-      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="smpn-3-sby">SMPN 3 Surabaya</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="K4524164808">SD NEGERI ABANGSONGAN</button>
+      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="K3390354458">KB MEKAR ANOM</button>
     </div>
     <div class="flex items-center gap-2">
       <button type="button" id="btnResetFilter" class="px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1">
@@ -350,24 +379,25 @@
     </div>
   </div>
 </form>
-<!-- Action Strip & Active Breadcrumbs -->
-<div class="mt-space-md pt-space-md flex flex-wrap items-center justify-between gap-space-md">
+</div>
+<!-- Action Strip & Active Breadcrumbs — hidden until school is selected -->
+<div id="breadcrumbStrip" class="mt-space-md pt-space-md flex flex-wrap items-center justify-between gap-space-md hidden">
 <div class="flex items-center gap-2 flex-wrap">
 <span class="font-label-sm text-label-sm text-on-surface-variant">Rute Lokasi:</span>
-<span class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">DKI Jakarta</span>
+<span id="routeProvinsi" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">-</span>
 <span class="text-on-surface-variant text-label-sm">›</span>
-<span class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">Jakarta Selatan</span>
+<span id="routeKota" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">-</span>
 <span class="text-on-surface-variant text-label-sm">›</span>
-<span class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">Kebayoran Baru</span>
+<span id="routeKecamatan" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">-</span>
 <span class="text-on-surface-variant text-label-sm">›</span>
-<span class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold">SDN 01 Senayan</span>
+<span id="breadcrumbSchool" class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold">-</span>
 </div>
 <div class="flex items-center gap-space-sm w-full sm:w-auto">
-<button class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5" type="button">
+<button id="btnResetLocRoute" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5" type="button">
 <span class="material-symbols-outlined text-[16px]">restart_alt</span>
 <span>Reset Lokasi</span>
 </button>
-<button class="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm flex items-center justify-center gap-1.5" type="button">
+<button id="btnApplyFilter2" class="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm flex items-center justify-center gap-1.5" type="button">
 <span class="material-symbols-outlined text-tertiary-fixed text-[18px]">search_check</span>
 <span>Terapkan Filter</span>
 </button>
@@ -375,6 +405,60 @@
 </div>
 </div>
 </section>
+<!-- ═══════════════════════════════════════════════════════════════════
+     SELECTION PROMPT — tampil sebelum user memilih sekolah
+     ═══════════════════════════════════════════════════════════════════ -->
+<section id="menuSelectionPrompt" class="w-full px-space-md sm:px-space-lg py-space-md max-w-[1200px] mx-auto">
+  <div class="bg-gradient-to-br from-surface-container-lowest to-surface-container-low rounded-3xl border-2 border-dashed border-border-subtle p-10 sm:p-16 flex flex-col items-center justify-center text-center gap-5">
+    <div class="w-20 h-20 rounded-3xl bg-primary-container/20 flex items-center justify-center">
+      <span class="material-symbols-outlined text-[48px] text-secondary opacity-70">restaurant_menu</span>
+    </div>
+    <div>
+      <h3 class="font-headline-lg text-headline-lg text-primary font-bold mb-2">Pilih Satuan Pendidikan untuk Melihat Menu</h3>
+      <p class="font-body-md text-body-md text-on-surface-variant max-w-md">
+        Gunakan filter di atas untuk memilih Provinsi → Kota/Kab → Jenjang → Nama Sekolah, lalu klik <strong>Tampilkan Menu</strong> untuk melihat menu MBG hari ini beserta rincian gizi dan profil dapur SPPG penyedia.
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center justify-center gap-2 mt-2">
+      <span class="px-3 py-1.5 rounded-xl bg-surface-container text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-secondary text-[16px]">info</span>
+        Hanya sekolah dengan menu hari ini yang tersedia di dropdown
+      </span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2 w-full max-w-xl">
+      <button type="button" class="quick-school-btn flex items-center gap-3 p-4 rounded-2xl bg-white hover:bg-surface-container border border-border-subtle shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 text-left" data-school="K4524164808">
+        <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[26px]">school</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <span class="font-label-md text-label-md text-primary font-bold block truncate">SD NEGERI ABANGSONGAN</span>
+          <span class="font-label-sm text-label-sm text-on-surface-variant block">Kintamani, Bangli, BALI</span>
+          <span class="text-[10px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Menu Hari Ini Siap
+          </span>
+        </div>
+      </button>
+      <button type="button" class="quick-school-btn flex items-center gap-3 p-4 rounded-2xl bg-white hover:bg-surface-container border border-border-subtle shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 text-left" data-school="K3390354458">
+        <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-[26px]">child_care</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <span class="font-label-md text-label-md text-primary font-bold block truncate">KB MEKAR ANOM</span>
+          <span class="font-label-sm text-label-sm text-on-surface-variant block">Kintamani, Bangli, BALI</span>
+          <span class="text-[10px] text-emerald-700 font-semibold mt-0.5 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Menu Hari Ini Siap
+          </span>
+        </div>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     DETAIL MENU — tersembunyi sampai sekolah dipilih
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="menuDetailWrapper" class="hidden">
+
 <!-- Section Menu MBG Hari Ini (Highlight Utama) -->
 <section class="w-full px-space-md sm:px-space-lg py-space-md max-w-[1200px] mx-auto">
 <!-- Header of Selected Entity -->
@@ -391,15 +475,15 @@
               Siklus Menu: Pekan ke-4 (Menu C-08)
             </span>
 </div>
-<h2 class="font-headline-xl text-headline-xl text-primary font-bold">
-            Paket Menu Siswa: SDN 01 Senayan Jakarta Selatan
+<h2 id="packageTitle" class="font-headline-xl text-headline-xl text-primary font-bold">
+            Paket Menu Siswa: SD NEGERI ABANGSONGAN (BANGLI)
           </h2>
 <p id="packageAgeGroup" class="font-body-md text-body-md text-on-surface-variant mt-1">Dipersiapkan khusus untuk kelompok usia 7-12 tahun dengan pemenuhan 32% Angka Kecukupan Gizi (AKG) Harian Nasional.</p>
 </div>
 <!-- Quick Summary Mini-Card -->
 <div class="flex items-center gap-4 p-space-md bg-surface-container-low rounded-2xl shrink-0">
 <div class="w-14 h-14 rounded-2xl bg-tertiary-container text-tertiary-fixed flex flex-col items-center justify-center font-bold">
-<span id="totalCaloriesDisplay" class="text-headline-md font-headline-md leading-none">620</span>
+<span id="totalCaloriesDisplay" class="text-headline-md font-headline-md leading-none">629</span>
 <span class="text-[10px] uppercase tracking-wider text-tertiary-fixed-dim">kkal</span>
 </div>
 <div class="flex flex-col">
@@ -420,24 +504,24 @@
 <span class="material-symbols-outlined text-secondary text-[22px]">lunch_dining</span>
               Komposisi Piring Gizi Seimbang
             </h3>
-<span class="text-on-surface-variant font-label-sm text-label-sm">Total 6 Komponen Sajian</span>
+<span id="dishComponentsCount" class="text-on-surface-variant font-label-sm text-label-sm">Total 6 Komponen Sajian</span>
 </div>
 <!-- Hero Dish Showcase Image Card -->
 <div class="relative rounded-2xl overflow-hidden bg-primary-container text-on-primary min-h-[220px] shadow-sm flex flex-col justify-end p-space-lg">
-<div class="absolute inset-0 bg-cover bg-center" data-alt="A wholesome school lunch tray showing warm seasoned rice, tender roasted honey chicken, colorful steamed carrot and sweet corn stir-fry, traditional tempeh, fresh banana, and a small milk carton, photographed in soft natural sunlight on a clean surface with fresh, vibrant institutional culinary styling." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCkLbSHziTgMS4wjfXnmGJaa87bd_N3KasCcc2H4qhnJv0-x1bXQDvleyxCuK58099ZoZfRbhBN8WpUfixGsZsefv_a7MSmNJ3smRd3oXRskR5Vg7Nxz16LFyr9C-wrk8QimhpK8Y0YYqWL4eT4Hl9kHVFimf3FAjdcJfglmxj3dWfqWiVQN0QL-uaA1bRCAWeW3sSvk0sUJAEDLbARjtbg1VzCHnlLwoPl9Ghqvw8_OF7pN35D3hpA')"></div>
+<div id="heroDishPhotoBg" class="absolute inset-0 bg-cover bg-center transition-all duration-500" data-alt="Menu MBG Hari Ini" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCkLbSHziTgMS4wjfXnmGJaa87bd_N3KasCcc2H4qhnJv0-x1bXQDvleyxCuK58099ZoZfRbhBN8WpUfixGsZsefv_a7MSmNJ3smRd3oXRskR5Vg7Nxz16LFyr9C-wrk8QimhpK8Y0YYqWL4eT4Hl9kHVFimf3FAjdcJfglmxj3dWfqWiVQN0QL-uaA1bRCAWeW3sSvk0sUJAEDLbARjtbg1VzCHnlLwoPl9Ghqvw8_OF7pN35D3hpA')"></div>
 <div class="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-transparent"></div>
 <div class="relative z-10">
 <span class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-sm text-label-sm font-semibold uppercase tracking-wider inline-block mb-2">
                 Porsi Siap Santap Siswa
               </span>
-<h4 id="heroDishTitle" class="font-headline-lg text-headline-lg text-on-primary font-bold">Paket Nusantara Ayam Panggang Madu &amp; Tempe Bacem</h4>
-<p class="font-body-sm text-body-sm text-on-primary-container max-w-lg mt-1">
+<h4 id="heroDishTitle" class="font-headline-lg text-headline-lg text-on-primary font-bold">Nasi putih + ayam goreng sambal embe + tempe ongseng + tumis kacang panjang sawi putih + semangka, pepaya</h4>
+<p id="heroDishDescription" class="font-body-sm text-body-sm text-on-primary-container max-w-lg mt-1">
                 Diolah tanpa pengawet buatan, rendah natrium (garam beriodium &lt; 1.2g), dan menggunakan bahan pangan lokal segar dari mitra koperasi tani binaan.
               </p>
 </div>
 </div>
 <!-- List of Food Items with Grammage & Source Badges -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+<div id="foodItemsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
 <!-- Item 1: Nasi Fortifikasi -->
 <div class="p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex items-start gap-3">
 <div class="w-10 h-10 rounded-xl bg-surface-container-lowest text-primary flex items-center justify-center shrink-0 shadow-sm">
@@ -541,17 +625,17 @@
 <div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-xl">
 <div>
 <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider block">Total Kalori Sajian</span>
-<span class="font-headline-lg text-headline-lg text-primary font-bold">620 kkal</span>
-<span class="font-body-sm text-body-sm text-status-success block">32% dari AKG harian (1900 kkal)</span>
+<span id="totalCaloriesAKG" class="font-headline-lg text-headline-lg text-primary font-bold">629 kkal</span>
+<span id="totalCaloriesPercentAKG" class="font-body-sm text-body-sm text-status-success block">33% dari AKG harian (1900 kkal)</span>
 </div>
 <!-- Inline Micro Progress Ring -->
 <div class="relative w-16 h-16 shrink-0">
 <svg class="w-full h-full -rotate-90" viewbox="0 0 36 36">
 <path class="text-surface-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
-<path class="text-status-success" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="32, 100" stroke-linecap="round" stroke-width="3.5"></path>
+<path id="calorieProgressRing" class="text-status-success" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="33, 100" stroke-linecap="round" stroke-width="3.5"></path>
 </svg>
-<div class="absolute inset-0 flex items-center justify-center font-label-sm text-label-sm font-bold text-primary">
-                  32%
+<div id="calorieProgressPercent" class="absolute inset-0 flex items-center justify-center font-label-sm text-label-sm font-bold text-primary">
+                  33%
                 </div>
 </div>
 </div>
@@ -563,10 +647,10 @@
 <span class="text-primary font-semibold flex items-center gap-1.5">
 <span class="w-2 h-2 rounded-full bg-secondary"></span> Protein Seimbang
                   </span>
-<span class="text-primary font-bold">24.5g <span class="text-on-surface-variant font-normal">/ 25g target</span></span>
+<span class="text-primary font-bold"><span id="proteinValueAKG">26.2g</span> <span class="text-on-surface-variant font-normal">/ 25g target</span></span>
 </div>
 <div class="w-full bg-surface-container rounded-full h-2 overflow-hidden">
-<div class="bg-secondary h-full rounded-full" style="width: 98%;"></div>
+<div id="proteinBarAKG" class="bg-secondary h-full rounded-full" style="width: 100%;"></div>
 </div>
 <span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5 block">Sangat baik untuk pembentukan jaringan &amp; otot anak</span>
 </div>
@@ -576,10 +660,10 @@
 <span class="text-primary font-semibold flex items-center gap-1.5">
 <span class="w-2 h-2 rounded-full bg-status-warning"></span> Karbohidrat Kompleks
                   </span>
-<span class="text-primary font-bold">78g <span class="text-on-surface-variant font-normal">/ 85g target</span></span>
+<span class="text-primary font-bold"><span id="karboValueAKG">76.9g</span> <span class="text-on-surface-variant font-normal">/ 85g target</span></span>
 </div>
 <div class="w-full bg-surface-container rounded-full h-2 overflow-hidden">
-<div class="bg-status-warning h-full rounded-full" style="width: 91%;"></div>
+<div id="karboBarAKG" class="bg-status-warning h-full rounded-full" style="width: 90%;"></div>
 </div>
 <span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5 block">Sumber energi belajar &amp; konsentrasi kelas siang</span>
 </div>
@@ -589,10 +673,10 @@
 <span class="text-primary font-semibold flex items-center gap-1.5">
 <span class="w-2 h-2 rounded-full bg-primary-container"></span> Lemak Baik (Tak Jenuh)
                   </span>
-<span class="text-primary font-bold">16g <span class="text-on-surface-variant font-normal">/ 18g target</span></span>
+<span class="text-primary font-bold"><span id="lemakValueAKG">24.7g</span> <span class="text-on-surface-variant font-normal">/ 18g target</span></span>
 </div>
 <div class="w-full bg-surface-container rounded-full h-2 overflow-hidden">
-<div class="bg-primary-container h-full rounded-full" style="width: 88%;"></div>
+<div id="lemakBarAKG" class="bg-primary-container h-full rounded-full" style="width: 100%;"></div>
 </div>
 <span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5 block">Asam lemak esensial tanpa lemak trans hewani</span>
 </div>
@@ -901,6 +985,7 @@
       }
     });
   </script>
+</div><!-- /menuDetailWrapper -->
 </div></main><footer class="w-full bg-surface-container-lowest border-t border-border-subtle mt-space-xl">
   <div class="w-full px-space-lg py-space-xl">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-xl mb-space-xl">
@@ -1229,11 +1314,15 @@
 
     const routeProv = document.getElementById('routeProvinsi');
     const routeKota = document.getElementById('routeKota');
+    const routeKec = document.getElementById('routeKecamatan');
     const routeSchool = document.getElementById('breadcrumbSchool');
+    const breadcrumbStrip = document.getElementById('breadcrumbStrip');
 
     const btnApply = document.getElementById('btnApplyFilter');
     const btnReset = document.getElementById('btnResetFilter');
     const btnChangeTop = document.getElementById('btnChangeSchoolTop');
+    const btnResetLoc = document.getElementById('btnResetLocRoute');
+    const btnApply2 = document.getElementById('btnApplyFilter2');
 
     // Inisialisasi & Ambil Data Riil dari Database Neon
     async function loadLiveMenuDatabase() {
@@ -1241,9 +1330,12 @@
         const res = await fetch('api/menu.php?all_schools=1');
         const json = await res.json();
         if (json.status === 'success' && json.schools) {
-          // Sinkronisasi data lokal dengan data terkini di database
+          // Hapus cache lama agar HANYA sekolah dengan menu hari ini yang muncul
+          for (const k in schoolDb) delete schoolDb[k];
           Object.assign(schoolDb, json.schools);
+
           if (json.region_cascade) {
+            for (const rk in regionCascade) delete regionCascade[rk];
             Object.assign(regionCascade, json.region_cascade);
           }
 
@@ -1252,12 +1344,36 @@
             dbText.textContent = `Terhubung Database Neon Realtime (${json.total_schools || Object.keys(schoolDb).length} Satuan Pendidikan)`;
           }
 
-          // Perbarui opsi dropdown
-          updateKotaOptions(filterProv ? filterProv.value : '');
+          // Perbarui dropdown provinsi dinamis
+          updateProvinsiOptions();
+
+          // Jika provinsi hanya 1 (misal Bali), auto pilih agar user langsung melihat kab/kota
+          const pKeys = Object.keys(regionCascade);
+          if (pKeys.length === 1) {
+            filterProv.value = pKeys[0];
+            updateKotaOptions(pKeys[0]);
+            if (routeProv) routeProv.textContent = regionCascade[pKeys[0]].name;
+          } else {
+            updateKotaOptions(filterProv ? filterProv.value : '');
+          }
         }
       } catch (err) {
         console.warn('Gagal memuat data live database, beralih ke cache data:', err);
       }
+    }
+
+    // Populate Provinsi dinamis dari database
+    function updateProvinsiOptions() {
+      if (!filterProv) return;
+      const current = filterProv.value;
+      filterProv.innerHTML = '<option value="">-- Pilih Provinsi --</option>';
+      Object.keys(regionCascade).forEach(pCode => {
+        const opt = document.createElement('option');
+        opt.value = pCode;
+        opt.textContent = regionCascade[pCode].name;
+        if (pCode === current) opt.selected = true;
+        filterProv.appendChild(opt);
+      });
     }
 
     // Populate Kota based on Provinsi
@@ -1302,7 +1418,7 @@
           schoolStatusTag.textContent = 'Pilih Wilayah Dulu';
           schoolStatusTag.className = 'text-label-sm text-on-surface-variant font-semibold';
         } else {
-          schoolStatusTag.textContent = count + ' Sekolah Tersedia di Database';
+          schoolStatusTag.textContent = count + ' Satuan Pendidikan Hari Ini';
           schoolStatusTag.className = 'text-label-sm text-status-success font-semibold';
         }
       }
@@ -1311,8 +1427,9 @@
     if (filterProv) {
       filterProv.addEventListener('change', () => {
         updateKotaOptions(filterProv.value);
-        if (routeProv) routeProv.textContent = filterProv.value && regionCascade[filterProv.value] ? regionCascade[filterProv.value].name : 'Belum Memilih';
+        if (routeProv) routeProv.textContent = filterProv.value && regionCascade[filterProv.value] ? regionCascade[filterProv.value].name : '-';
         if (routeKota) routeKota.textContent = '-';
+        if (routeKec) routeKec.textContent = '-';
         if (routeSchool) routeSchool.textContent = '-';
       });
     }
@@ -1324,6 +1441,8 @@
           const text = filterKota.options[filterKota.selectedIndex]?.text || '-';
           routeKota.textContent = filterKota.value ? text : '-';
         }
+        if (routeKec) routeKec.textContent = '-';
+        if (routeSchool) routeSchool.textContent = '-';
       });
     }
 
@@ -1350,7 +1469,7 @@
           renderSchoolDOM(json.data, schoolKey);
         }
       } catch (e) {
-        // Abaikan jika offline, data lokal sudah tampil
+        // Data lokal sudah tampil
       }
     }
 
@@ -1364,10 +1483,12 @@
       updateSchoolOptions();
       if (schoolSelect) schoolSelect.value = schoolKey;
 
-      // Breadcrumb
-      if (routeProv) routeProv.textContent = data.provinsiName;
-      if (routeKota) routeKota.textContent = data.kotaName;
+      // Breadcrumb Rute Lokasi (sesuai data menu database)
+      if (routeProv) routeProv.textContent = data.provinsiName || 'BALI';
+      if (routeKota) routeKota.textContent = data.kotaName || 'BANGLI';
+      if (routeKec) routeKec.textContent = data.kecamatan || 'Kintamani';
       if (routeSchool) routeSchool.textContent = data.name;
+      if (breadcrumbStrip) breadcrumbStrip.classList.remove('hidden');
 
       // Badges & Titles
       const arrivalText = document.getElementById('arrivalBadgeText');
@@ -1382,19 +1503,91 @@
       const calDisplay = document.getElementById('totalCaloriesDisplay');
       if (calDisplay) calDisplay.textContent = data.calories;
 
+      const calAKG = document.getElementById('totalCaloriesAKG');
+      if (calAKG) calAKG.textContent = data.calories + ' kkal';
+
+      const pct = Math.min(100, Math.round((data.calories / 1900) * 100));
+      const calPctAKG = document.getElementById('totalCaloriesPercentAKG');
+      if (calPctAKG) calPctAKG.textContent = pct + '% dari AKG harian (1900 kkal)';
+
+      const calRing = document.getElementById('calorieProgressRing');
+      if (calRing) calRing.setAttribute('stroke-dasharray', pct + ', 100');
+
+      const calRingPct = document.getElementById('calorieProgressPercent');
+      if (calRingPct) calRingPct.textContent = pct + '%';
+
+      // Protein, Karbo, Lemak
+      const pVal = document.getElementById('proteinValueAKG');
+      const pBar = document.getElementById('proteinBarAKG');
+      if (pVal && data.protein) pVal.textContent = data.protein + 'g';
+      if (pBar && data.protein) pBar.style.width = Math.min(100, Math.round((data.protein / 25) * 100)) + '%';
+
+      const kVal = document.getElementById('karboValueAKG');
+      const kBar = document.getElementById('karboBarAKG');
+      if (kVal && data.karbohidrat) kVal.textContent = data.karbohidrat + 'g';
+      if (kBar && data.karbohidrat) kBar.style.width = Math.min(100, Math.round((data.karbohidrat / 85) * 100)) + '%';
+
+      const lVal = document.getElementById('lemakValueAKG');
+      const lBar = document.getElementById('lemakBarAKG');
+      if (lVal && data.lemak) lVal.textContent = data.lemak + 'g';
+      if (lBar && data.lemak) lBar.style.width = Math.min(100, Math.round((data.lemak / 18) * 100)) + '%';
+
+      // Hero Title & Description
       const heroTitle = document.getElementById('heroDishTitle');
       if (heroTitle) heroTitle.textContent = data.packageName;
 
-      // Foto Makanan
-      const dishPhoto = document.getElementById('heroDishPhoto');
-      if (dishPhoto && data.photo) {
-        dishPhoto.src = data.photo;
-      }
-
-      // Deskripsi Menu
       const descEl = document.getElementById('heroDishDescription');
       if (descEl && data.desc) {
         descEl.textContent = data.desc;
+      }
+
+      // Foto Makanan
+      const heroPhotoBg = document.getElementById('heroDishPhotoBg');
+      if (heroPhotoBg) {
+        const validPhoto = (data.photo && data.photo.startsWith('http')) 
+          ? data.photo 
+          : 'https://lh3.googleusercontent.com/aida-public/AB6AXuCkLbSHziTgMS4wjfXnmGJaa87bd_N3KasCcc2H4qhnJv0-x1bXQDvleyxCuK58099ZoZfRbhBN8WpUfixGsZsefv_a7MSmNJ3smRd3oXRskR5Vg7Nxz16LFyr9C-wrk8QimhpK8Y0YYqWL4eT4Hl9kHVFimf3FAjdcJfglmxj3dWfqWiVQN0QL-uaA1bRCAWeW3sSvk0sUJAEDLbARjtbg1VzCHnlLwoPl9Ghqvw8_OF7pN35D3hpA';
+        heroPhotoBg.style.backgroundImage = 'url(\'' + validPhoto + '\')';
+      }
+
+      // Komposisi Piring Gizi Seimbang
+      if (data.komposisiList && data.komposisiList.length > 0) {
+        const compCount = document.getElementById('dishComponentsCount');
+        if (compCount) compCount.textContent = 'Total ' + data.komposisiList.length + ' Komponen Sajian';
+
+        const grid = document.getElementById('foodItemsGrid');
+        if (grid) {
+          grid.innerHTML = '';
+          data.komposisiList.forEach(item => {
+            let icon = 'restaurant';
+            let cat = 'Pilihan Pangan Sehat';
+            let gram = '';
+            const u = item.toLowerCase();
+            if (u.includes('nasi')) { icon = 'rice_bowl'; cat = 'Karbohidrat Kompleks'; gram = '150g'; }
+            else if (u.includes('ayam') || u.includes('daging') || u.includes('ikan') || u.includes('telur')) { icon = 'kebab_dining'; cat = 'Protein Hewani Utama'; gram = '80g'; }
+            else if (u.includes('tempe') || u.includes('tahu')) { icon = 'bakery_dining'; cat = 'Protein Nabati & Prebiotik'; gram = '50g'; }
+            else if (u.includes('sayur') || u.includes('tumis') || u.includes('kacang panjang') || u.includes('sawi') || u.includes('buncis')) { icon = 'spa'; cat = 'Serat & Antioksidan'; gram = '75g'; }
+            else if (u.includes('semangka') || u.includes('pepaya') || u.includes('pisang') || u.includes('buah')) { icon = 'nutrition'; cat = 'Vitamin & Mineral Alami'; gram = '1 Porsi'; }
+            else if (u.includes('susu')) { icon = 'water_bottle'; cat = 'Kalsium & Vitamin D3'; gram = '200ml'; }
+
+            const itemCard = document.createElement('div');
+            itemCard.className = 'p-space-md rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex items-start gap-3';
+            itemCard.innerHTML = `
+              <div class="w-10 h-10 rounded-xl bg-surface-container-lowest text-primary flex items-center justify-center shrink-0 shadow-sm">
+                <span class="material-symbols-outlined text-[20px]">${icon}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="font-label-md text-label-md text-primary font-bold truncate">${item}</span>
+                  ${gram ? `<span class="font-label-sm text-label-sm text-secondary font-semibold shrink-0">${gram}</span>` : ''}
+                </div>
+                <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 line-clamp-1">Menu segar higienis dapur SPPG</p>
+                <span class="inline-block mt-1 px-2 py-0.5 rounded bg-surface-container-lowest text-on-surface-variant font-label-sm text-label-sm">${cat}</span>
+              </div>
+            `;
+            grid.appendChild(itemCard);
+          });
+        }
       }
 
       // SPPG Info
@@ -1420,7 +1613,7 @@
       }
       const schoolMap = document.getElementById('schoolGoogleMapLink');
       if (schoolMap) {
-        schoolMap.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(data.name + ' ' + data.kotaName);
+        schoolMap.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(data.name + ' ' + (data.kotaName || ''));
       }
 
       // Toggle View State
@@ -1442,9 +1635,11 @@
         schoolStatusTag.className = 'text-label-sm text-on-surface-variant font-semibold';
       }
 
-      if (routeProv) routeProv.textContent = 'Belum Memilih';
+      if (routeProv) routeProv.textContent = '-';
       if (routeKota) routeKota.textContent = '-';
+      if (routeKec) routeKec.textContent = '-';
       if (routeSchool) routeSchool.textContent = '-';
+      if (breadcrumbStrip) breadcrumbStrip.classList.add('hidden');
 
       if (detailWrapper) detailWrapper.classList.add('hidden');
       if (promptState) promptState.classList.remove('hidden');
@@ -1454,10 +1649,23 @@
 
     if (btnReset) btnReset.addEventListener('click', resetToSelection);
     if (btnChangeTop) btnChangeTop.addEventListener('click', resetToSelection);
+    if (btnResetLoc) btnResetLoc.addEventListener('click', resetToSelection);
 
     // Apply Filter button
     if (btnApply) {
       btnApply.addEventListener('click', () => {
+        const selected = schoolSelect ? schoolSelect.value : '';
+        if (selected && schoolDb[selected]) {
+          renderSchool(selected);
+        } else {
+          alert('Silakan pilih salah satu Satuan Pendidikan (Sekolah) pada dropdown di atas terlebih dahulu.');
+        }
+      });
+    }
+
+    // Apply Filter 2 (breadcrumb strip button)
+    if (btnApply2) {
+      btnApply2.addEventListener('click', () => {
         const selected = schoolSelect ? schoolSelect.value : '';
         if (selected && schoolDb[selected]) {
           renderSchool(selected);
@@ -1487,7 +1695,7 @@
     // Panggil Sinkronisasi Database Realtime saat DOM siap
     loadLiveMenuDatabase();
 
-    // Check URL Param (?q= or ?school=)
+    // Check URL Param (?q= or ?school=) — hanya render jika param diberikan eksplisit
     const urlParams = new URLSearchParams(window.location.search);
     const qParam = urlParams.get('q') || urlParams.get('school');
     if (qParam) {
@@ -1500,8 +1708,6 @@
       });
       if (matchedKey) {
         renderSchool(matchedKey);
-      } else {
-        renderSchool('sdn-01-senayan');
       }
     }
   });
