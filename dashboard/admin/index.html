@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Dashboard Administrator — Radar MBG</title>
+<link rel="icon" type="image/webp" href="../../assets/images/logo.webp"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="hidden bg-slate-50 font-sans text-[#001026] min-h-screen">
+<header class="bg-[#001026] text-white sticky top-0 z-10 shadow">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+    <a href="../../index.html" class="flex items-center gap-3">
+      <img src="../../assets/images/logo.webp" alt="Logo BGN" class="h-9 w-auto"/>
+      <div><div class="font-extrabold leading-tight">Radar MBG</div><div id="role" class="text-[11px] text-emerald-300 font-semibold"></div></div>
+    </a>
+    <div class="flex items-center gap-3 text-xs">
+      <span id="who" class="hidden sm:inline font-semibold"></span>
+      <button onclick="out()" class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 font-bold">Keluar</button>
+    </div>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+  <div><h1 id="ttl" class="text-2xl font-extrabold"></h1><p id="sub" class="text-sm text-slate-500"></p></div>
+  <div class="rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3">Mode demo statis: data di halaman ini adalah contoh dan belum terhubung ke database.</div>
+  <div id="kpis" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+  <div id="tbls" class="space-y-6"></div>
+</main>
+<script>
+const G='bg-emerald-100 text-emerald-800', Y='bg-yellow-100 text-yellow-800', B='bg-blue-100 text-blue-800';
+const b=(t,c)=>`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${c}">${t}</span>`;
+const D={
+  role:'admin', label:'Admin Satgas BGN', title:'Dashboard Administrator',
+  sub:'Ringkasan telemetri nasional, aduan publik, dan verifikasi mitra SPPG.',
+  kpis:[
+    ['Porsi Tersalurkan','4.850.210','99,2% dari target'],
+    ['SPPG Aktif','1.284','100% bersertifikat'],
+    ['Sekolah Terlayani','18.420','38 provinsi'],
+    ['Kepatuhan AKG','99,6%','Terverifikasi']
+  ],
+  tables:[
+    {title:'Aduan Publik Terbaru', head:['Tiket','Sekolah','Kategori','Status'], rows:[
+      ['MBG-0412','SDN 01 Menteng, Jakarta','Kualitas makanan',b('Masuk',B)],
+      ['MBG-0411','SMPN 3 Surabaya','Keterlambatan',b('Diproses',Y)],
+      ['MBG-0409','SDN 05 Denpasar','Kebersihan',b('Selesai',G)],
+      ['MBG-0405','SMPN 1 Semarang','Porsi kurang',b('Diproses',Y)]
+    ]},
+    {title:'Verifikasi Mitra SPPG', head:['Dapur','Wilayah','NIB / SLHS','Status'], rows:[
+      ['SPPG Bangli Landih','Bali','Lengkap',b('Disetujui',G)],
+      ['SPPG Sukajadi','Bandung','Menunggu SLHS',b('Peninjauan',Y)],
+      ['SPPG Denpasar Timur','Bali','Lengkap',b('Disetujui',G)]
+    ]}
+  ]
+};
+let s=null;try{s=JSON.parse(sessionStorage.getItem('mbg_session')||'null')}catch(e){}
+if(!s){location.replace('../../login.html')}
+else if(s.role!==D.role){location.replace('../'+s.role+'/')}
+else{
+  document.body.classList.remove('hidden');
+  document.title=D.title+' — Radar MBG';
+  document.getElementById('role').textContent=D.label;
+  document.getElementById('who').textContent=s.name||D.label;
+  document.getElementById('ttl').textContent=D.title;
+  document.getElementById('sub').textContent=D.sub;
+  document.getElementById('kpis').innerHTML=D.kpis.map(k=>`<div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm"><p class="text-[11px] font-bold uppercase tracking-wide text-slate-500">${k[0]}</p><p class="text-2xl font-black mt-1">${k[1]}</p><p class="text-[11px] text-emerald-600 font-semibold mt-0.5">${k[2]}</p></div>`).join('');
+  document.getElementById('tbls').innerHTML=D.tables.map(t=>`<section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"><h2 class="px-4 py-3 font-extrabold text-sm border-b border-slate-100">${t.title}</h2><div class="overflow-x-auto"><table class="w-full text-xs"><thead class="bg-slate-50 text-slate-500 uppercase text-[10px]"><tr>${t.head.map(h=>`<th class="text-left px-4 py-2.5">${h}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r=>`<tr class="border-t border-slate-100">${r.map(c=>`<td class="px-4 py-2.5">${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div></section>`).join('');
+}
+function out(){try{sessionStorage.removeItem('mbg_session')}catch(e){};location.href='../../login.html'}
+</script>
+</body></html>
