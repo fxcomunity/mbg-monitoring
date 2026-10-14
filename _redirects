@@ -1,15 +1,30 @@
-# Cloudflare Pages (hosting statis, tidak menjalankan PHP).
-# Semua link lama ke halaman login PHP diarahkan ke panel login statis.
-/login.php            /login.html              301
-/auth/login.php       /login.html              301
-/register.php         /login.html?tab=register 301
-/auth/register.php    /login.html?tab=register 301
-/features/login.php   /login.html              301
-/pages/login.php      /login.html              301
+# Cloudflare Pages — Semua redirect statis
+# ─────────────────────────────────────────────────────────────
 
-# Root PHP files — tidak dieksekusi di Cloudflare Pages
-/aduan.php                /laporan-aduan.html             301
+# Login / Auth (lama → baru)
+/login.html               /auth/login.html                301
+/login                    /auth/login.html                301
+/login.php                /auth/login.html                301
+/auth/login.php           /auth/login.html                301
+/register.php             /auth/login.html?tab=register   301
+/auth/register.php        /auth/login.html?tab=register   301
+/features/login.php       /auth/login.html                301
+/pages/login.php          /auth/login.html                301
+/auth/logout.php          /auth/login.html?logout=1       301
+
+# Fitur pages (lama root → /fitur/)
+/menu-hari-ini.html           /fitur/menu-hari-ini.html           301
+/distribusi-sebaran-sppg.html /fitur/distribusi-sebaran-sppg.html 301
+/kebijakan-privasi.html       /fitur/kebijakan-privasi.html       301
+/laporan-aduan.html           /fitur/laporan-aduan.html           301
+/standar-uji-akg.html         /fitur/standar-uji-akg.html         301
+
+# PHP files yang tidak berfungsi di Cloudflare Pages
+/aduan.php                /fitur/laporan-aduan.html       301
 /generate_og_image.php    /assets/images/og-preview.png  301
 /api.php                  /                               301
 /build.php                /                               301
-/auth/logout.php          /login.html?logout=1            301
+
+# Error pages
+/404                      /error/404.html                 404
+/*                        /error/404.html                 404

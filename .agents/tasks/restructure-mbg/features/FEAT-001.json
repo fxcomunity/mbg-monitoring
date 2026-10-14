@@ -1,0 +1,41 @@
+{
+  "id": "FEAT-001",
+  "type": "refactor",
+  "description": "Folder restructuring: create fitur/ folder (move 5 root HTML pages), move login.html to auth/login.html + create auth/register.html, delete auth/login.php + auth/logout.php, update _redirects, update all cross-links in index.html and all 3 dashboards and assets/js/script.js and assets/js/api.js. This is the structural foundation — FEAT-002, FEAT-003, FEAT-004 are independent of this FEAT and can be done in any order after this one.",
+  "status": "pending",
+  "steps": [
+    "1. Create directory fitur/ at workspace root c:\\laragon\\www\\MBG-MONITORING\\fitur\\.",
+    "2. Copy kebijakan-privasi.html, laporan-aduan.html, menu-hari-ini.html, standar-uji-akg.html, distribusi-sebaran-sppg.html to fitur/. In EACH copied file update: (a) href='assets/' → href='../assets/', (b) src='assets/' → src='../assets/', (c) href='index.html' → href='../index.html', (d) href='login.html' → href='../auth/login.html', (e) sibling fitur pages remain relative to each other (e.g. href='laporan-aduan.html' stays as-is within fitur/ folder). Then delete the 5 original root HTML files.",
+    "3. Copy root login.html to auth/login.html. In auth/login.html update: (a) href='assets/' → href='../assets/', (b) src='assets/' → src='../assets/', (c) href='index.html' → href='../index.html', (d) href='laporan-aduan.html' → href='../fitur/laporan-aduan.html', (e) href='kebijakan-privasi.html' → href='../fitur/kebijakan-privasi.html', (f) fetch('api/auth_user.php', ...) → fetch('/api/auth', ...) (BOTH login and register fetch calls), (g) The inline head script redirect: location.replace('dashboard/' + s.role + '/') → location.replace('../dashboard/' + s.role + '/'), (h) Success redirect after login: window.location.href = 'dashboard/' + role + '/' → window.location.href = '../dashboard/' + role + '/', (i) Remove demo: true from the catch block fallback session object. Then delete root login.html. Also delete auth/login.php and auth/logout.php.",
+    "4. Create auth/register.html as a standalone register page. Base it on the register tab extracted from auth/login.html. Include: same <head> with Tailwind, Plus Jakarta Sans, logo, dark navy background. Add an inline session-check redirect at top (if session exists → redirect to ../dashboard/<role>/). The register form should POST to /api/auth with action=register. Include a link back to auth/login.html for existing users. Keep the same glass-card design pattern from login.html.",
+    "5. Overwrite _redirects with updated rules: replace all old /login.html targets with /auth/login.html. Add 301s for all 5 moved fitur pages (old root path → new /fitur/ path). Update /aduan.php → /fitur/laporan-aduan.html. Move catch-all 404 rules to end of file. Full content documented in restructure-plan.md Step 4.",
+    "6. Update index.html: change all 5 navbar fitur hrefs from root-relative to fitur/-relative (both desktop nav and mobile nav menu), change href='login.html' to href='auth/login.html' (both desktop and mobile), change href='laporan-aduan.html' in notification dropdown to href='fitur/laporan-aduan.html'.",
+    "7. Update dashboard/admin/index.html: (a) In the inline auth guard <script>, replace go('../../login.html') with go('../../auth/login.html') — appears twice (PHP fetch fallback and catch), (b) Update the a[href$='login.html'] click listener selector to also match auth/login.html by changing the selector pattern to a[href*='login.html'], (c) Update all <a href='../../login.html'> buttons to href='../../auth/login.html', (d) Update any links to ../../distribusi-sebaran-sppg.html → ../../fitur/distribusi-sebaran-sppg.html, (e) Replace fetch('../../api/auth_user.php') with a graceful static-only mode: just use session from storage, redirect to ../../auth/login.html if not found.",
+    "8. Update dashboard/sppg/index.html with same auth guard + link changes as step 7. Also update href='../../distribusi-sebaran-sppg.html' → href='../../fitur/distribusi-sebaran-sppg.html' in the 'Lihat Peta Spasial' link.",
+    "9. Update dashboard/user/index.html with same auth guard + link changes as step 7.",
+    "10. Update assets/js/script.js: (a) Line 80: 'menu-hari-ini.html?q=' → '/fitur/menu-hari-ini.html?q=', (b) Line 252: href='login.html' → href='/auth/login.html', (c) Any fetch('api/notifications.php') → fetch('/api/notifications'), (d) Any fetch('api/auth_user.php') → fetch('/api/auth').",
+    "11. Update assets/js/api.js: Replace the entire BASE_URL detection block with const BASE_URL = '/api/'; Add 'X-Requested-By': 'mbg-radar' header to all fetch() calls inside the module; update endpoint construction to use BASE_URL + '?action=...' pattern."
+  ],
+  "acceptance_criteria": [
+    "fitur/ directory exists with all 5 HTML files; root copies are deleted",
+    "auth/login.html exists; root login.html is deleted; auth/login.php and auth/logout.php are deleted",
+    "auth/register.html exists as standalone page",
+    "All moved fitur files use ../assets/ for CSS/JS/image paths",
+    "All moved fitur files cross-link to each other without ../ prefix (sibling links)",
+    "auth/login.html uses ../assets/ and ../index.html and ../fitur/ prefixes correctly",
+    "_redirects has 301 rules for all old root paths pointing to new /auth/ and /fitur/ locations",
+    "index.html navbar links point to fitur/ and auth/ paths",
+    "All 3 dashboards redirect to ../../auth/login.html on invalid session",
+    "assets/js/api.js has no references to api.php; BASE_URL is '/api/'; all fetch calls include X-Requested-By header"
+  ],
+  "verification": [
+    "Open c:\\laragon\\www\\MBG-MONITORING\\fitur\\menu-hari-ini.html in browser (via local server) — logo and CSS load, navbar links work",
+    "Open c:\\laragon\\www\\MBG-MONITORING\\auth\\login.html — page renders, tabs switch, logo/CSS load from ../assets/",
+    "Open c:\\laragon\\www\\MBG-MONITORING\\auth\\register.html — page renders, form is present",
+    "Open c:\\laragon\\www\\MBG-MONITORING\\index.html — check navbar Menu Hari Ini link points to fitur/menu-hari-ini.html",
+    "In dashboard/admin/index.html: search the file for 'login.html' — should only appear as '../../auth/login.html', never as '../../login.html'",
+    "In assets/js/api.js: confirm BASE_URL = '/api/' and X-Requested-By header present"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

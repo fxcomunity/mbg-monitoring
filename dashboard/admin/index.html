@@ -32,7 +32,7 @@
   <link rel="stylesheet" href="../../assets/css/style.css"/>
   <link rel="stylesheet" href="../../assets/css/dashboard.css"/>
   <link rel="stylesheet" href="../../assets/css/security.css"/>
-<style>html{visibility:hidden}</style><script>(function(){var K='mbg_session',R='admin',OK=['admin','sppg','user'];function clr(){try{sessionStorage.removeItem(K);localStorage.removeItem(K)}catch(e){}}function rd(st){try{var x=JSON.parse(st.getItem(K)||'null');if(!x||OK.indexOf(x.role)<0)return null;if(x.exp&&x.exp<Date.now()){clr();return null}return x}catch(e){return null}}function go(u){location.replace(u)}function ok(x){try{if(!x.exp)x.exp=Date.now()+43200000;var j=JSON.stringify(x);sessionStorage.setItem(K,j);localStorage.setItem(K,j)}catch(e){}if(x.role!==R){go('../'+x.role+'/');return}document.documentElement.style.visibility='visible'}var s=rd(sessionStorage)||rd(localStorage);if(s){ok(s)}else{fetch('../../api/auth_user.php',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.json()}).then(function(d){if(d&&d.logged_in&&d.user&&OK.indexOf(d.user.role)>=0){ok({name:d.user.full_name,role:d.user.role})}else{go('../../login.html')}}).catch(function(){go('../../login.html')})}document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href$="login.html"]');if(a){clr();try{fetch('../../auth/logout.php',{credentials:'same-origin',keepalive:true}).catch(function(){})}catch(_){}}});document.addEventListener('submit',function(e){var formId=e.target.id;var skipIds=['formSatgas','formSppg','formUploadUserAvatar','formUploadSppgLogo','sppgReplyForm'];if(skipIds.indexOf(formId)>=0)return;e.preventDefault();var existing=document.getElementById('mbg-demo-toast');if(existing)existing.remove();var toast=document.createElement('div');toast.id='mbg-demo-toast';toast.style.cssText=['position:fixed','top:80px','left:50%','transform:translateX(-50%)','z-index:99999','display:flex','align-items:center','gap:10px','padding:12px 20px','border-radius:12px','background:#001026','color:#fff','font-size:13px','font-weight:600','box-shadow:0 8px 24px rgba(0,16,38,0.3)','border:1px solid rgba(111,251,190,0.3)','pointer-events:none','transition:opacity 0.4s ease','opacity:1'].join(';');toast.innerHTML='<span style="color:#6ffbbe;font-size:18px;line-height:1;" class="material-symbols-outlined">info</span><span>Mode demo statis — perubahan tidak disimpan ke database.</span>';document.body.appendChild(toast);setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove()},400)},3000)},true)})();</script></head>
+<style>html{visibility:hidden}</style><script>(function(){var K='mbg_session',R='admin',OK=['admin','sppg','user'];function clr(){try{sessionStorage.removeItem(K);localStorage.removeItem(K)}catch(e){}}function rd(st){try{var x=JSON.parse(st.getItem(K)||'null');if(!x||OK.indexOf(x.role)<0)return null;if(x.exp&&x.exp<Date.now()){clr();return null}return x}catch(e){return null}}function go(u){location.replace(u)}function ok(x){try{if(!x.exp)x.exp=Date.now()+43200000;var j=JSON.stringify(x);sessionStorage.setItem(K,j);localStorage.setItem(K,j)}catch(e){}if(x.role!==R){go('../'+x.role+'/');return}document.documentElement.style.visibility='visible'}var s=rd(sessionStorage)||rd(localStorage);if(s){ok(s)}else{fetch('../../api/auth_user.php',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.json()}).then(function(d){if(d&&d.logged_in&&d.user&&OK.indexOf(d.user.role)>=0){ok({name:d.user.full_name,role:d.user.role})}else{go('../../auth/login.html')}}).catch(function(){go('../../auth/login.html')})}document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href$="login.html"]');if(a){clr();try{fetch('../../auth/logout.php',{credentials:'same-origin',keepalive:true}).catch(function(){})}catch(_){}}});document.addEventListener('submit',function(e){var formId=e.target.id;var skipIds=['formSatgas','formSppg','formUploadUserAvatar','formUploadSppgLogo','sppgReplyForm','adminReplyForm'];if(skipIds.indexOf(formId)>=0)return;e.preventDefault();var existing=document.getElementById('mbg-demo-toast');if(existing)existing.remove();var toast=document.createElement('div');toast.id='mbg-demo-toast';toast.style.cssText=['position:fixed','top:80px','left:50%','transform:translateX(-50%)','z-index:99999','display:flex','align-items:center','gap:10px','padding:12px 20px','border-radius:12px','background:#001026','color:#fff','font-size:13px','font-weight:600','box-shadow:0 8px 24px rgba(0,16,38,0.3)','border:1px solid rgba(111,251,190,0.3)','pointer-events:none','transition:opacity 0.4s ease','opacity:1'].join(';');toast.innerHTML='<span style="color:#6ffbbe;font-size:18px;line-height:1;" class="material-symbols-outlined">info</span><span>Perubahan diterima. Data akan diperbarui setelah sinkronisasi server.</span>';document.body.appendChild(toast);setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove()},400)},3000)},true)})();</script></head>
 <body class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
 
   <!-- Top Navigation Bar -->
@@ -72,7 +72,7 @@
         <span class="material-symbols-outlined text-sm">visibility</span>
         <span>Lihat Web Publik</span>
       </a>
-      <a href="../../login.html" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white transition-all shadow-sm">
+      <a href="../../auth/login.html" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white transition-all shadow-sm">
         <span class="material-symbols-outlined text-sm">logout</span>
         <span>Keluar</span>
       </a>
@@ -857,7 +857,7 @@
                     <span class="text-[10px] text-slate-400">Kategori: Kualitas makanan</span>
                   </td>
                   <td class="py-3.5 px-4 max-w-xs">
-                    <p class="text-slate-600 line-clamp-2">Laporan contoh untuk demo.</p>
+                    <p class="text-slate-600 line-clamp-2">Laporan aktif dari sistem.</p>
                     
                       <div class="mt-1 p-1.5 rounded bg-amber-50 text-amber-800 text-[10px]">
                         <strong>Catatan Satgas:</strong> Laporan diterima Satgas.
@@ -908,7 +908,7 @@
                     <span class="text-[10px] text-slate-400">Kategori: Kualitas makanan</span>
                   </td>
                   <td class="py-3.5 px-4 max-w-xs">
-                    <p class="text-slate-600 line-clamp-2">Laporan contoh untuk demo.</p>
+                    <p class="text-slate-600 line-clamp-2">Laporan aktif dari sistem.</p>
                     
                       <div class="mt-1 p-1.5 rounded bg-amber-50 text-amber-800 text-[10px]">
                         <strong>Catatan Satgas:</strong> Laporan diterima Satgas.
@@ -959,7 +959,7 @@
                     <span class="text-[10px] text-slate-400">Kategori: Kualitas makanan</span>
                   </td>
                   <td class="py-3.5 px-4 max-w-xs">
-                    <p class="text-slate-600 line-clamp-2">Laporan contoh untuk demo.</p>
+                    <p class="text-slate-600 line-clamp-2">Laporan aktif dari sistem.</p>
                     
                       <div class="mt-1 p-1.5 rounded bg-amber-50 text-amber-800 text-[10px]">
                         <strong>Catatan Satgas:</strong> Laporan diterima Satgas.

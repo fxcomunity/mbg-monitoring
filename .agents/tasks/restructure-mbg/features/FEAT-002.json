@@ -1,0 +1,49 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Create error/ folder with 5 styled error pages (404, 500, 505, blocked, caught) and create workers/ folder with Cloudflare Workers JS API (auth.js, data.js, security.js, wrangler.toml, README.md). These two sub-tasks are independent of each other and of FEAT-001 (they create new files only). Error pages use ../assets/images/logo.webp and Tailwind CDN. Workers use plain ES module pattern with fetch handler.",
+  "status": "pending",
+  "steps": [
+    "1. Create directory c:\\laragon\\www\\MBG-MONITORING\\error\\.",
+
+    "2. Create error/404.html — full HTML page with: dark navy #001026 background, Tailwind CDN, Plus Jakarta Sans from Google Fonts, logo at ../assets/images/logo.webp (h-10), centered card layout, title 'Halaman Tidak Ditemukan', subtitle '404 — Halaman yang kamu cari tidak ada', two action buttons: 'Kembali ke Beranda' (href='/') and 'Coba Lagi' (onclick history.back()). No external CSS files needed — use inline Tailwind classes.",
+
+    "3. Create error/500.html — same design pattern as 404.html. Title: 'Kesalahan Internal Server', subtitle: '500 — Terjadi kesalahan pada server. Tim kami telah diberitahu.', button: 'Kembali ke Beranda' (href='/'). Show a 'Coba Lagi' button that calls location.reload().",
+
+    "4. Create error/505.html — same design. Title: 'Versi HTTP Tidak Didukung', subtitle: '505 — Browser atau klien kamu menggunakan versi HTTP yang tidak didukung.', one button: 'Kembali ke Beranda' (href='/').",
+
+    "5. Create error/blocked.html — static info page (no countdown). Title: 'Anda Terdeteksi Melakukan Aktivitas Mencurigakan', subtitle: 'Sistem keamanan kami telah memblokir akses dari perangkat ini. Aktivitas Anda telah dicatat dan dilaporkan.', one button: 'Kembali ke Beranda' (href='/'). Include a shield/warning icon using Material Symbols Outlined (load from Google Fonts CDN).",
+
+    "6. Create error/caught.html — dynamic page that: reads URL param ?type= to get attack type (xss|bot|inject|unknown), reads current timestamp, displays: title 'Sistem Kami Mendeteksi Aktivitas Tidak Wajar', shows attack type in a styled badge (e.g. 'Jenis: XSS Injection'), shows timestamp 'Waktu: DD/MM/YYYY HH:MM:SS', shows 'IP Anda telah dicatat dalam sistem keamanan kami', shows a 10-second countdown timer 'Pengalihan otomatis dalam X detik...', after 10 seconds calls location.replace('/'). Include the Material Symbols icon for 'gpp_bad' or 'security'. All logic in a small inline <script> block.",
+
+    "7. Create directory c:\\laragon\\www\\MBG-MONITORING\\workers\\.",
+
+    "8. Create workers/auth.js — Cloudflare Worker (ES module, export default { async fetch(request, env) }). Handles: (a) OPTIONS preflight → return CORS headers, (b) POST /api/auth — parse FormData, check X-Requested-By header (if missing → 403), handle action=login: read user from env.USERS KV by key 'user:'+username, compare SHA-256 hash of password, return JSON {status:'success', user:{role, full_name}} or {status:'error', message}; handle action=register: hash password with SubtleCrypto SHA-256, store user in env.USERS KV as JSON, return success; handle action=session-check: verify session token from Authorization header. Rate limiting: store IP attempt count in env.THREATS KV with 5-minute TTL, reject after 5 attempts with 429. CORS: only allow same-origin (Access-Control-Allow-Origin: same-origin or the site domain). Always reject if X-Requested-By != 'mbg-radar'.",
+
+    "9. Create workers/data.js — Cloudflare Worker. Handles GET /api/data?action=telemetri|distribusi|menu|cek_tiket|notifications. Rejects missing X-Requested-By header (403). Reads data from env.DATA KV. Returns mock/static JSON if KV key not found (fallback data so the site still works before KV is populated). Include fallback static data objects for telemetri (porsi_tersalurkan, sppg_aktif, sekolah_terlayani, kepatuhan_akg, suhu_rata_rata, sla_distribusi), distribusi (array of province objects), and menu (empty array with status:'success').",
+
+    "10. Create workers/security.js — Cloudflare Worker. Handles: (a) POST /api/security/log — parse JSON body with {type, payload, url}, get client IP from request.headers.get('CF-Connecting-IP'), store threat record in env.THREATS KV as JSON with key 'threat:'+ip+':'+timestamp, set TTL 24 hours, return {status:'logged'}, (b) GET /api/security/threats — check Authorization header for admin session, return list of threat records from env.THREATS KV, (c) Auto-block: before logging, count threats from same IP in last hour (read from KV prefix scan), if count > 3 also store 'block:'+ip key with 1-hour TTL. All requests: reject missing X-Requested-By header.",
+
+    "11. Create workers/wrangler.toml — valid TOML with: name='mbg-radar-api', compatibility_date='2024-01-01', three kv_namespaces entries: [[kv_namespaces]] binding='USERS' id='PLACEHOLDER_USERS_KV_ID', binding='DATA' id='PLACEHOLDER_DATA_KV_ID', binding='THREATS' id='PLACEHOLDER_THREATS_KV_ID'. Add routes: routes = [{pattern='mbg.jack-ai.my.id/api/auth*', zone_name='jack-ai.my.id'}, {pattern='mbg.jack-ai.my.id/api/data*', zone_name='jack-ai.my.id'}, {pattern='mbg.jack-ai.my.id/api/security*', zone_name='jack-ai.my.id'}].",
+
+    "12. Create workers/README.md documenting: prerequisites (wrangler CLI installed), step-by-step deploy (wrangler login, create KV namespaces with wrangler kv:namespace create USERS/DATA/THREATS, update placeholder IDs in wrangler.toml, wrangler deploy), how to populate KV with initial data, note that Workers are separate from CF Pages deploy."
+  ],
+  "acceptance_criteria": [
+    "error/ directory exists with 404.html, 500.html, 505.html, blocked.html, caught.html",
+    "Each error page shows logo, correct title, dark navy background",
+    "error/caught.html reads ?type= param and shows 10-second countdown that redirects to /",
+    "workers/ directory exists with auth.js, data.js, security.js, wrangler.toml, README.md",
+    "Each worker JS file is valid ES module with export default { async fetch(request, env) {} }",
+    "workers/auth.js rejects requests missing X-Requested-By: mbg-radar with 403",
+    "workers/auth.js uses SubtleCrypto for password hashing",
+    "workers/wrangler.toml has three kv_namespaces bindings with placeholder IDs"
+  ],
+  "verification": [
+    "Open error/404.html in browser — logo loads (../assets/images/logo.webp), page renders with navy background",
+    "Open error/caught.html?type=xss — shows 'xss' in attack type badge, countdown counts from 10 to 0, then redirects",
+    "Inspect workers/auth.js — confirm 'export default' at top level and SubtleCrypto usage",
+    "Inspect workers/wrangler.toml — confirm three [[kv_namespaces]] sections with USERS, DATA, THREATS bindings"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

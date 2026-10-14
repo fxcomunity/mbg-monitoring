@@ -1,0 +1,10 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    "Broken 'Portal Masuk' links in 5 public pages — laporan-aduan.html, menu-hari-ini.html, distribusi-sebaran-sppg.html, standar-uji-akg.html, and kebijakan-privasi.html each have href=\"auth/login.php\" (desktop nav) and href=\"login.php\" (mobile nav). Fix to href=\"login.html\" in all five files, both nav locations.",
+    "Admin chat reply form missing from toast skip-list — dashboard/admin/index.html line 1064 declares <form id=\"adminReplyForm\">. The skip-list does not include 'adminReplyForm', so the demo toast intercepts the submit and the admin live-chat reply is never sent. Add 'adminReplyForm' to the skip-list in the admin dashboard inline script.",
+    "Duplicate arrow_forward icon in index.html Cards 2, 3, 4 — Lines 340, 359, and 378 each contain a standalone orphan <span>arrow_forward</span> after the closing </a> of the card footer link. Card 1 was fixed; Cards 2-4 were not. Remove the three orphan spans.",
+    "login.html header logo onerror self-loop — Line 82: <img src=\"assets/images/logo.webp\" onerror=\"this.src='assets/images/logo.webp'\">. The fallback sets src to the same path that just failed, triggering onerror again indefinitely. Fix to onerror=\"this.onerror=null;this.src='assets/images/logo.webp'\" or point the fallback to a guaranteed alternative resource."
+  ],
+  "reviewDoc": "c:\\laragon\\www\\MBG-MONITORING\\.agents\\tasks\\2026-10-15-051815-review.md"
+}

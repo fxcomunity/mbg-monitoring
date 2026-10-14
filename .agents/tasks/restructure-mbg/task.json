@@ -1,0 +1,7 @@
+{
+  "task_id": "task-restructure-mbg",
+  "task_description": "Major restructure of MBG Monitoring Cloudflare Pages site: move fitur pages to /fitur/, move login to /auth/, create error pages, build Cloudflare Workers API to replace PHP, harden security.js with DevTools/XSS/honeypot/rate-limit features, and purge all demo/statis labels from dashboards.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

@@ -1,0 +1,29 @@
+name = "mbg-monitoring-api"
+compatibility_date = "2024-09-23"
+
+# Route semua /api/* ke Workers ini
+# Di Cloudflare Pages: set di Pages > Settings > Functions > KV namespace bindings
+
+[[kv_namespaces]]
+binding = "USERS"
+id = "GANTI_DENGAN_KV_NAMESPACE_ID"      # buat via: wrangler kv:namespace create USERS
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "GANTI_DENGAN_KV_NAMESPACE_ID"      # buat via: wrangler kv:namespace create SESSIONS
+
+[[kv_namespaces]]
+binding = "DATA"
+id = "GANTI_DENGAN_KV_NAMESPACE_ID"      # buat via: wrangler kv:namespace create DATA
+
+[[kv_namespaces]]
+binding = "RATE"
+id = "GANTI_DENGAN_KV_NAMESPACE_ID"      # buat via: wrangler kv:namespace create RATE
+
+[[kv_namespaces]]
+binding = "THREATS"
+id = "GANTI_DENGAN_KV_NAMESPACE_ID"      # buat via: wrangler kv:namespace create THREATS
+
+[[kv_namespaces]]
+binding = "BLOCKED_IPS"
+id = "GANTI_DENGAN_KV_NAMESPACE_ID"      # buat via: wrangler kv:namespace create BLOCKED_IPS

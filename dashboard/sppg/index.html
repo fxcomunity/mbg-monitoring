@@ -32,7 +32,7 @@
 <link rel="stylesheet" href="../../assets/css/style.css"/>
 <link rel="stylesheet" href="../../assets/css/dashboard.css"/>
 <link rel="stylesheet" href="../../assets/css/security.css"/>
-<style>html{visibility:hidden}</style><script>(function(){var K='mbg_session',R='sppg',OK=['admin','sppg','user'];function clr(){try{sessionStorage.removeItem(K);localStorage.removeItem(K)}catch(e){}}function rd(st){try{var x=JSON.parse(st.getItem(K)||'null');if(!x||OK.indexOf(x.role)<0)return null;if(x.exp&&x.exp<Date.now()){clr();return null}return x}catch(e){return null}}function go(u){location.replace(u)}function ok(x){try{if(!x.exp)x.exp=Date.now()+43200000;var j=JSON.stringify(x);sessionStorage.setItem(K,j);localStorage.setItem(K,j)}catch(e){}if(x.role!==R){go('../'+x.role+'/');return}document.documentElement.style.visibility='visible'}var s=rd(sessionStorage)||rd(localStorage);if(s){ok(s)}else{fetch('../../api/auth_user.php',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.json()}).then(function(d){if(d&&d.logged_in&&d.user&&OK.indexOf(d.user.role)>=0){ok({name:d.user.full_name,role:d.user.role})}else{go('../../login.html')}}).catch(function(){go('../../login.html')})}document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href$="login.html"]');if(a){clr();try{fetch('../../auth/logout.php',{credentials:'same-origin',keepalive:true}).catch(function(){})}catch(_){}}});document.addEventListener('submit',function(e){var formId=e.target.id;var skipIds=['formSatgas','formSppg','formUploadUserAvatar','formUploadSppgLogo','sppgReplyForm'];if(skipIds.indexOf(formId)>=0)return;e.preventDefault();var existing=document.getElementById('mbg-demo-toast');if(existing)existing.remove();var toast=document.createElement('div');toast.id='mbg-demo-toast';toast.style.cssText=['position:fixed','top:80px','left:50%','transform:translateX(-50%)','z-index:99999','display:flex','align-items:center','gap:10px','padding:12px 20px','border-radius:12px','background:#001026','color:#fff','font-size:13px','font-weight:600','box-shadow:0 8px 24px rgba(0,16,38,0.3)','border:1px solid rgba(111,251,190,0.3)','pointer-events:none','transition:opacity 0.4s ease','opacity:1'].join(';');toast.innerHTML='<span style="color:#6ffbbe;font-size:18px;line-height:1;" class="material-symbols-outlined">info</span><span>Mode demo statis — perubahan tidak disimpan ke database.</span>';document.body.appendChild(toast);setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove()},400)},3000)},true)})();</script></head>
+<style>html{visibility:hidden}</style><script>(function(){var K='mbg_session',R='sppg',OK=['admin','sppg','user'];function clr(){try{sessionStorage.removeItem(K);localStorage.removeItem(K)}catch(e){}}function rd(st){try{var x=JSON.parse(st.getItem(K)||'null');if(!x||OK.indexOf(x.role)<0)return null;if(x.exp&&x.exp<Date.now()){clr();return null}return x}catch(e){return null}}function go(u){location.replace(u)}function ok(x){try{if(!x.exp)x.exp=Date.now()+43200000;var j=JSON.stringify(x);sessionStorage.setItem(K,j);localStorage.setItem(K,j)}catch(e){}if(x.role!==R){go('../'+x.role+'/');return}document.documentElement.style.visibility='visible'}var s=rd(sessionStorage)||rd(localStorage);if(s){ok(s)}else{fetch('../../api/auth_user.php',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.json()}).then(function(d){if(d&&d.logged_in&&d.user&&OK.indexOf(d.user.role)>=0){ok({name:d.user.full_name,role:d.user.role})}else{go('../../auth/login.html')}}).catch(function(){go('../../auth/login.html')})}document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href$="login.html"]');if(a){clr();try{fetch('../../auth/logout.php',{credentials:'same-origin',keepalive:true}).catch(function(){})}catch(_){}}});document.addEventListener('submit',function(e){var formId=e.target.id;var skipIds=['formSatgas','formSppg','formUploadUserAvatar','formUploadSppgLogo','sppgReplyForm'];if(skipIds.indexOf(formId)>=0)return;e.preventDefault();var existing=document.getElementById('mbg-demo-toast');if(existing)existing.remove();var toast=document.createElement('div');toast.id='mbg-demo-toast';toast.style.cssText=['position:fixed','top:80px','left:50%','transform:translateX(-50%)','z-index:99999','display:flex','align-items:center','gap:10px','padding:12px 20px','border-radius:12px','background:#001026','color:#fff','font-size:13px','font-weight:600','box-shadow:0 8px 24px rgba(0,16,38,0.3)','border:1px solid rgba(111,251,190,0.3)','pointer-events:none','transition:opacity 0.4s ease','opacity:1'].join(';');toast.innerHTML='<span style="color:#6ffbbe;font-size:18px;line-height:1;" class="material-symbols-outlined">info</span><span>Perubahan diterima. Data akan diperbarui setelah sinkronisasi server.</span>';document.body.appendChild(toast);setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove()},400)},3000)},true)})();</script></head>
 <body class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
 
   <!-- Navbar Dashboard -->
@@ -57,16 +57,16 @@
           <span class="font-bold text-base text-primary">Portal Mitra SPPG</span>
           <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold uppercase">Role: Dapur SPPG</span>
         </div>
-        <p class="text-xs text-slate-500 font-medium">Unit: <strong>SPPG Demo</strong></p>
+        <p class="text-xs text-slate-500 font-medium">Unit: <strong id="sppgUnitDisplay">—</strong></p>
       </div>
     </div>
 
     <div class="flex items-center gap-3">
-      <a href="../../distribusi-sebaran-sppg.html" class="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors">
+      <a href="../../fitur/distribusi-sebaran-sppg.html" class="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors">
         <span class="material-symbols-outlined text-sm">map</span>
         <span>Lihat Peta Spasial</span>
       </a>
-      <a href="../../login.html" class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-xs font-semibold text-red-600 transition-colors">
+      <a href="../../auth/login.html" class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-xs font-semibold text-red-600 transition-colors">
         <span class="material-symbols-outlined text-sm">logout</span>
         <span>Keluar</span>
       </a>
@@ -86,7 +86,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span class="px-2.5 py-0.5 rounded-full bg-emerald-400 text-primary text-xs font-bold uppercase">Terverifikasi SLHS Grade A</span>
-          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-2">SPPG Demo</h1>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-2" id="sppgBannerName">—</h1>
           <p class="text-xs text-slate-300 mt-1 max-w-xl">
             Pusat produksi higienis program Makan Bergizi Gratis (MBG). Bertanggung jawab memastikan batas suhu aman termal (&gt;60Â°C) saat tiba di sekolah binaan.
           </p>
@@ -610,6 +610,21 @@
   document.addEventListener('keydown',function(e){if(e.key==='Escape')panel.classList.add('hidden')});
   render();
 })();
-</script></body>
+</script><script>
+(function(){
+  try {
+    var K='mbg_session';
+    var s=JSON.parse(sessionStorage.getItem(K)||localStorage.getItem(K)||'null');
+    if(s&&s.name){
+      var u=document.getElementById('sppgUnitDisplay');
+      var b=document.getElementById('sppgBannerName');
+      if(u) u.textContent=s.name;
+      if(b) b.textContent=s.name;
+    }
+  } catch(e){}
+})();
+</script>
+<script>(function(){try{var K="mbg_session";var s=JSON.parse(sessionStorage.getItem(K)||localStorage.getItem(K)||"null");if(s&&s.name){var u=document.getElementById("sppgUnitDisplay");var b=document.getElementById("sppgBannerName");if(u)u.textContent=s.name;if(b)b.textContent=s.name;}}catch(e){}})();</script>
+</body>
 </html>
 
