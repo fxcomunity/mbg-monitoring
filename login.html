@@ -395,7 +395,7 @@
         if (json.status === 'success' && json.user) {
           showAlert('success', 'Berhasil', 'Login sukses, mengarahkan ke dashboard...');
           const role = json.user.role;
-          try { sessionStorage.setItem('mbg_session', JSON.stringify({ name: json.user.full_name || u, role: role })); } catch (_) {}
+          try { const _s = JSON.stringify({ name: json.user.full_name || u, role: role }); sessionStorage.setItem('mbg_session', _s); localStorage.setItem('mbg_session', _s); } catch (_) {}
           setTimeout(() => {
             if (role === 'admin') window.location.href = 'dashboard/admin/';
             else if (role === 'sppg') window.location.href = 'dashboard/sppg/';
@@ -410,7 +410,7 @@
         // Fallback untuk static demo jika backend offline
         const lu = u.toLowerCase();
         const role = lu.includes('admin') ? 'admin' : (lu.includes('sppg') ? 'sppg' : 'user');
-        try { sessionStorage.setItem('mbg_session', JSON.stringify({ name: u, role: role, demo: true })); } catch (_) {}
+        try { const _s = JSON.stringify({ name: u, role: role, demo: true }); sessionStorage.setItem('mbg_session', _s); localStorage.setItem('mbg_session', _s); } catch (_) {}
         window.location.href = 'dashboard/' + role + '/';
       }
     }
