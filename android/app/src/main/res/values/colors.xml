@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand Primary Colors (Badan Gizi Nasional) -->
+    <color name="bgn_primary">#001026</color>
+    <color name="bgn_primary_container">#0B2545</color>
+    <color name="bgn_on_primary">#FFFFFF</color>
+    <color name="bgn_on_primary_container">#778DB2</color>
+
+    <!-- Secondary & Accent Colors -->
+    <color name="bgn_secondary">#395F95</color>
+    <color name="bgn_secondary_fixed">#D5E3FF</color>
+    <color name="bgn_on_secondary">#FFFFFF</color>
+    <color name="bgn_tertiary_fixed">#6FFBBE</color>
+    <color name="bgn_tertiary_container">#002B1B</color>
+
+    <!-- Surface & Background (Light Scheme) -->
+    <color name="bgn_background">#F8F9FF</color>
+    <color name="bgn_surface">#FFFFFF</color>
+    <color name="bgn_surface_container_low">#EFF4FF</color>
+    <color name="bgn_surface_container">#E5EEFF</color>
+    <color name="bgn_on_surface">#0B1C30</color>
+    <color name="bgn_on_surface_variant">#44474E</color>
+
+    <!-- Outline & Borders -->
+    <color name="bgn_border_subtle">#E2E8F0</color>
+    <color name="bgn_border_focus">#134074</color>
+    <color name="bgn_outline">#74777F</color>
+
+    <!-- Status Colors -->
+    <color name="bgn_status_success">#059669</color>
+    <color name="bgn_status_warning">#F59E0B</color>
+    <color name="bgn_status_error">#EF4444</color>
+
+    <!-- Standard Android Palette -->
+    <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="transparent">#00000000</color>
+</resources>

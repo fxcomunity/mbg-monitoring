@@ -1,77 +1,62 @@
-# Radar MBG — Android App (WebView APK)
+# Radar MBG — Android APK
 
-## Cara Import ke Android Studio
+## Cara Build APK via Terminal Android Studio
 
-### 1. Buka Android Studio
-- Pilih **File → Open** (bukan "New Project")
-- Arahkan ke folder: `c:\laragon\www\MBG-MONITORING\android`
-- Klik **OK** → tunggu Gradle sync selesai (~1-2 menit)
+### 1. Buka Terminal di Android Studio
+`View → Tool Windows → Terminal`
 
----
-
-### 2. Icon Launcher (sudah siap ✅)
-File `ic_launcher.png` sudah dikopy otomatis ke semua folder mipmap:
+### 2. Masuk ke folder android
 ```
-res/
-  mipmap-mdpi/      ic_launcher.png  ic_launcher_round.png
-  mipmap-hdpi/      ic_launcher.png  ic_launcher_round.png
-  mipmap-xhdpi/     ic_launcher.png  ic_launcher_round.png
-  mipmap-xxhdpi/    ic_launcher.png  ic_launcher_round.png
-  mipmap-xxxhdpi/   ic_launcher.png  ic_launcher_round.png
+cd c:\laragon\www\MBG-MONITORING\android
 ```
-AndroidManifest sudah set:
-```xml
-android:icon="@mipmap/ic_launcher"
-android:roundIcon="@mipmap/ic_launcher"
+
+### 3. Build APK Debug
 ```
-**Tidak perlu setup manual apapun untuk icon.**
+.\gradlew.bat assembleDebug
+```
+Tunggu ~3-5 menit (download Gradle pertama kali lebih lama).
 
----
+APK tersimpan di:
+```
+android\app\build\outputs\apk\debug\app-debug.apk
+```
 
-### 3. Build APK Debug (untuk test di HP)
-1. Menu **Build → Build Bundle(s) / APK(s) → Build APK(s)**
-2. Tunggu build selesai
-3. Klik **"locate"** di notifikasi bawah, atau cari di:
-   ```
-   android/app/build/outputs/apk/debug/app-debug.apk
-   ```
-4. Transfer ke HP → install
-
----
-
-### 4. Build APK Release (untuk distribusi)
-1. **Build → Generate Signed Bundle / APK → APK → Next**
-2. Klik **"Create new..."** untuk buat keystore:
-   - Key store path: pilih lokasi simpan `.jks`
-   - Password: isi bebas (ingat ini!)
-   - Alias: `radarmbg`
-   - Validity: `25`
-3. **Next → Release → Finish**
-4. APK tersimpan di:
-   ```
-   android/app/build/outputs/apk/release/app-release.apk
-   ```
-
----
-
-### 5. Install via ADB (opsional)
-```bash
-adb install app-debug.apk
+### 4. Build APK Release (tanpa signing, untuk test)
+```
+.\gradlew.bat assembleRelease
 ```
 
 ---
 
-## Fitur APK
-| Fitur | Status |
+## Struktur Project
+```
+android/
+  app/
+    build.gradle          ← dependencies & config
+    src/main/
+      AndroidManifest.xml
+      java/.../
+        MainActivity.kt   ← WebView utama
+        SplashActivity.kt ← Splash logo BGN
+      res/
+        layout/           ← XML layout
+        values/           ← strings, colors, themes
+        mipmap-*/         ← ic_launcher.png (semua densitas)
+        drawable/         ← background gradient
+        xml/              ← network security config
+  build.gradle            ← plugin versions
+  settings.gradle         ← module config
+  gradlew.bat             ← build script Windows
+  gradle.properties       ← JVM & Android flags
+  gradle/wrapper/
+    gradle-wrapper.jar
+    gradle-wrapper.properties
+```
+
+## Info APK
+| Field | Value |
 |---|---|
-| Splash screen logo BGN (2 detik) | ✅ |
-| WebView load `https://mbg.jack-ai.my.id` | ✅ |
-| Bottom Navigation (Beranda, Menu, Distribusi, Laporan) | ✅ |
-| Swipe to refresh | ✅ |
-| Geolokasi untuk peta realtime | ✅ |
-| Deep link `https://mbg.jack-ai.my.id` | ✅ |
-| Halaman error jika offline | ✅ |
-| Support Android 7.0+ (API 24+) | ✅ |
-
-## Package Name
-`id.go.bgn.radarmbg`
+| Package | `id.go.bgn.radarmbg` |
+| Min Android | 7.0 (API 24) |
+| Target Android | 14 (API 35) |
+| URL | `https://mbg.jack-ai.my.id` |
