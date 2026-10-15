@@ -25,6 +25,7 @@ android {
         debug {
             applicationIdSuffix ".debug"
             debuggable true
+            archivesBaseName "Radar-MBG-V2"
         }
     }
 
