@@ -25,7 +25,15 @@ android {
         debug {
             applicationIdSuffix ".debug"
             debuggable true
-            archivesBaseName "Radar-MBG-V2"
+        }
+    }
+
+    // Nama output APK
+    applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach {
+            if (variant.buildType.name == "debug") {
+                outputFileName = "Radar-MBG-V2-debug.apk"
+            }
         }
     }
 
