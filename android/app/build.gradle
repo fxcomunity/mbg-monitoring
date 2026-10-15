@@ -23,7 +23,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            applicationIdSuffix ".debug"
             debuggable true
         }
     }
@@ -32,7 +31,10 @@ android {
     applicationVariants.configureEach { variant ->
         variant.outputs.configureEach {
             if (variant.buildType.name == "debug") {
-                outputFileName = "Radar-MBG-V2-debug.apk"
+                outputFileName = "Radar-MBG-V2.apk"
+            }
+            if (variant.buildType.name == "release") {
+                outputFileName = "Radar-MBG-V2.apk"
             }
         }
     }
