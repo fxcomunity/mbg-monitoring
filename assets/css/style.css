@@ -181,3 +181,25 @@ html, body {
 .animate-bgn-pulse {
   animation: bgnPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* ── Leaflet Map Container Fix ──────────────────────────────────────────── */
+/* Tanpa ini Leaflet kadang render putih karena tidak bisa detect parent height */
+#mbgInteractiveMap {
+  height: 420px !important;
+  width: 100% !important;
+  position: relative !important;
+  z-index: 0;
+}
+
+/* Override saat parent pakai absolute positioning */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Pastikan tile tidak tertimpa oleh overlay */
+.leaflet-tile-pane { z-index: 2; }
+.leaflet-overlay-pane { z-index: 4; }
+.leaflet-marker-pane { z-index: 6; }
+.leaflet-popup-pane { z-index: 7; }

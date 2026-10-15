@@ -28,3 +28,6 @@
 # Error pages
 /404                      /error/404.html                 404
 /*                        /error/404.html                 404
+
+# Peta realtime
+/map              /map/index.html  200

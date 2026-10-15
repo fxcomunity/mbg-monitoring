@@ -1,5 +1,5 @@
 ﻿/**
- * script.js â€” Interaktivitas Utama Radar MBG Nasional
+ * script.js "” Interaktivitas Utama Radar MBG Nasional
  * Terintegrasi penuh dengan Database Riil & Validasi Anti-Exploit
  */
 document.addEventListener('DOMContentLoaded', function() {
@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', function() {
   initUserAuthStatus();
 
   // Inisialisasi Peta Telemetri Interaktif Realtime
-  initInteractiveTelemetryMap();
+  // Delay sedikit supaya container sudah punya dimensi sebelum Leaflet init
+  setTimeout(initInteractiveTelemetryMap, 300);
 
   // Inisialisasi Telemetri & Distribusi Riil dari Database
   initTelemetriAndDistribusi();
@@ -113,7 +114,7 @@ async function initTelemetriAndDistribusi() {
         if (elSppg) elSppg.textContent = Number(d.sppg_aktif).toLocaleString('id-ID');
         if (elSekolah) elSekolah.textContent = Number(d.sekolah_terlayani).toLocaleString('id-ID');
         if (elAkg) elAkg.textContent = `${d.kepatuhan_akg}%`;
-        if (elSuhu) elSuhu.textContent = `${d.suhu_rata_rata}Â°C`;
+        if (elSuhu) elSuhu.textContent = `${d.suhu_rata_rata}°C`;
         if (elUpdate && d.pembaruan_teks) elUpdate.textContent = `Pembaruan: ${d.pembaruan_teks}`;
         if (elSla && d.sla_distribusi) elSla.textContent = `${d.sla_distribusi}% Tepat Waktu`;
       }
@@ -348,7 +349,7 @@ function applyStaticSessionFallback() {
 
     a.href = 'dashboard/' + s.role + '/';
     a.dataset.staticSession = '1';
-    a.title = (s.name || labels[s.role]) + ' â€” ' + labels[s.role];
+    a.title = (s.name || labels[s.role]) + ' "” ' + labels[s.role];
     a.classList.remove('hidden', 'md:flex');
     a.classList.add('flex');
     if (!isDesktopOnly) a.classList.add('flex-1');
@@ -653,138 +654,147 @@ function initInteractiveTelemetryMap() {
   const mapElement = document.getElementById('mbgInteractiveMap');
   if (!mapElement || typeof L === 'undefined') return;
 
-  // Koordinat Utama Indonesia (Pusat DKI Jakarta)
-  const defaultCenter = [-6.2088, 106.8456];
-  const defaultZoom = 11;
+  // Hancurkan instance lama jika ada (hindari double init)
+  if (mbgLeafletMap) {
+    mbgLeafletMap.remove();
+    mbgLeafletMap = null;
+    mbgMarkers = [];
+    mbgDeliveryVans = [];
+  }
 
-  // Inisialisasi Leaflet Map
   mbgLeafletMap = L.map('mbgInteractiveMap', {
-    center: defaultCenter,
-    zoom: defaultZoom,
+    center: [-6.2088, 106.8456],
+    zoom: 11,
     zoomControl: true,
     scrollWheelZoom: true,
-    attributionControl: false
+    attributionControl: true
   });
 
-  // Tile layer OpenStreetMap bergaya CartoDB Positron yang bersih & modern
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+  // ── OpenStreetMap tile — 100% gratis, zero API key ──────────────────────
+  // Pakai URL tanpa subdomains variabel untuk hindari cache mix lama
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    subdomains: 'abcd'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
   }).addTo(mbgLeafletMap);
 
-  // Data Stasiun Dapur SPPG & Titik Sekolah
+  // Force Leaflet hitung ulang ukuran container (kritis jika parent div baru visible)
+  setTimeout(() => { if (mbgLeafletMap) mbgLeafletMap.invalidateSize(); }, 200);
+
+  // ── Data Stasiun SPPG — tersebar berbeda per wilayah ────────────────────
   const sppgStations = [
-    { name: 'SPPG Satgas DKI Jakarta Pusat', lat: -6.1824, lng: 106.8290, radius: 4500, porsi: '34.200 porsi/hari', temp: '65.4Â°C' },
-    { name: 'SPPG Satgas Jakarta Selatan', lat: -6.2615, lng: 106.8106, radius: 4000, porsi: '28.500 porsi/hari', temp: '64.8Â°C' },
-    { name: 'SPPG Satgas Bandung Raya (Jabar)', lat: -6.9175, lng: 107.6191, radius: 5000, porsi: '41.100 porsi/hari', temp: '66.2Â°C' },
-    { name: 'SPPG Satgas Semarang (Jateng)', lat: -6.9932, lng: 110.4203, radius: 4200, porsi: '31.800 porsi/hari', temp: '65.1Â°C' },
-    { name: 'SPPG Satgas Surabaya (Jatim)', lat: -7.2575, lng: 112.7521, radius: 4800, porsi: '39.000 porsi/hari', temp: '65.9Â°C' }
+    { name: 'SPPG Jakarta Pusat',         lat: -6.1824, lng: 106.8290, radius: 4500, porsi: '34.200', temp: '65.4°C', wilayah: 'DKI Jakarta' },
+    { name: 'SPPG Jakarta Selatan',        lat: -6.2615, lng: 106.8106, radius: 3800, porsi: '28.500', temp: '64.8°C', wilayah: 'DKI Jakarta' },
+    { name: 'SPPG Jakarta Timur',          lat: -6.2251, lng: 106.9004, radius: 4200, porsi: '31.000', temp: '65.1°C', wilayah: 'DKI Jakarta' },
+    { name: 'SPPG Bandung Kota',           lat: -6.9175, lng: 107.6191, radius: 5000, porsi: '41.100', temp: '66.2°C', wilayah: 'Jawa Barat' },
+    { name: 'SPPG Bekasi Raya',            lat: -6.2349, lng: 106.9896, radius: 4600, porsi: '37.400', temp: '65.7°C', wilayah: 'Jawa Barat' },
+    { name: 'SPPG Depok',                  lat: -6.4025, lng: 106.7942, radius: 4000, porsi: '29.800', temp: '64.5°C', wilayah: 'Jawa Barat' },
+    { name: 'SPPG Semarang Tengah',        lat: -6.9932, lng: 110.4203, radius: 4200, porsi: '31.800', temp: '65.1°C', wilayah: 'Jawa Tengah' },
+    { name: 'SPPG Solo Raya',              lat: -7.5661, lng: 110.8314, radius: 3900, porsi: '27.600', temp: '63.9°C', wilayah: 'Jawa Tengah' },
+    { name: 'SPPG Surabaya Pusat',         lat: -7.2575, lng: 112.7521, radius: 4800, porsi: '39.000', temp: '65.9°C', wilayah: 'Jawa Timur' },
+    { name: 'SPPG Malang Kota',            lat: -7.9797, lng: 112.6304, radius: 4300, porsi: '32.500', temp: '64.3°C', wilayah: 'Jawa Timur' },
+    { name: 'SPPG Medan Kota',             lat:  3.5952, lng:  98.6722, radius: 5200, porsi: '43.000', temp: '66.8°C', wilayah: 'Sumatera Utara' },
+    { name: 'SPPG Makassar Pusat',         lat: -5.1477, lng: 119.4327, radius: 4700, porsi: '38.200', temp: '65.6°C', wilayah: 'Sulawesi Selatan' },
+    { name: 'SPPG Denpasar',               lat: -8.6705, lng: 115.2126, radius: 3600, porsi: '26.100', temp: '64.0°C', wilayah: 'Bali' },
   ];
 
-  // Render Dapur SPPG & Radius Distribusi
+  // ── Render SPPG markers + radius ────────────────────────────────────────
   sppgStations.forEach(sppg => {
-    // Circle Radius Distribusi
     L.circle([sppg.lat, sppg.lng], {
-      color: '#059669',
-      fillColor: '#10B981',
-      fillOpacity: 0.15,
-      radius: sppg.radius
+      color: '#059669', fillColor: '#10B981', fillOpacity: 0.12,
+      radius: sppg.radius, weight: 1.5, dashArray: '4 4'
     }).addTo(mbgLeafletMap);
 
-    // Marker Dapur SPPG
     const iconSppg = L.divIcon({
-      className: 'custom-sppg-icon',
-      html: `
-        <div style="background:#059669; color:#fff; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,0,0,0.3); border:2px solid #fff;">
-          <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-        </div>
-      `,
-      iconSize: [34, 34],
-      iconAnchor: [17, 17]
+      className: '',
+      html: `<div style="
+        background:linear-gradient(135deg,#059669,#047857);
+        color:#fff; width:32px; height:32px; border-radius:50%;
+        display:flex; align-items:center; justify-content:center;
+        box-shadow:0 2px 8px rgba(5,150,105,0.5); border:2.5px solid #fff;
+        font-size:15px; line-height:1;">🏭</div>`,
+      iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18]
     });
 
-    const marker = L.marker([sppg.lat, sppg.lng], { icon: iconSppg }).addTo(mbgLeafletMap);
-    marker.bindPopup(`
-      <div style="font-family:'Plus Jakarta Sans',sans-serif; min-width:180px;">
-        <span style="font-size:10px; font-weight:700; color:#059669; text-transform:uppercase;">Dapur SPPG Terakreditasi BGN</span>
-        <h4 style="margin:2px 0 6px 0; font-size:13px; font-weight:700; color:#0f172a;">${sppg.name}</h4>
-        <div style="font-size:11px; color:#475569; line-height:1.5;">
-          <div>Kapasitas: <strong>${sppg.porsi}</strong></div>
-          <div>Suhu Rantai Hangat: <strong style="color:#059669;">${sppg.temp}</strong> (Sesuai SOP)</div>
-          <div>Radius Layanan: <strong>${sppg.radius / 1000} KM</strong></div>
+    const m = L.marker([sppg.lat, sppg.lng], { icon: iconSppg }).addTo(mbgLeafletMap);
+    m.bindPopup(`
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;min-width:190px;padding:2px 0">
+        <div style="font-size:9px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Dapur SPPG Terakreditasi BGN</div>
+        <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px;">${sppg.name}</div>
+        <div style="font-size:11px;color:#475569;line-height:1.7;">
+          <div>📍 <strong>${sppg.wilayah}</strong></div>
+          <div>🍱 Kapasitas: <strong>${sppg.porsi} porsi/hari</strong></div>
+          <div>🌡️ Suhu Termal: <strong style="color:#059669;">${sppg.temp}</strong></div>
+          <div>📐 Radius Layanan: <strong>${sppg.radius/1000} km</strong></div>
         </div>
-      </div>
-    `);
-    mbgMarkers.push(marker);
+      </div>`, { maxWidth: 240 });
+    mbgMarkers.push(m);
   });
 
-  // Inisialisasi Armada Van Logistik Ber-Sensor Termal IoT
+  // ── Data Van — tersebar berbeda per kota ─────────────────────────────────
   const initialVans = [
-    { id: 'VAN-BGN-01', lat: -6.2150, lng: 106.8400, temp: 65.8, dest: 'SDN Menteng 01 Jakarta', status: 'Mengantar Porsi Pagi' },
-    { id: 'VAN-BGN-02', lat: -6.1950, lng: 106.8220, temp: 66.2, dest: 'SMPN 1 Jakarta Pusat', status: 'Mengantar Porsi Pagi' },
-    { id: 'VAN-BGN-03', lat: -6.2700, lng: 106.8050, temp: 64.9, dest: 'SDN Cilandak Barat 03', status: 'Menuju Lokasi Sekolah' },
-    { id: 'VAN-BGN-04', lat: -6.9250, lng: 107.6100, temp: 65.4, dest: 'SDN Merdeka Bandung', status: 'Distribusi Selesai 99%' },
-    { id: 'VAN-BGN-05', lat: -7.2650, lng: 107.7450, temp: 66.0, dest: 'SDN Ketabang Surabaya', status: 'Selesai Serah Terima' }
+    { id: 'VAN-JKT-01', lat: -6.1950, lng: 106.8315, temp: 65.8, dest: 'SDN Menteng 01',       status: 'Mengantar', region: 'dki' },
+    { id: 'VAN-JKT-02', lat: -6.2080, lng: 106.8520, temp: 66.2, dest: 'SMPN 1 Jakarta',       status: 'Mengantar', region: 'dki' },
+    { id: 'VAN-JKT-03', lat: -6.2410, lng: 106.7980, temp: 64.9, dest: 'SDN Cilandak Barat',   status: 'Menuju Sekolah', region: 'dki' },
+    { id: 'VAN-JKT-04', lat: -6.1720, lng: 106.8650, temp: 65.3, dest: 'SDN Rawamangun 02',    status: 'Mengantar', region: 'dki' },
+    { id: 'VAN-BDG-01', lat: -6.9050, lng: 107.6350, temp: 65.4, dest: 'SDN Merdeka Bandung',  status: 'Selesai 99%', region: 'jabar' },
+    { id: 'VAN-BDG-02', lat: -6.9380, lng: 107.6010, temp: 63.8, dest: 'SMPN 5 Bandung',       status: 'Kembali', region: 'jabar' },
+    { id: 'VAN-BKS-01', lat: -6.2180, lng: 107.0120, temp: 66.1, dest: 'SDN Bekasi Jaya 01',   status: 'Mengantar', region: 'jabar' },
+    { id: 'VAN-SMG-01', lat: -7.0050, lng: 110.4380, temp: 65.1, dest: 'SDN Semarang Tengah',  status: 'Mengantar', region: 'jateng' },
+    { id: 'VAN-SMG-02', lat: -6.9810, lng: 110.4020, temp: 64.7, dest: 'SMPN 3 Semarang',      status: 'Menuju Sekolah', region: 'jateng' },
+    { id: 'VAN-SBY-01', lat: -7.2480, lng: 112.7380, temp: 66.0, dest: 'SDN Ketabang Surabaya',status: 'Selesai', region: 'jatim' },
+    { id: 'VAN-SBY-02', lat: -7.2720, lng: 112.7650, temp: 65.5, dest: 'SMPN 7 Surabaya',      status: 'Mengantar', region: 'jatim' },
+    { id: 'VAN-MLG-01', lat: -7.9680, lng: 112.6450, temp: 64.2, dest: 'SDN Malang 01',         status: 'Menuju Sekolah', region: 'jatim' },
   ];
 
   initialVans.forEach(v => {
+    const tempColor = v.temp >= 65 ? '#059669' : v.temp >= 62 ? '#d97706' : '#dc2626';
     const iconVan = L.divIcon({
-      className: 'custom-van-icon',
-      html: `
-        <div class="van-marker-inner" style="background:#2563EB; color:#fff; width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 6px rgba(37,99,235,0.4); border:2px solid #fff; font-size:10px; font-weight:bold;">
-          ðŸšš
-        </div>
-      `,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14]
+      className: '',
+      html: `<div style="
+        background:linear-gradient(135deg,#1d4ed8,#2563eb);
+        color:#fff; width:30px; height:30px; border-radius:8px;
+        display:flex; align-items:center; justify-content:center;
+        box-shadow:0 2px 8px rgba(37,99,235,0.45); border:2px solid #fff;
+        font-size:14px; line-height:1;">🚚</div>`,
+      iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -17]
     });
 
-    const vanMarker = L.marker([v.lat, v.lng], { icon: iconVan }).addTo(mbgLeafletMap);
-    vanMarker.bindPopup(`
-      <div style="font-family:'Plus Jakarta Sans',sans-serif; min-width:170px;">
-        <span style="font-size:10px; font-weight:700; color:#2563EB; text-transform:uppercase;">Sensor IoT Rantai Hangat</span>
-        <h4 style="margin:2px 0; font-size:12px; font-weight:700; color:#0f172a;">${v.id}</h4>
-        <div style="font-size:11px; color:#475569; margin-top:4px;">
-          <div>Tujuan: <strong>${v.dest}</strong></div>
-          <div>Suhu Termal: <strong style="color:#d97706;" class="van-temp-label">${v.temp}Â°C</strong> (&gt;60Â°C Aman)</div>
-          <div>Status: <span style="color:#059669; font-weight:600;">${v.status}</span></div>
+    const vm = L.marker([v.lat, v.lng], { icon: iconVan }).addTo(mbgLeafletMap);
+    vm.bindPopup(`
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;min-width:180px;padding:2px 0">
+        <div style="font-size:9px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Sensor IoT Rantai Hangat</div>
+        <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:5px;">${v.id}</div>
+        <div style="font-size:11px;color:#475569;line-height:1.7;">
+          <div>🏫 Tujuan: <strong>${v.dest}</strong></div>
+          <div>🌡️ Suhu: <strong style="color:${tempColor};">${v.temp}°C</strong> <span style="color:#94a3b8;">(min 60°C)</span></div>
+          <div>📡 Status: <strong style="color:#059669;">${v.status}</strong></div>
         </div>
-      </div>
-    `);
+      </div>`, { maxWidth: 220 });
 
-    mbgDeliveryVans.push({
-      marker: vanMarker,
-      data: v
-    });
+    mbgDeliveryVans.push({ marker: vm, data: { ...v } });
   });
 
-  // Loop Realtime Telemetri: Pergerakan GPS Halus & Fluktuasi Suhu Termal IoT setiap 4 detik
+  // ── Simulasi GPS bergerak + suhu berfluktuasi setiap 3 detik ─────────────
   setInterval(() => {
     mbgDeliveryVans.forEach(item => {
-      // Pergerakan GPS acak kecil (0.0003 lat/lng)
-      const latDelta = (Math.random() - 0.5) * 0.0006;
-      const lngDelta = (Math.random() - 0.5) * 0.0006;
-      const newLat = item.data.lat + latDelta;
-      const newLng = item.data.lng + lngDelta;
-      item.data.lat = newLat;
-      item.data.lng = newLng;
-      item.marker.setLatLng([newLat, newLng]);
+      const d = item.data;
+      d.lat += (Math.random() - 0.5) * 0.0008;
+      d.lng += (Math.random() - 0.5) * 0.0008;
+      item.marker.setLatLng([d.lat, d.lng]);
 
-      // Fluktuasi suhu rantai hangat (antara 63.5Â°C - 66.8Â°C)
-      const tempDelta = (Math.random() - 0.5) * 0.3;
-      item.data.temp = Math.round((item.data.temp + tempDelta) * 10) / 10;
-      if (item.data.temp < 62.0) item.data.temp = 64.5;
-      if (item.data.temp > 68.0) item.data.temp = 66.2;
+      d.temp = Math.round((d.temp + (Math.random() - 0.5) * 0.4) * 10) / 10;
+      if (d.temp < 61.5) d.temp = 64.0;
+      if (d.temp > 68.5) d.temp = 66.0;
     });
-  }, 4000);
+  }, 3000);
 
-  // Hubungkan Tombol Pilihan Wilayah ke Peta (Fly to region)
+  // ── Fly to region on button click ────────────────────────────────────────
   const regionCoords = {
-    dki: { center: [-6.2088, 106.8456], zoom: 11 },
-    jabar: { center: [-6.9175, 107.6191], zoom: 11 },
-    jateng: { center: [-6.9932, 110.4203], zoom: 11 },
-    jatim: { center: [-7.2575, 112.7521], zoom: 11 },
-    nasional: { center: [-2.5489, 118.0149], zoom: 5 }
+    dki:      { center: [-6.2088, 106.8456], zoom: 12 },
+    jabar:    { center: [-6.9175, 107.6191], zoom: 11 },
+    jateng:   { center: [-6.9932, 110.4203], zoom: 11 },
+    jatim:    { center: [-7.2575, 112.7521], zoom: 11 },
+    nasional: { center: [-2.5489, 118.0149], zoom: 5  }
   };
 
   const regionBtns = document.querySelectorAll('.region-telemetry-btn');

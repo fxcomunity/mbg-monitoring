@@ -60,6 +60,7 @@
       <a class="px-3 py-1.5 font-semibold text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-xl transition-all whitespace-nowrap" href="fitur/distribusi-sebaran-sppg.html">Distribusi & Wilayah</a>
       <a class="px-3 py-1.5 font-semibold text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-xl transition-all whitespace-nowrap" href="fitur/standar-uji-akg.html">Standar & AKG</a>
       <a class="px-3 py-1.5 font-semibold text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-xl transition-all whitespace-nowrap" href="fitur/laporan-aduan.html">Laporan & Aduan Publik</a>
+    <a class="px-3 py-1.5 font-semibold text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-xl transition-all whitespace-nowrap flex items-center gap-1" href="map/"><span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 1.5s infinite;"></span>Peta Realtime</a>
     </nav>
     
     <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
@@ -416,9 +417,9 @@
     <span id="telemetryTempBadge" class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-sm text-label-sm font-semibold">
       Rata-rata 64.2°C
     </span>
-    <a id="btnMapGoogleLink" href="https://www.google.com/maps/search/?api=1&query=Badan+Gizi+Nasional+SPPG+DKI+Jakarta" target="_blank" class="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm">
+    <a id="btnMapGoogleLink" href="https://www.openstreetmap.org/search?query=Badan+Gizi+Nasional+SPPG+DKI+Jakarta" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm">
       <span class="material-symbols-outlined text-[16px]">location_on</span>
-      <span id="mapLinkText">Buka di Google Maps</span>
+      <span id="mapLinkText">Buka di OpenStreetMap</span>
       <span class="material-symbols-outlined text-[14px]">open_in_new</span>
     </a>
   </div>
@@ -433,45 +434,49 @@
   <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="nasional" data-label="Seluruh Indonesia" data-query="Badan Gizi Nasional Indonesia" data-temp="64.5°C">Seluruh Indonesia</button>
 </div>
 <!-- Map View Container with Leaflet Interactive Map -->
-<div class="relative w-full h-96 rounded-xl overflow-hidden bg-slate-900 shadow-inner flex flex-col justify-between">
-  <!-- Interactive Leaflet Map Div (Full Width & Height with Zoom & Drag) -->
-  <div id="mbgInteractiveMap" class="absolute inset-0 w-full h-full z-0"></div>
+<div style="position:relative;width:100%;height:420px;border-radius:12px;overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,0.08);">
 
-  <!-- Map Floating Badges (Overlaid on top of map) -->
-  <div class="relative flex justify-between items-start p-3 z-10 pointer-events-none">
-    <div class="pointer-events-auto p-2 rounded-lg bg-surface-card/95 backdrop-blur-md shadow-md flex items-center gap-2 border border-slate-200">
-      <span class="w-3 h-3 rounded-full bg-status-success animate-pulse"></span>
-      <div class="flex flex-col">
-        <span class="font-label-sm text-label-sm text-primary font-bold">Telemetri Satgas IoT Aktif</span>
-        <span id="mapVanCount" class="font-body-sm text-body-sm text-on-surface-variant">38.410 Armada Van &amp; 1.284 SPPG</span>
-      </div>
-    </div>
-    <div class="pointer-events-auto flex items-center gap-2">
-      <div class="px-3 py-1.5 rounded-lg bg-primary/90 backdrop-blur-md text-on-primary font-label-sm text-label-sm shadow flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        <span>Transmisi GPS Realtime</span>
+  <!-- Interactive Leaflet Map — height eksplisit wajib untuk Leaflet -->
+  <div id="mbgInteractiveMap" style="width:100%;height:420px;z-index:0;"></div>
+
+  <!-- Floating badge kiri atas -->
+  <div style="position:absolute;top:12px;left:12px;z-index:10;pointer-events:none;">
+    <div style="pointer-events:auto;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);box-shadow:0 2px 8px rgba(0,0,0,0.12);display:flex;align-items:center;gap:8px;border:1px solid #e2e8f0;">
+      <span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 1.5s infinite;flex-shrink:0;"></span>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#001026;">Telemetri Satgas IoT Aktif</div>
+        <div id="mapVanCount" style="font-size:10px;color:#64748b;">38.410 Armada Van &amp; 1.284 SPPG</div>
       </div>
     </div>
   </div>
 
-  <!-- Map Overlay Legend -->
-  <div class="relative z-10 p-2.5 mx-3 mb-3 rounded-xl bg-surface-card/95 backdrop-blur-md shadow-md flex flex-wrap items-center justify-between gap-3 border border-slate-200 pointer-events-auto">
-    <div class="flex flex-wrap items-center gap-4 text-xs">
-      <div class="flex items-center gap-1.5">
-        <span class="w-3 h-3 rounded-full bg-emerald-500 shadow-sm"></span>
-        <span class="font-medium text-slate-800">Dapur SPPG Terakreditasi</span>
+  <!-- Floating badge kanan atas -->
+  <div style="position:absolute;top:12px;right:12px;z-index:10;">
+    <div style="padding:6px 12px;border-radius:10px;background:rgba(0,16,38,0.88);backdrop-filter:blur(8px);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+      <span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;animation:pulse 1s infinite;"></span>
+      Transmisi GPS Realtime
+    </div>
+  </div>
+
+  <!-- Legend bawah -->
+  <div style="position:absolute;bottom:12px;left:12px;right:12px;z-index:10;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);box-shadow:0 2px 8px rgba(0,0,0,0.12);border:1px solid #e2e8f0;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;font-size:11px;">
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#059669;display:inline-block;"></span>
+        <span style="color:#1e293b;font-weight:500;">Dapur SPPG</span>
       </div>
-      <div class="flex items-center gap-1.5">
-        <span class="w-3 h-3 rounded-full bg-blue-500 shadow-sm"></span>
-        <span class="font-medium text-slate-800">Van Pengantar Termal (&gt;60°C)</span>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#2563eb;display:inline-block;"></span>
+        <span style="color:#1e293b;font-weight:500;">Van Termal (&gt;60°C)</span>
       </div>
-      <div class="flex items-center gap-1.5">
-        <span class="w-3 h-3 rounded-full bg-amber-500 shadow-sm"></span>
-        <span class="font-medium text-slate-800">Sekolah Penerima MBG</span>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>
+        <span style="color:#1e293b;font-weight:500;">Sekolah Penerima</span>
       </div>
     </div>
-    <span class="text-[11px] text-slate-500 font-mono hidden sm:inline">Zoom In/Out didukung (Wheel / Pinch)</span>
+    <span style="font-size:10px;color:#94a3b8;font-family:monospace;">Scroll = Zoom · Drag = Geser</span>
   </div>
+
 </div>
 <!-- Regional Macro Performance Strip -->
 <div class="grid grid-cols-3 gap-space-sm pt-space-xs">
@@ -1095,6 +1100,16 @@
   // Region Telemetry Button Styling
   const regionBtns = document.querySelectorAll('.region-telemetry-btn');
   const telemetryTempBadge = document.getElementById('telemetryTempBadge');
+  const btnMapLink = document.getElementById('btnMapGoogleLink');
+  const mapLinkText = document.getElementById('mapLinkText');
+
+  const regionOsmLinks = {
+    dki:      'https://www.openstreetmap.org/#map=12/-6.2088/106.8456',
+    jabar:    'https://www.openstreetmap.org/#map=11/-6.9175/107.6191',
+    jateng:   'https://www.openstreetmap.org/#map=11/-6.9932/110.4203',
+    jatim:    'https://www.openstreetmap.org/#map=11/-7.2575/112.7521',
+    nasional: 'https://www.openstreetmap.org/#map=5/-2.5489/118.0149'
+  };
 
   regionBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1104,8 +1119,13 @@
       btn.className = 'region-telemetry-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm transition-all';
 
       const temp = btn.getAttribute('data-temp');
-      if (telemetryTempBadge && temp) {
-        telemetryTempBadge.textContent = 'Rata-rata ' + temp;
+      const region = btn.getAttribute('data-region');
+      const label = btn.getAttribute('data-label');
+
+      if (telemetryTempBadge && temp) telemetryTempBadge.textContent = 'Rata-rata ' + temp;
+      if (btnMapLink && regionOsmLinks[region]) {
+        btnMapLink.href = regionOsmLinks[region];
+        if (mapLinkText) mapLinkText.textContent = 'Buka ' + label + ' di OSM';
       }
     });
   });
