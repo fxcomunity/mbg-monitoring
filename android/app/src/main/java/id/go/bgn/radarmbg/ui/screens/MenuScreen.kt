@@ -1,4 +1,4 @@
-package id.go.bgn.radarmbg.ui.screens
+﻿package id.go.bgn.radarmbg.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -95,7 +95,7 @@ fun MenuScreen(menuViewModel: MenuViewModel = viewModel()) {
                             FilterChip(
                                 selected = state.selectedKota.isBlank(),
                                 onClick = { menuViewModel.filterByKota("") },
-                                label = { Text("Semua") },
+                                label = { Text(stringResource(R.string.filter_semua)) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = BgnPrimary,
                                     selectedLabelColor = Color.White

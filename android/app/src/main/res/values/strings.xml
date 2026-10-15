@@ -117,4 +117,25 @@
     <!-- General -->
     <string name="loading">Memuat data...</string>
     <string name="error_umum">Terjadi kesalahan. Coba lagi.</string>
+
+    <!-- Dialog / Button generic -->
+    <string name="btn_ok">OK</string>
+    <string name="btn_batal">Batal</string>
+    <string name="btn_tutup">Tutup</string>
+    <string name="filter_semua">Semua</string>
+
+    <!-- Peta dropdown -->
+    <string name="peta_pilih_wilayah">Pilih Wilayah</string>
+
+    <!-- Laporan result -->
+    <string name="laporan_diterima">Laporan Diterima ✓</string>
+    <string name="label_nomor_tiket">Nomor Tiket:</string>
+    <string name="label_balasan">Balasan:</string>
+    <string name="label_kategori_tiket">Kategori:</string>
+    <string name="label_sekolah_tiket">Sekolah:</string>
+    <string name="tiket_tidak_ditemukan">Tiket tidak ditemukan.</string>
+
+    <!-- Profile password change -->
+    <string name="hint_password_lama">Kata Sandi Lama</string>
+    <string name="hint_password_baru">Kata Sandi Baru</string>
 </resources>

@@ -1,4 +1,4 @@
-package id.go.bgn.radarmbg.ui.screens
+﻿package id.go.bgn.radarmbg.ui.screens
 
 import android.content.Context
 import android.graphics.drawable.Drawable
@@ -114,7 +114,7 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
                     value = selectedWilayah.label,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Pilih Wilayah") },
+                    label = { Text(stringResource(R.string.peta_pilih_wilayah)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier
                         .fillMaxWidth()

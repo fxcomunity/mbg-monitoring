@@ -1,4 +1,4 @@
-package id.go.bgn.radarmbg.ui.screens
+﻿package id.go.bgn.radarmbg.ui.screens
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -116,10 +116,10 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
                         laporanViewModel.tanggal.value = sdf.format(Date(millis))
                     }
                     showDatePicker = false
-                }) { Text("OK") }
+                }) { Text(stringResource(R.string.btn_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Batal") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.btn_batal)) }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -309,10 +309,10 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Laporan Diterima ✓", fontWeight = FontWeight.Bold, color = StatusSuccess)
-                            Text("Nomor Tiket: ${s.data.nomor_tiket}", fontSize = 13.sp)
+                            Text(stringResource(R.string.laporan_diterima), fontWeight = FontWeight.Bold, color = StatusSuccess)
+                            Text(stringResource(R.string.label_nomor_tiket) + " " + s.data.nomor_tiket, fontSize = 13.sp)
                             if (s.data.catatan_satgas.isNotBlank()) {
-                                Text("Balasan: ${s.data.catatan_satgas}", fontSize = 12.sp, color = BgnOnSurfaceVariant)
+                                Text(stringResource(R.string.label_balasan) + " " + s.data.catatan_satgas, fontSize = 12.sp, color = BgnOnSurfaceVariant)
                             }
                         }
                     }
@@ -377,8 +377,8 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(t.data.nomor_tiket, fontWeight = FontWeight.Bold, color = BgnPrimary)
-                            Text("Kategori: ${t.data.kategori}", fontSize = 13.sp)
-                            Text("Sekolah: ${t.data.target_sekolah}", fontSize = 13.sp)
+                            Text(stringResource(R.string.label_kategori_tiket) + " " + t.data.kategori, fontSize = 13.sp)
+                            Text(stringResource(R.string.label_sekolah_tiket) + " " + t.data.target_sekolah, fontSize = 13.sp)
                             Text(
                                 text = t.data.status,
                                 color = statusColor,
@@ -397,7 +397,7 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
                     }
                 }
                 is TiketUiState.NotFound -> {
-                    Text("Tiket tidak ditemukan.", color = StatusWarning, fontSize = 13.sp)
+                    Text(stringResource(R.string.tiket_tidak_ditemukan), color = StatusWarning, fontSize = 13.sp)
                 }
                 is TiketUiState.Error -> {
                     Text(text = t.message, color = StatusError, fontSize = 13.sp)

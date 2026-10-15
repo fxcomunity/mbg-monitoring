@@ -1,4 +1,4 @@
-package id.go.bgn.radarmbg.ui.screens
+﻿package id.go.bgn.radarmbg.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -89,7 +89,7 @@ fun ProfileScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Batal")
+                    Text(stringResource(R.string.btn_batal))
                 }
             }
         )
@@ -105,7 +105,7 @@ fun ProfileScreen(
                     OutlinedTextField(
                         value = oldPassword,
                         onValueChange = { oldPassword = it },
-                        label = { Text("Kata Sandi Lama") },
+                        label = { Text(stringResource(R.string.hint_password_lama)) },
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -113,7 +113,7 @@ fun ProfileScreen(
                     OutlinedTextField(
                         value = newPassword,
                         onValueChange = { newPassword = it },
-                        label = { Text("Kata Sandi Baru") },
+                        label = { Text(stringResource(R.string.hint_password_baru)) },
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -130,7 +130,7 @@ fun ProfileScreen(
                     onClick = { showPasswordDialog = false },
                     colors = ButtonDefaults.buttonColors(containerColor = BgnPrimary)
                 ) {
-                    Text("Tutup")
+                    Text(stringResource(R.string.btn_tutup))
                 }
             }
         )
