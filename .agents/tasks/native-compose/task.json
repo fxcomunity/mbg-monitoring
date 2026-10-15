@@ -1,0 +1,7 @@
+{
+  "task_id": "task-native-compose",
+  "task_description": "Rebuild the Radar MBG Android app from WebView wrapper to full native Kotlin + Jetpack Compose. Remove all XML layouts and WebView code; implement single-activity NavHost architecture with Retrofit data layer, OSMDroid map, and complete screen set (Splash, Login, Register, Home, Menu, Peta, Laporan, Profile, Notifikasi).",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

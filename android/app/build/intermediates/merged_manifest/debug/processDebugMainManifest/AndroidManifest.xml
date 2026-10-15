@@ -44,6 +44,24 @@
 
     <uses-permission android:name="id.go.bgn.radarmbg.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
 
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true" />
+
+    <uses-feature
+        android:name="android.hardware.location.network"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.wifi"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
@@ -58,25 +76,18 @@
         android:theme="@style/Theme.RadarMBG"
         android:usesCleartextTraffic="true" >
 
-        <!-- Splash Screen Activity -->
+        <!-- Main Activity (Launcher) -->
         <activity
-            android:name="id.go.bgn.radarmbg.SplashActivity"
+            android:name="id.go.bgn.radarmbg.MainActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="true"
-            android:screenOrientation="portrait"
-            android:theme="@style/Theme.RadarMBG.Splash" >
+            android:theme="@style/Theme.RadarMBG"
+            android:windowSoftInputMode="adjustResize" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- Main Dashboard Activity -->
-        <activity
-            android:name="id.go.bgn.radarmbg.MainActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:exported="true"
-            android:windowSoftInputMode="adjustResize" >
 
             <!-- Deep Link Handler for Portal URLs -->
             <intent-filter android:autoVerify="true" >

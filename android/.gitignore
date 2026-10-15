@@ -1,0 +1,8 @@
+﻿# Android build output
+build/
+.gradle/
+local.properties
+*.apk
+*.aab
+*.keystore
+*.jks

@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "id.go.bgn.radarmbg.app-mergeDebugResources-32:/values-watch-v20/values-watch-v20.xml",
+            "outputFile": "id.go.bgn.radarmbg.app-mergeDebugResources-66:/values-watch-v20/values-watch-v20.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\user\\.gradle\\caches\\8.14\\transforms\\0de6166b46eab20e67a096df5d6b27c1\\transformed\\appcompat-1.7.0\\res\\values-watch-v20\\values-watch-v20.xml",
+                    "source": "C:\\Users\\user\\.gradle\\caches\\8.14\\transforms\\1c846f053922d15c0228deb17bd4b661\\transformed\\appcompat-1.6.1\\res\\values-watch-v20\\values-watch-v20.xml",
                     "from": {
                         "startLines": "2,5,8",
                         "startColumns": "4,4,4",

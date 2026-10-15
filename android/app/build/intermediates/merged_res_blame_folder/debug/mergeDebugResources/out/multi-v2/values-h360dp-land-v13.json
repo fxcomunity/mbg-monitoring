@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "id.go.bgn.radarmbg.app-mergeDebugResources-32:/values-h360dp-land-v13/values-h360dp-land-v13.xml",
+            "outputFile": "id.go.bgn.radarmbg.app-mergeDebugResources-66:/values-h360dp-land-v13/values-h360dp-land-v13.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\user\\.gradle\\caches\\8.14\\transforms\\82edb1e429ba64226eb357b065ef8955\\transformed\\material-1.12.0\\res\\values-h360dp-land-v13\\values-h360dp-land-v13.xml",
+                    "source": "C:\\Users\\user\\.gradle\\caches\\8.14\\transforms\\8d8e9d2571b4c084e31e80e1e5cb25a8\\transformed\\material-1.12.0\\res\\values-h360dp-land-v13\\values-h360dp-land-v13.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10",
                         "startColumns": "4,4,4,4,4,4,4,4,4",
