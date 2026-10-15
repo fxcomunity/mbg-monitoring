@@ -1,13 +1,10 @@
 /**
  * Cloudflare Worker — Auth API
- * Route: /api/auth
+ * Route: GET/POST /api/auth
  * Replaces: api/auth_user.php
- *
- * KV Bindings required:
- *   USERS  — stores user records keyed by username
- *   SESSIONS — stores active sessions keyed by session token
- *   RATE   — stores rate limit counters keyed by IP
  */
+
+import { neon } from '@neondatabase/serverless';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -16,137 +13,151 @@ const CORS = {
   'Content-Type': 'application/json'
 };
 
-const SESSION_TTL = 43200; // 12 hours in seconds
-const RATE_MAX = 5;
-const RATE_WINDOW = 900; // 15 minutes
+const SESSION_TTL = 43200;
+const RATE_MAX    = 5;
+const RATE_WINDOW = 900;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS });
 }
 
 async function hashPassword(password, salt) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(salt + password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const data = new TextEncoder().encode(salt + password);
+  const buf  = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 function generateToken() {
   const arr = new Uint8Array(32);
   crypto.getRandomValues(arr);
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-async function checkRateLimit(env, ip) {
-  const key = `rate:${ip}`;
-  const current = await env.RATE.get(key);
-  const count = current ? parseInt(current) : 0;
-  if (count >= RATE_MAX) return false;
-  await env.RATE.put(key, String(count + 1), { expirationTtl: RATE_WINDOW });
-  return true;
+async function getSession(request, env) {
+  const cookie = request.headers.get('Cookie') || '';
+  const match  = cookie.match(/mbg_token=([a-f0-9]{64})/);
+  if (!match || !env.SESSIONS) return null;
+  const data = await env.SESSIONS.get(match[1]);
+  return data ? JSON.parse(data) : null;
 }
 
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
-    // Validate X-Requested-By header (anti-scraping)
-    if (request.headers.get('X-Requested-By') !== 'mbg-radar' && request.method === 'POST') {
-      return json({ status: 'error', message: 'Akses tidak diizinkan.' }, 403);
-    }
+    if (!env.DATABASE_URL) return json({ status: 'error', message: 'DATABASE_URL tidak dikonfigurasi' }, 500);
 
-    const url = new URL(request.url);
-    const ip = request.headers.get('CF-Connecting-IP') || '0.0.0.0';
+    const sql = neon(env.DATABASE_URL);
 
-    // GET /api/auth — check session
+    // ── GET: cek sesi ────────────────────────────────────────────────────────
     if (request.method === 'GET') {
-      const cookie = request.headers.get('Cookie') || '';
-      const match = cookie.match(/mbg_token=([a-f0-9]{64})/);
-      if (!match) return json({ logged_in: false });
-
-      const sessionData = await env.SESSIONS.get(match[1]);
-      if (!sessionData) return json({ logged_in: false });
-
-      const session = JSON.parse(sessionData);
-      return json({ logged_in: true, user: { full_name: session.name, role: session.role } });
+      const session = await getSession(request, env);
+      if (!session) return json({ logged_in: false });
+      return json({
+        logged_in: true,
+        user: {
+          username:   session.username || '',
+          full_name:  session.name || '',
+          role:       session.role,
+          role_label: { admin: 'Admin Satgas BGN', sppg: 'Mitra Dapur SPPG', user: 'Wali Murid / Publik' }[session.role] || session.role,
+          sppg_name:  session.sppg_name || '',
+          avatar:     session.avatar || ''
+        }
+      });
     }
 
-    // POST /api/auth — login or register
+    // ── POST ─────────────────────────────────────────────────────────────────
     if (request.method === 'POST') {
-      const formData = await request.formData();
-      const action = formData.get('action');
-
-      // ── LOGIN ──────────────────────────────────────────────
-      if (action === 'login') {
-        const allowed = await checkRateLimit(env, ip);
-        if (!allowed) {
-          return json({ status: 'error', message: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' }, 429);
-        }
-
-        const username = (formData.get('username') || '').trim().toLowerCase();
-        const password = formData.get('password') || '';
-
-        if (!username || !password) {
-          return json({ status: 'error', message: 'Username dan kata sandi wajib diisi.' });
-        }
-
-        const userData = await env.USERS.get(`user:${username}`);
-        if (!userData) {
-          return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
-        }
-
-        const user = JSON.parse(userData);
-        const hashedInput = await hashPassword(password, user.salt);
-
-        if (hashedInput !== user.password_hash) {
-          return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
-        }
-
-        // Create session
-        const token = generateToken();
-        const sessionPayload = { name: user.full_name, role: user.role, username };
-        await env.SESSIONS.put(token, JSON.stringify(sessionPayload), { expirationTtl: SESSION_TTL });
-
-        const headers = new Headers(CORS);
-        headers.set('Set-Cookie', `mbg_token=${token}; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_TTL}; Path=/`);
-
-        return new Response(JSON.stringify({
-          status: 'success',
-          user: { full_name: user.full_name, role: user.role }
-        }), { status: 200, headers });
+      let body = {};
+      const ct = request.headers.get('Content-Type') || '';
+      if (ct.includes('application/json')) {
+        body = await request.json().catch(() => ({}));
+      } else {
+        const fd = await request.formData().catch(() => null);
+        if (fd) fd.forEach((v, k) => { body[k] = v; });
       }
 
-      // ── REGISTER ───────────────────────────────────────────
+      const action = body.action || '';
+      const ip     = request.headers.get('CF-Connecting-IP') || '0.0.0.0';
+
+      // LOGIN
+      if (action === 'login') {
+        if (env.RATE) {
+          const rk  = `rate:login:${ip}`;
+          const cnt = parseInt(await env.RATE.get(rk) || '0');
+          if (cnt >= RATE_MAX) return json({ status: 'error', message: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' }, 429);
+          await env.RATE.put(rk, String(cnt + 1), { expirationTtl: RATE_WINDOW });
+        }
+
+        const username = String(body.username || '').trim().toLowerCase();
+        const password = String(body.password || '');
+        if (!username || !password) return json({ status: 'error', message: 'Username dan kata sandi wajib diisi.' });
+
+        try {
+          const rows = await sql.query(
+            `SELECT id, username, full_name, email, role, sppg_name, password_hash, salt, avatar_url, avatar_status
+             FROM users WHERE (username = $1 OR email = $1) AND active = TRUE LIMIT 1`,
+            [username]
+          );
+          const user = rows[0];
+          if (!user) return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
+
+          const hash = await hashPassword(password, user.salt || '');
+          if (hash !== user.password_hash) return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
+
+          const token   = generateToken();
+          const session = { username: user.username, name: user.full_name, role: user.role, sppg_name: user.sppg_name || '', avatar: user.avatar_url || '' };
+          if (env.SESSIONS) await env.SESSIONS.put(token, JSON.stringify(session), { expirationTtl: SESSION_TTL });
+
+          const headers = new Headers(CORS);
+          headers.set('Set-Cookie', `mbg_token=${token}; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_TTL}; Path=/`);
+          return new Response(JSON.stringify({ status: 'success', user: { full_name: user.full_name, role: user.role } }), { status: 200, headers });
+
+        } catch (err) {
+          return json({ status: 'error', message: 'Gagal memproses login: ' + err.message }, 500);
+        }
+      }
+
+      // REGISTER
       if (action === 'register') {
-        const full_name = (formData.get('full_name') || '').trim();
-        const email = (formData.get('email') || '').trim().toLowerCase();
-        const username = (formData.get('username') || '').trim().toLowerCase();
-        const password = formData.get('password') || '';
-        const role = formData.get('role') === 'sppg' ? 'sppg' : 'user';
+        const full_name = String(body.full_name || '').trim();
+        const email     = String(body.email     || '').trim().toLowerCase();
+        const username  = String(body.username  || '').trim().toLowerCase();
+        const password  = String(body.password  || '');
+        const role      = ['sppg','user'].includes(body.role) ? body.role : 'user';
+        const sppg_name = String(body.sppg_name || '').trim();
 
-        if (!full_name || !email || !username || !password) {
-          return json({ status: 'error', message: 'Semua kolom wajib diisi.' });
+        if (!full_name || !email || !username || !password) return json({ status: 'error', message: 'Semua kolom wajib diisi.' });
+        if (username.length < 3)  return json({ status: 'error', message: 'Username minimal 3 karakter.' });
+        if (password.length < 6)  return json({ status: 'error', message: 'Kata sandi minimal 6 karakter.' });
+
+        try {
+          const check = await sql.query(`SELECT id FROM users WHERE username = $1 OR email = $2 LIMIT 1`, [username, email]);
+          if (check.length) return json({ status: 'error', message: 'Username atau email sudah digunakan.' });
+
+          const salt = generateToken().substring(0, 16);
+          const hash = await hashPassword(password, salt);
+          await sql.query(
+            `INSERT INTO users (username, full_name, email, role, sppg_name, password_hash, salt, active, created_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE,NOW())`,
+            [username, full_name, email, role, sppg_name || null, hash, salt]
+          );
+          return json({ status: 'success', message: 'Akun berhasil didaftarkan. Silakan masuk.' });
+        } catch (err) {
+          return json({ status: 'error', message: 'Gagal mendaftar: ' + err.message }, 500);
         }
-        if (username.length < 3) {
-          return json({ status: 'error', message: 'Username minimal 3 karakter.' });
+      }
+
+      // LIST USERS (admin only)
+      if (action === 'list_users') {
+        const session = await getSession(request, env);
+        if (!session || session.role !== 'admin') return json({ status: 'error', message: 'Hanya admin.' }, 403);
+        try {
+          const rows = await sql.query(`SELECT id, username, full_name, email, role, sppg_name, avatar_status, active, created_at FROM users ORDER BY created_at DESC LIMIT 200`);
+          return json({ status: 'success', data: rows });
+        } catch (err) {
+          return json({ status: 'error', message: err.message }, 500);
         }
-        if (password.length < 6) {
-          return json({ status: 'error', message: 'Kata sandi minimal 6 karakter.' });
-        }
-
-        const existing = await env.USERS.get(`user:${username}`);
-        if (existing) {
-          return json({ status: 'error', message: 'Username sudah digunakan.' });
-        }
-
-        const salt = generateToken().substring(0, 16);
-        const password_hash = await hashPassword(password, salt);
-
-        const newUser = { full_name, email, username, role, salt, password_hash, created_at: Date.now() };
-        await env.USERS.put(`user:${username}`, JSON.stringify(newUser));
-
-        return json({ status: 'success', message: 'Akun berhasil didaftarkan. Silakan masuk.' });
       }
 
       return json({ status: 'error', message: 'Aksi tidak dikenal.' }, 400);

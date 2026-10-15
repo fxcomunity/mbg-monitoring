@@ -1,6 +1,7 @@
 name = "mbg-monitoring-api"
 main = "auth.js"
 compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
 
 # ─── Cron Trigger ──────────────────────────────────────────────────────────
 [triggers]
