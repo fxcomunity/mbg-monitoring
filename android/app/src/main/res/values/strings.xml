@@ -40,4 +40,81 @@
     <!-- Error States -->
     <string name="network_error_title">Koneksi Internet Terputus</string>
     <string name="network_error_message">Periksa kembali koneksi internet untuk memuat data pemantauan real-time Radar MBG.</string>
+
+    <!-- Login Screen -->
+    <string name="login_judul">Masuk ke Akun</string>
+    <string name="login_subtitle">Monitor program MBG secara real-time</string>
+    <string name="hint_username">Username</string>
+    <string name="hint_password">Kata Sandi</string>
+    <string name="btn_login">Masuk</string>
+    <string name="link_register">Belum punya akun? Daftar</string>
+    <string name="label_error_login">Login gagal</string>
+
+    <!-- Register Screen -->
+    <string name="register_judul">Buat Akun Baru</string>
+    <string name="hint_nama_lengkap">Nama Lengkap</string>
+    <string name="hint_email">Email</string>
+    <string name="hint_konfirmasi_password">Konfirmasi Kata Sandi</string>
+    <string name="label_role">Daftar sebagai</string>
+    <string name="role_user">Wali Murid / Publik</string>
+    <string name="role_sppg">Pengelola SPPG</string>
+    <string name="hint_sppg_name">Nama Dapur SPPG</string>
+    <string name="btn_register">Daftar</string>
+    <string name="link_login">Sudah punya akun? Masuk</string>
+
+    <!-- Home Screen -->
+    <string name="kpi_sekolah_terlayani">Sekolah Terlayani</string>
+    <string name="kpi_porsi">Porsi Terdistribusi</string>
+    <string name="kpi_kepatuhan">Kepatuhan AKG</string>
+    <string name="kpi_sppg_aktif">SPPG Aktif</string>
+    <string name="label_distribusi_provinsi">Distribusi per Provinsi</string>
+    <string name="label_ketepatan">Ketepatan</string>
+    <string name="pull_to_refresh">Tarik untuk memuat ulang</string>
+
+    <!-- Menu Screen -->
+    <string name="menu_judul">Menu Hari Ini</string>
+    <string name="menu_empty">Belum ada data menu untuk hari ini</string>
+    <string name="label_kalori">kkal</string>
+    <string name="label_protein">Protein</string>
+    <string name="label_karbohidrat">Karbohidrat</string>
+    <string name="label_lemak">Lemak</string>
+
+    <!-- Peta Screen -->
+    <string name="peta_judul">Peta Distribusi SPPG</string>
+    <string name="wilayah_semua">Seluruh Indonesia</string>
+    <string name="wilayah_dki">DKI Jakarta</string>
+    <string name="wilayah_jabar">Jawa Barat</string>
+    <string name="wilayah_jateng">Jawa Tengah</string>
+    <string name="wilayah_jatim">Jawa Timur</string>
+
+    <!-- Laporan Screen -->
+    <string name="laporan_judul">Laporan &amp; Aduan</string>
+    <string name="hint_nama">Nama Lengkap</string>
+    <string name="hint_telepon">Nomor Telepon</string>
+    <string name="hint_sekolah">Nama Sekolah</string>
+    <string name="hint_tanggal">Tanggal Kejadian</string>
+    <string name="hint_deskripsi">Deskripsi Aduan</string>
+    <string name="label_kategori">Kategori Aduan</string>
+    <string name="btn_foto">Lampirkan Foto</string>
+    <string name="btn_kirim">Kirim Laporan</string>
+    <string name="label_tiket_tracking">Lacak Status Laporan</string>
+    <string name="hint_nomor_tiket">Nomor Tiket: TKT-XXXXX</string>
+    <string name="btn_cek_tiket">Cek Status</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_judul">Profil Saya</string>
+    <string name="btn_ganti_password">Ganti Kata Sandi</string>
+    <string name="btn_logout">Keluar</string>
+    <string name="confirm_logout">Yakin ingin keluar?</string>
+
+    <!-- Notifikasi Screen -->
+    <string name="notifikasi_judul">Notifikasi</string>
+    <string name="notif_empty">Tidak ada notifikasi baru</string>
+
+    <!-- Nav Tabs -->
+    <string name="nav_peta">Peta SPPG</string>
+
+    <!-- General -->
+    <string name="loading">Memuat data...</string>
+    <string name="error_umum">Terjadi kesalahan. Coba lagi.</string>
 </resources>

@@ -40,25 +40,18 @@
         android:hardwareAccelerated="true"
         tools:targetApi="34">
 
-        <!-- Splash Screen Activity -->
+        <!-- Main Activity (Launcher) -->
         <activity
-            android:name=".SplashActivity"
+            android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.RadarMBG.Splash"
-            android:screenOrientation="portrait">
+            android:theme="@style/Theme.RadarMBG"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
 
-        <!-- Main Dashboard Activity -->
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:windowSoftInputMode="adjustResize">
-            
             <!-- Deep Link Handler for Portal URLs -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
