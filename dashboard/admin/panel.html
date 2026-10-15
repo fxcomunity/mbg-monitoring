@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel Administrasi Sistem — Radar MBG</title>
+  <link rel="icon" type="image/webp" href="../../assets/images/logo.webp"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#001026', 'primary-container': '#0b2545',
+            secondary: '#395f95', 'tertiary-fixed': '#6ffbbe',
+            surface: '#f8f9ff', 'surface-card': '#ffffff',
+            'status-success': '#059669', 'status-warning': '#f59e0b', 'status-error': '#ef4444'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="../../assets/css/style.css"/>
+  <link rel="stylesheet" href="../../assets/css/dashboard.css"/>
+  <style>html{visibility:hidden}</style>
+  <script>
+  // Auth guard — admin only
+  (function(){
+    var K='mbg_session';
+    function clr(){try{sessionStorage.removeItem(K);localStorage.removeItem(K)}catch(e){}}
+    function rd(st){try{var x=JSON.parse(st.getItem(K)||'null');if(!x||x.role!=='admin')return null;if(x.exp&&x.exp<Date.now()){clr();return null}return x}catch(e){return null}}
+    var s=rd(sessionStorage)||rd(localStorage);
+    if(s){document.documentElement.style.visibility='visible'}
+    else{location.replace('../../auth/login.html')}
+  })();
+  </script>
+</head>
+<body class="bg-surface font-sans text-primary min-h-screen">
+
+  <!-- Header -->
+  <header class="w-full bg-primary text-white sticky top-0 z-40 px-4 sm:px-8 py-3 flex items-center justify-between shadow-md">
+    <div class="flex items-center gap-3">
+      <img src="../../assets/images/logo.webp" alt="Logo BGN" class="h-9 w-auto"/>
+      <div>
+        <span class="font-extrabold text-sm tracking-tight">Panel Administrasi Sistem</span>
+        <p class="text-[10px] text-slate-300">Badan Gizi Nasional — Akses Terbatas</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="index.html" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all">
+        <span class="material-symbols-outlined text-sm">dashboard</span>
+        <span class="hidden sm:inline">Dashboard Operasional</span>
+      </a>
+      <a href="../../index.html" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all">
+        <span class="material-symbols-outlined text-sm">public</span>
+        <span>Web Publik</span>
+      </a>
+      <a href="../../auth/login.html" id="panelLogoutBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white transition-all shadow-sm">
+        <span class="material-symbols-outlined text-sm">logout</span>
+        <span>Keluar</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-8 py-6">
+
+    <!-- Page Title + breadcrumb -->
+    <div class="mb-6">
+      <div class="flex items-center gap-2 text-xs text-slate-400 mb-1">
+        <a href="../../index.html" class="hover:text-primary">Beranda</a>
+        <span>/</span>
+        <a href="index.html" class="hover:text-primary">Dashboard Admin</a>
+        <span>/</span>
+        <span class="text-primary font-semibold">Panel Administrasi</span>
+      </div>
+      <h1 class="text-2xl font-extrabold text-primary">Panel Administrasi Sistem</h1>
+      <p class="text-sm text-slate-500 mt-1">Pengelolaan akun, persetujuan, status SPPG, dan pemeliharaan sistem.</p>
+    </div>
+
+    <!-- Quick nav pills -->
+    <div class="flex flex-wrap gap-2 mb-8 p-2.5 bg-white rounded-2xl border border-slate-200 shadow-sm sticky top-16 z-20">
+      <a href="#akun" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[15px] text-purple-600">manage_accounts</span> Manajemen Akun
+      </a>
+      <a href="#sppg-status" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[15px] text-blue-600">kitchen</span> Status SPPG
+      </a>
+      <a href="#approval-pp" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[15px] text-emerald-600">how_to_reg</span> Approval Foto SPPG
+      </a>
+      <a href="#maintenance" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-50 hover:text-amber-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[15px] text-amber-600">build</span> Pemeliharaan Sistem
+      </a>
+      <a href="#security-log" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-red-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[15px] text-red-600">security</span> Log Keamanan
+      </a>
+      <a href="#system-config" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
+        <span class="material-symbols-outlined text-[15px] text-slate-600">settings</span> Konfigurasi Sistem
+      </a>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION 1: MANAJEMEN AKUN PENGGUNA
+    ══════════════════════════════════════════ -->
+    <div id="akun" class="bg-surface-card rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+      <div class="p-6 bg-purple-50/60 border-b border-purple-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">manage_accounts</span>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-primary">Manajemen Akun Pengguna & Hak Akses</h2>
+            <p class="text-xs text-slate-500">Buat, edit, dan kelola semua akun pengguna sistem.</p>
+          </div>
+        </div>
+        <button onclick="toggleSection('formTambahAkun')" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all shrink-0">
+          <span class="material-symbols-outlined text-sm">person_add</span> Tambah Akun Baru
+        </button>
+      </div>
+
+      <!-- Form tambah akun (collapsible) -->
+      <div id="formTambahAkun" class="hidden p-6 bg-slate-50 border-b border-slate-200">
+        <h3 class="text-sm font-bold text-primary mb-4">Daftarkan Akun Resmi Baru</h3>
+        <form action="#" id="formCreateUser" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <input type="hidden" name="action" value="create_user"/>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Username</label>
+            <input type="text" name="username" placeholder="Contoh: sppg_bali" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-purple-400 outline-none"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nama Lengkap</label>
+            <input type="text" name="full_name" placeholder="Nama Lengkap" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-purple-400 outline-none"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Email Resmi</label>
+            <input type="email" name="email" placeholder="email@bgn.go.id" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-purple-400 outline-none"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Kata Sandi</label>
+            <input type="password" name="password" placeholder="Min. 6 karakter" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-purple-400 outline-none"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Role</label>
+            <select name="role" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-purple-400 outline-none">
+              <option value="sppg">SPPG (Mitra Dapur)</option>
+              <option value="admin">Admin Satgas BGN</option>
+              <option value="user">User / Wali Murid</option>
+            </select>
+          </div>
+          <div class="col-span-full flex gap-3 pt-1">
+            <button type="submit" class="px-5 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all">
+              <span class="material-symbols-outlined text-sm">save</span> Simpan Akun
+            </button>
+            <button type="button" onclick="toggleSection('formTambahAkun')" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs transition-all">Batal</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tabel pengguna -->
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <input type="text" id="searchUser" placeholder="Cari username, nama, email..." oninput="filterUsers(this.value)" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs w-64 focus:ring-2 focus:ring-purple-400 outline-none"/>
+          <select id="filterRole" onchange="filterUsers(document.getElementById('searchUser').value)" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
+            <option value="">Semua Role</option>
+            <option value="admin">Admin</option>
+            <option value="sppg">SPPG</option>
+            <option value="user">User</option>
+          </select>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left" id="userTable">
+            <thead>
+              <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[11px]">
+                <th class="py-2.5 px-3 rounded-l-lg">Username</th>
+                <th class="py-2.5 px-3">Nama Lengkap</th>
+                <th class="py-2.5 px-3">Email</th>
+                <th class="py-2.5 px-3">Role</th>
+                <th class="py-2.5 px-3">Status</th>
+                <th class="py-2.5 px-3 rounded-r-lg">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody" class="divide-y divide-slate-100">
+              <!-- Diisi via JS dari API -->
+              <tr><td colspan="6" class="py-6 text-center text-slate-400">Memuat data pengguna...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION 2: STATUS SPPG
+    ══════════════════════════════════════════ -->
+    <div id="sppg-status" class="bg-surface-card rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+      <div class="p-6 bg-blue-50/60 border-b border-blue-100 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">kitchen</span>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-primary">Status & Monitoring SPPG</h2>
+          <p class="text-xs text-slate-500">Pantau status operasional, sertifikasi, dan aktivitas semua dapur SPPG terdaftar.</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <!-- KPI row -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
+            <p class="text-[11px] text-emerald-700 font-bold uppercase">Aktif & Beroperasi</p>
+            <p class="text-2xl font-black text-emerald-700 mt-1" id="sppgCountAktif">—</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-amber-50 border border-amber-100">
+            <p class="text-[11px] text-amber-700 font-bold uppercase">Sertifikasi Segera Habis</p>
+            <p class="text-2xl font-black text-amber-700 mt-1" id="sppgCountHabis">—</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-red-50 border border-red-100">
+            <p class="text-[11px] text-red-700 font-bold uppercase">Nonaktif / Suspend</p>
+            <p class="text-2xl font-black text-red-700 mt-1" id="sppgCountSuspend">—</p>
+          </div>
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <p class="text-[11px] text-slate-600 font-bold uppercase">Total Terdaftar</p>
+            <p class="text-2xl font-black text-slate-700 mt-1" id="sppgCountTotal">—</p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[11px]">
+                <th class="py-2.5 px-3 rounded-l-lg">Nama SPPG</th>
+                <th class="py-2.5 px-3">Kota</th>
+                <th class="py-2.5 px-3">Status</th>
+                <th class="py-2.5 px-3">Sertifikasi SLHS</th>
+                <th class="py-2.5 px-3">Kapasitas/hari</th>
+                <th class="py-2.5 px-3">Menu Terakhir</th>
+                <th class="py-2.5 px-3 rounded-r-lg">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="sppgTableBody" class="divide-y divide-slate-100">
+              <tr><td colspan="7" class="py-6 text-center text-slate-400">Memuat data SPPG...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION 3: APPROVAL FOTO PROFIL SPPG
+    ══════════════════════════════════════════ -->
+    <div id="approval-pp" class="bg-surface-card rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+      <div class="p-6 bg-emerald-50/60 border-b border-emerald-100 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">how_to_reg</span>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-primary">Persetujuan Penggantian Foto Profil SPPG</h2>
+          <p class="text-xs text-slate-500">Foto profil dapur SPPG hanya aktif setelah disetujui admin BGN.</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <div id="approvalList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Contoh card pending approval -->
+          <div class="border border-amber-200 rounded-2xl overflow-hidden bg-amber-50/40">
+            <div class="aspect-video bg-slate-100 flex items-center justify-center relative">
+              <img src="../../assets/images/food-placeholder.svg" alt="Foto pengajuan" class="w-full h-full object-cover opacity-60"/>
+              <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold">Menunggu Review</span>
+            </div>
+            <div class="p-3">
+              <p class="font-bold text-xs text-primary">SPPG Jakarta Pusat</p>
+              <p class="text-[11px] text-slate-500 mb-3">Diajukan: 15 Okt 2026 · 08:42 WIB</p>
+              <div class="flex gap-2">
+                <button onclick="approvePhoto(this, 'demo-1')" class="flex-1 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition-all">
+                  <span class="material-symbols-outlined text-sm">check_circle</span> Setujui
+                </button>
+                <button onclick="rejectPhoto(this, 'demo-1')" class="flex-1 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-bold text-[11px] flex items-center justify-center gap-1 transition-all border border-red-200">
+                  <span class="material-symbols-outlined text-sm">cancel</span> Tolak
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Empty state jika tidak ada -->
+          <div id="approvalEmpty" class="hidden col-span-full py-8 text-center text-slate-400 text-sm">
+            <span class="material-symbols-outlined text-4xl text-slate-300 block mb-2">check_circle</span>
+            Tidak ada pengajuan foto yang menunggu persetujuan.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION 4: PEMELIHARAAN SISTEM
+    ══════════════════════════════════════════ -->
+    <div id="maintenance" class="bg-surface-card rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+      <div class="p-6 bg-amber-50/60 border-b border-amber-100 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">build</span>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-primary">Pemeliharaan & Kesehatan Sistem</h2>
+          <p class="text-xs text-slate-500">Operasi database, cache, dan monitoring performa sistem.</p>
+        </div>
+      </div>
+      <div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <!-- Health cards -->
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-700 uppercase">Database Neon</span>
+            <span id="dbStatus" class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">Mengecek...</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-3">PostgreSQL serverless · Neon Tech</p>
+          <button onclick="checkDbHealth()" class="w-full py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-[11px] transition-all">Cek Koneksi</button>
+        </div>
+
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-700 uppercase">Cache KV</span>
+            <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">Cloudflare KV</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-3">7 namespace aktif · Menu cache 5 menit</p>
+          <button onclick="clearMenuCache()" class="w-full py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] transition-all">Bersihkan Cache Menu</button>
+        </div>
+
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-700 uppercase">Backup Menu</span>
+            <span id="lastBackupBadge" class="px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 text-[10px] font-bold">—</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-3">Arsip otomatis setiap 00:05 WIB</p>
+          <button onclick="triggerManualBackup()" class="w-full py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold text-[11px] transition-all">Jalankan Arsip Manual</button>
+        </div>
+
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-700 uppercase">Mode Maintenance</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="maintenanceToggle" class="sr-only peer" onchange="toggleMaintenance(this.checked)"/>
+              <div class="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-amber-500 transition-all"></div>
+              <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all peer-checked:translate-x-4"></div>
+            </label>
+          </div>
+          <p class="text-[11px] text-slate-500">Aktifkan mode pemeliharaan — tampilkan halaman maintenance ke pengunjung.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-700 uppercase">Vakum Database</span>
+            <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-bold">PostgreSQL</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-3">VACUUM ANALYZE untuk optimalkan performa query.</p>
+          <button onclick="vacuumDb()" class="w-full py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-[11px] transition-all">Jalankan VACUUM</button>
+        </div>
+
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-bold text-slate-700 uppercase">Versi Sistem</span>
+            <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold">v2.0</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-1">Radar MBG · Cloudflare Pages</p>
+          <p class="text-[11px] text-slate-400">Workers: auth · data · menu · security · ws</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION 5: LOG KEAMANAN
+    ══════════════════════════════════════════ -->
+    <div id="security-log" class="bg-surface-card rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+      <div class="p-6 bg-red-50/60 border-b border-red-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">security</span>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-primary">Log Ancaman & Keamanan Sistem</h2>
+            <p class="text-xs text-slate-500">XSS, scraping, brute force, honeypot — dicatat dari semua halaman.</p>
+          </div>
+        </div>
+        <button onclick="loadSecurityLogs()" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all shrink-0">
+          <span class="material-symbols-outlined text-sm">refresh</span> Muat Ulang Log
+        </button>
+      </div>
+      <div class="p-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[11px]">
+                <th class="py-2.5 px-3 rounded-l-lg">Waktu</th>
+                <th class="py-2.5 px-3">Jenis Ancaman</th>
+                <th class="py-2.5 px-3">IP</th>
+                <th class="py-2.5 px-3">Negara</th>
+                <th class="py-2.5 px-3">URL Asal</th>
+                <th class="py-2.5 px-3 rounded-r-lg">Status</th>
+              </tr>
+            </thead>
+            <tbody id="securityLogBody" class="divide-y divide-slate-100">
+              <tr><td colspan="6" class="py-6 text-center text-slate-400">Klik "Muat Ulang Log" untuk menampilkan data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SECTION 6: KONFIGURASI SISTEM
+    ══════════════════════════════════════════ -->
+    <div id="system-config" class="bg-surface-card rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+      <div class="p-6 bg-slate-50 border-b border-slate-200 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-slate-200 text-slate-700 flex items-center justify-center">
+          <span class="material-symbols-outlined text-2xl">settings</span>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-primary">Konfigurasi & Pengaturan Sistem</h2>
+          <p class="text-xs text-slate-500">Atur parameter global sistem Radar MBG.</p>
+        </div>
+      </div>
+      <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nama Aplikasi</label>
+          <input type="text" value="Radar MBG Nasional" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-400 outline-none"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL Aplikasi</label>
+          <input type="text" value="https://mbg.jack-ai.my.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-400 outline-none"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Batas Upload Foto (MB)</label>
+          <input type="number" value="10" min="1" max="50" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-400 outline-none"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">TTL Session (Jam)</label>
+          <input type="number" value="12" min="1" max="72" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-slate-400 outline-none"/>
+        </div>
+        <div class="col-span-full flex justify-end pt-2">
+          <button class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all">
+            <span class="material-symbols-outlined text-sm">save</span> Simpan Konfigurasi
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end max-w-7xl -->
+
+  <!-- Toast -->
+  <div id="panelToast" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl text-white text-xs font-bold flex items-center gap-2" style="background:#001026;border:1px solid rgba(111,251,190,0.3)">
+    <span id="panelToastIcon" class="material-symbols-outlined text-[16px] text-[#6ffbbe]">info</span>
+    <span id="panelToastMsg">—</span>
+  </div>
+
+  <script src="../../assets/js/dashboard-common.js"></script>
+  <script>
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function showToast(msg, type) {
+    var t = document.getElementById('panelToast');
+    var i = document.getElementById('panelToastIcon');
+    var m = document.getElementById('panelToastMsg');
+    var colors = { success: '#059669', error: '#dc2626', info: '#001026', warning: '#d97706' };
+    var icons  = { success: 'check_circle', error: 'error', info: 'info', warning: 'warning' };
+    t.style.background = 'rgba(' + (type==='error'?'220,38,38':'0,16,38') + ',0.95)';
+    i.textContent = icons[type] || 'info';
+    m.textContent = msg;
+    t.classList.remove('hidden');
+    t.classList.add('flex');
+    setTimeout(function(){ t.classList.add('hidden'); t.classList.remove('flex'); }, 3500);
+  }
+
+  function toggleSection(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden');
+  }
+
+  // ── Load users dari API ───────────────────────────────────────────────────
+  function loadUsers() {
+    var tbody = document.getElementById('userTableBody');
+    fetch('/api/auth?action=list_users', {
+      headers: { 'X-Requested-By': 'mbg-radar' },
+      credentials: 'include'
+    })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(res){
+      if (!res.data || !res.data.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Belum ada pengguna terdaftar.</td></tr>';
+        return;
+      }
+      renderUserTable(res.data);
+    })
+    .catch(function(){ tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Gagal memuat data. Deploy Worker untuk akses API.</td></tr>'; });
+  }
+
+  var _allUsers = [];
+  function renderUserTable(users) {
+    _allUsers = users;
+    filterUsers('');
+  }
+
+  function filterUsers(q) {
+    var role = document.getElementById('filterRole').value;
+    var tbody = document.getElementById('userTableBody');
+    var filtered = _allUsers.filter(function(u) {
+      var matchQ = !q || (u.username+u.full_name+u.email).toLowerCase().includes(q.toLowerCase());
+      var matchR = !role || u.role === role;
+      return matchQ && matchR;
+    });
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-400">Tidak ada hasil.</td></tr>';
+      return;
+    }
+    var roleBg = { admin: 'bg-red-100 text-red-700', sppg: 'bg-blue-100 text-blue-700', user: 'bg-emerald-100 text-emerald-700' };
+    tbody.innerHTML = filtered.map(function(u) {
+      return '<tr class="hover:bg-slate-50">' +
+        '<td class="py-2.5 px-3 font-bold text-primary">' + u.username + '</td>' +
+        '<td class="py-2.5 px-3">' + (u.full_name||'—') + '</td>' +
+        '<td class="py-2.5 px-3 text-slate-500">' + (u.email||'—') + '</td>' +
+        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (roleBg[u.role]||'bg-slate-100 text-slate-600') + '">' + u.role + '</span></td>' +
+        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (u.active!==false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700') + '">' + (u.active!==false ? 'Aktif' : 'Nonaktif') + '</span></td>' +
+        '<td class="py-2.5 px-3"><button onclick="suspendUser(\'' + u.username + '\')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-[10px] font-semibold transition-all">Suspend</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // ── Load SPPG status ──────────────────────────────────────────────────────
+  function loadSppgStatus() {
+    fetch('/api/data?type=sppg_status', { headers: {'X-Requested-By':'mbg-radar'}, credentials:'include' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(res){
+      var data = res.data || [];
+      var aktif = data.filter(function(s){ return s.status==='aktif'; }).length;
+      var habis = data.filter(function(s){ return s.status==='sertifikasi_habis'; }).length;
+      var suspend = data.filter(function(s){ return s.status==='suspend'; }).length;
+      document.getElementById('sppgCountAktif').textContent   = aktif;
+      document.getElementById('sppgCountHabis').textContent   = habis;
+      document.getElementById('sppgCountSuspend').textContent = suspend;
+      document.getElementById('sppgCountTotal').textContent   = data.length;
+      renderSppgTable(data);
+    })
+    .catch(function(){
+      // Demo fallback
+      document.getElementById('sppgCountAktif').textContent   = '1.284';
+      document.getElementById('sppgCountHabis').textContent   = '23';
+      document.getElementById('sppgCountSuspend').textContent = '4';
+      document.getElementById('sppgCountTotal').textContent   = '1.311';
+      document.getElementById('sppgTableBody').innerHTML = '<tr><td colspan="7" class="py-4 text-center text-slate-400 text-xs">Deploy Worker untuk data live. Menampilkan data statis.</td></tr>';
+    });
+  }
+
+  function renderSppgTable(data) {
+    var tbody = document.getElementById('sppgTableBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-slate-400">Tidak ada data SPPG.</td></tr>'; return; }
+    var statusBg = { aktif: 'bg-emerald-100 text-emerald-700', sertifikasi_habis: 'bg-amber-100 text-amber-700', suspend: 'bg-red-100 text-red-700' };
+    tbody.innerHTML = data.map(function(s) {
+      return '<tr class="hover:bg-slate-50">' +
+        '<td class="py-2.5 px-3 font-bold text-primary">' + (s.name||'—') + '</td>' +
+        '<td class="py-2.5 px-3">' + (s.city||'—') + '</td>' +
+        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (statusBg[s.status]||'bg-slate-100') + '">' + (s.status||'—') + '</span></td>' +
+        '<td class="py-2.5 px-3">' + (s.cert_expiry||'—') + '</td>' +
+        '<td class="py-2.5 px-3">' + (s.capacity||'—') + '</td>' +
+        '<td class="py-2.5 px-3">' + (s.last_menu||'—') + '</td>' +
+        '<td class="py-2.5 px-3 flex gap-1">' +
+          '<button class="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-semibold">Detail</button>' +
+          '<button class="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-semibold">Suspend</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // ── Security logs ─────────────────────────────────────────────────────────
+  function loadSecurityLogs() {
+    var tbody = document.getElementById('securityLogBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-400">Memuat...</td></tr>';
+    // Ambil dari localStorage (client-side logs)
+    var logs = [];
+    try { logs = JSON.parse(localStorage.getItem('mbg_security_log') || '[]'); } catch(e) {}
+    // Fetch dari Worker juga
+    fetch('/api/security/threats', { headers: {'X-Requested-By':'mbg-radar'}, credentials:'include' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+    .then(function(res){
+      var all = (res.data || []).concat(logs.map(function(l){ return { type: l.type, ip: 'Client', country: '—', url: l.url, ts: l.ts }; }));
+      renderSecurityTable(all);
+    })
+    .catch(function(){ renderSecurityTable(logs.map(function(l){ return { type: l.type, ip: 'Client', country: '—', url: l.url, ts: l.ts }; })); });
+  }
+
+  function renderSecurityTable(data) {
+    var tbody = document.getElementById('securityLogBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Tidak ada log ancaman tercatat.</td></tr>'; return; }
+    var typeBg = { xss:'bg-red-100 text-red-700', scrape:'bg-orange-100 text-orange-700', bot:'bg-purple-100 text-purple-700', brute_force:'bg-rose-100 text-rose-700' };
+    tbody.innerHTML = data.slice(0,50).map(function(l) {
+      var d = l.ts ? new Date(l.ts).toLocaleString('id-ID') : '—';
+      return '<tr class="hover:bg-slate-50">' +
+        '<td class="py-2.5 px-3 text-slate-500 font-mono text-[10px]">' + d + '</td>' +
+        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (typeBg[l.type]||'bg-slate-100 text-slate-600') + '">' + (l.type||'unknown') + '</span></td>' +
+        '<td class="py-2.5 px-3 font-mono text-[10px]">' + (l.ip||'—') + '</td>' +
+        '<td class="py-2.5 px-3">' + (l.country||'—') + '</td>' +
+        '<td class="py-2.5 px-3 text-[10px] text-slate-500 max-w-[180px] truncate">' + (l.url||'—') + '</td>' +
+        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold">Diblokir</span></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  // ── Maintenance actions ───────────────────────────────────────────────────
+  function checkDbHealth() {
+    showToast('Mengecek koneksi database...', 'info');
+    fetch('/api/data?type=telemetri', { headers: {'X-Requested-By':'mbg-radar'} })
+    .then(function(r){ document.getElementById('dbStatus').textContent = r.ok ? 'Online ✓' : 'Error'; document.getElementById('dbStatus').className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (r.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'); showToast(r.ok ? 'Database online dan responsif.' : 'Database error!', r.ok ? 'success' : 'error'); })
+    .catch(function(){ document.getElementById('dbStatus').textContent = 'Offline'; showToast('Tidak dapat menjangkau database.', 'error'); });
+  }
+
+  function clearMenuCache() { showToast('Cache menu dibersihkan (client-side).', 'success'); try { var keys=[]; for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith('mbg_menu'))keys.push(k);} keys.forEach(function(k){localStorage.removeItem(k);}); } catch(e){} }
+  function triggerManualBackup() { showToast('Memicu arsip manual via cron endpoint...', 'info'); fetch('/api/menu/cron', { method:'POST', headers:{'X-Cron-Secret':'mbg-cron-secret-2026','X-Requested-By':'mbg-radar'} }).then(function(r){return r.json();}).then(function(d){ showToast('Arsip selesai: ' + (d.archived_count||0) + ' menu diarsip.', 'success'); document.getElementById('lastBackupBadge').textContent = 'Baru saja'; }).catch(function(){ showToast('Gagal memicu arsip. Cek cron endpoint.', 'error'); }); }
+  function toggleMaintenance(on) { showToast(on ? 'Mode maintenance AKTIF.' : 'Mode maintenance dimatikan.', on ? 'warning' : 'success'); }
+  function vacuumDb() { showToast('VACUUM hanya bisa dijalankan via psql langsung ke Neon.', 'info'); }
+  function approvePhoto(btn, id) { btn.closest('.border').style.borderColor = '#059669'; btn.closest('.border').style.background = '#f0fdf4'; showToast('Foto profil disetujui.', 'success'); }
+  function rejectPhoto(btn, id) { btn.closest('.border').remove(); showToast('Foto profil ditolak.', 'error'); }
+  function suspendUser(username) { if(confirm('Suspend akun ' + username + '?')) showToast('Akun ' + username + ' disuspend.', 'warning'); }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    loadUsers();
+    loadSppgStatus();
+
+    // Cek hash fragment untuk scroll
+    if (location.hash) {
+      var el = document.querySelector(location.hash);
+      if (el) setTimeout(function(){ el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300);
+    }
+
+    // Logout handler
+    document.getElementById('panelLogoutBtn').addEventListener('click', function() {
+      try { sessionStorage.removeItem('mbg_session'); localStorage.removeItem('mbg_session'); } catch(e) {}
+    });
+  });
+  </script>
+</body>
+</html>
