@@ -5,57 +5,73 @@
 ### 1. Buka Android Studio
 - Pilih **File → Open** (bukan "New Project")
 - Arahkan ke folder: `c:\laragon\www\MBG-MONITORING\android`
-- Klik **OK** → tunggu Gradle sync selesai
+- Klik **OK** → tunggu Gradle sync selesai (~1-2 menit)
 
-### 2. Tambahkan Logo BGN sebagai App Icon
-Karena file `.webp` dari web tidak bisa langsung jadi launcher icon:
+---
 
-**Cara cepat via Android Studio:**
-1. Klik kanan folder `app/src/main/res` → **New → Image Asset**
-2. Icon Type: **Launcher Icons (Adaptive and Legacy)**
-3. Source Asset: pilih file `c:\laragon\www\MBG-MONITORING\assets\images\logo.webp`
-4. Name: `ic_launcher`
-5. Klik **Next → Finish**
+### 2. Icon Launcher (sudah siap ✅)
+File `ic_launcher.png` sudah dikopy otomatis ke semua folder mipmap:
+```
+res/
+  mipmap-mdpi/      ic_launcher.png  ic_launcher_round.png
+  mipmap-hdpi/      ic_launcher.png  ic_launcher_round.png
+  mipmap-xhdpi/     ic_launcher.png  ic_launcher_round.png
+  mipmap-xxhdpi/    ic_launcher.png  ic_launcher_round.png
+  mipmap-xxxhdpi/   ic_launcher.png  ic_launcher_round.png
+```
+AndroidManifest sudah set:
+```xml
+android:icon="@mipmap/ic_launcher"
+android:roundIcon="@mipmap/ic_launcher"
+```
+**Tidak perlu setup manual apapun untuk icon.**
 
-### 3. Build APK Debug (untuk test)
-- Menu **Build → Build Bundle(s) / APK(s) → Build APK(s)**
-- APK tersimpan di: `android/app/build/outputs/apk/debug/app-debug.apk`
+---
+
+### 3. Build APK Debug (untuk test di HP)
+1. Menu **Build → Build Bundle(s) / APK(s) → Build APK(s)**
+2. Tunggu build selesai
+3. Klik **"locate"** di notifikasi bawah, atau cari di:
+   ```
+   android/app/build/outputs/apk/debug/app-debug.apk
+   ```
+4. Transfer ke HP → install
+
+---
 
 ### 4. Build APK Release (untuk distribusi)
-```
-Build → Generate Signed Bundle / APK → APK
-```
-Buat keystore baru → isi password → build.
+1. **Build → Generate Signed Bundle / APK → APK → Next**
+2. Klik **"Create new..."** untuk buat keystore:
+   - Key store path: pilih lokasi simpan `.jks`
+   - Password: isi bebas (ingat ini!)
+   - Alias: `radarmbg`
+   - Validity: `25`
+3. **Next → Release → Finish**
+4. APK tersimpan di:
+   ```
+   android/app/build/outputs/apk/release/app-release.apk
+   ```
 
-### 5. Install ke HP (via USB)
+---
+
+### 5. Install via ADB (opsional)
 ```bash
 adb install app-debug.apk
 ```
-Atau transfer file APK ke HP dan install manual.
 
 ---
 
 ## Fitur APK
-- **Splash screen** logo BGN + nama "Radar MBG" (2 detik)
-- **WebView** load `https://mbg.jack-ai.my.id`
-- **Bottom Navigation** → Beranda, Menu Hari Ini, Distribusi SPPG, Laporan
-- **Swipe to refresh** pada semua halaman
-- **Geolokasi** untuk peta realtime
-- **Deep link** `https://mbg.jack-ai.my.id` buka langsung di app
-- **Offline page** jika tidak ada koneksi
-
-## Dependencies (build.gradle)
-```gradle
-implementation 'androidx.appcompat:appcompat:1.7.0'
-implementation 'com.google.android.material:material:1.12.0'
-implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-```
+| Fitur | Status |
+|---|---|
+| Splash screen logo BGN (2 detik) | ✅ |
+| WebView load `https://mbg.jack-ai.my.id` | ✅ |
+| Bottom Navigation (Beranda, Menu, Distribusi, Laporan) | ✅ |
+| Swipe to refresh | ✅ |
+| Geolokasi untuk peta realtime | ✅ |
+| Deep link `https://mbg.jack-ai.my.id` | ✅ |
+| Halaman error jika offline | ✅ |
+| Support Android 7.0+ (API 24+) | ✅ |
 
 ## Package Name
 `id.go.bgn.radarmbg`
-
-## Min SDK
-Android 7.0 (API 24)
-
-## Target SDK  
-Android 14 (API 34)
