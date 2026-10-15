@@ -2,53 +2,41 @@ name = "mbg-monitoring-api"
 main = "auth.js"
 compatibility_date = "2024-09-23"
 
-# ─── Cron Trigger: arsip menu kemarin setiap hari jam 00:05 WIB (17:05 UTC) ──
+# ─── Cron Trigger ──────────────────────────────────────────────────────────
 [triggers]
 crons = ["5 17 * * *"]
-
-# ─── Durable Objects (WebSocket realtime map) ──────────────────────────────
-[durable_objects]
-bindings = [
-  { name = "MAP_ROOM", class_name = "MapRoom", script_name = "mbg-monitoring-api" }
-]
-
-[[migrations]]
-tag = "v1"
-new_classes = ["MapRoom"]
 
 # ─── KV Namespaces ─────────────────────────────────────────────────────────
 [[kv_namespaces]]
 binding = "USERS"
-id = "GANTI_DENGAN_KV_NAMESPACE_ID"
+id = "493f24dc223d4a9ea0ba62ec7d2b4fb9"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "GANTI_DENGAN_KV_NAMESPACE_ID"
+id = "2e12b6cbb1e64ab0a7d03ba739ada7de"
 
 [[kv_namespaces]]
 binding = "DATA"
-id = "GANTI_DENGAN_KV_NAMESPACE_ID"
+id = "85539fc16a9b49558ef198e7fab116d4"
 
 [[kv_namespaces]]
 binding = "RATE"
-id = "GANTI_DENGAN_KV_NAMESPACE_ID"
+id = "b899bc3c00dd46e1bdfc0cb1803e485a"
 
 [[kv_namespaces]]
 binding = "THREATS"
-id = "GANTI_DENGAN_KV_NAMESPACE_ID"
+id = "4c3477648cc84d7897f3182f3df3f282"
 
 [[kv_namespaces]]
 binding = "BLOCKED_IPS"
-id = "GANTI_DENGAN_KV_NAMESPACE_ID"
+id = "ce7d7844b5a749b5a1eac646d7614ece"
 
 [[kv_namespaces]]
 binding = "MENU_CACHE"
-id = "GANTI_DENGAN_KV_NAMESPACE_ID"      # buat via: wrangler kv:namespace create MENU_CACHE
+id = "446e89c787a64c2c868e3a54c2025de8"
 
 # ─── Environment Variables ──────────────────────────────────────────────────
 [vars]
 ENVIRONMENT = "production"
 
-# DATABASE_URL disimpan sebagai secret (tidak di-commit ke git):
-#   wrangler secret put DATABASE_URL
-# format: postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require
+# DATABASE_URL di-set via: wrangler secret put DATABASE_URL

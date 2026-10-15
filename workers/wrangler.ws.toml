@@ -1,0 +1,13 @@
+name = "mbg-ws"
+main = "ws.js"
+compatibility_date = "2024-09-23"
+
+# Durable Objects hanya untuk ws.js yang export class MapRoom
+[durable_objects]
+bindings = [
+  { name = "MAP_ROOM", class_name = "MapRoom" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["MapRoom"]
