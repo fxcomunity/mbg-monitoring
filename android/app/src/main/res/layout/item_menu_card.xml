@@ -1,9 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layoutWidth="match_parent"
-    android:layoutHeight="wrap_content"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
@@ -12,23 +12,23 @@
     app:cardBackgroundColor="@color/bgn_surface">
 
     <LinearLayout
-        android:layoutWidth="match_parent"
-        android:layoutHeight="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp">
 
         <!-- Top Status & Portion Header -->
         <LinearLayout
-            android:layoutWidth="match_parent"
-            android:layoutHeight="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:layout_marginBottom="8dp">
 
             <TextView
                 android:id="@+id/tvSchoolName"
-                android:layoutWidth="0dp"
-                android:layoutHeight="wrap_content"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="SDN 01 Senayan Jakarta"
                 android:textSize="15sp"
@@ -37,8 +37,8 @@
 
             <TextView
                 android:id="@+id/tvCaloriesBadge"
-                android:layoutWidth="wrap_content"
-                android:layoutHeight="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:background="@drawable/bg_gradient_primary"
                 android:paddingStart="10dp"
                 android:paddingEnd="10dp"
@@ -53,8 +53,8 @@
         <!-- Menu Title -->
         <TextView
             android:id="@+id/tvMenuTitle"
-            android:layoutWidth="match_parent"
-            android:layoutHeight="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="Paket Ayam Panggang Madu &amp; Tempe Bacem"
             android:textSize="14sp"
             android:textColor="@color/bgn_secondary"
@@ -64,8 +64,8 @@
         <!-- Description -->
         <TextView
             android:id="@+id/tvMenuDescription"
-            android:layoutWidth="match_parent"
-            android:layoutHeight="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="Rendah natrium, menggunakan bahan pangan lokal segar binaan koperasi tani."
             android:textSize="12sp"
             android:textColor="@color/bgn_on_surface_variant"
@@ -73,8 +73,8 @@
 
         <!-- Nutrition & Temperature Indicators -->
         <LinearLayout
-            android:layoutWidth="match_parent"
-            android:layoutHeight="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingTop="8dp"
@@ -82,8 +82,8 @@
 
             <TextView
                 android:id="@+id/tvTempStatus"
-                android:layoutWidth="wrap_content"
-                android:layoutHeight="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Suhu: 68.4°C (Hangat)"
                 android:textSize="11sp"
                 android:textColor="@color/bgn_status_success"
@@ -92,8 +92,8 @@
 
             <TextView
                 android:id="@+id/tvDietitianName"
-                android:layoutWidth="wrap_content"
-                android:layoutHeight="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Dietisien: Terverifikasi"
                 android:textSize="11sp"
                 android:textColor="@color/bgn_on_surface_variant" />
@@ -102,8 +102,8 @@
         <!-- Action Button: Open Google Maps for this School/SPPG -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnOpenMaps"
-            android:layoutWidth="match_parent"
-            android:layoutHeight="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/action_open_maps"
             app:icon="@drawable/ic_location"

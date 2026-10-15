@@ -1,24 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layoutWidth="match_parent"
-    android:layoutHeight="wrap_content"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="24dp"
     android:background="@color/bgn_surface">
 
     <TextView
-        android:layoutWidth="match_parent"
-        android:layoutHeight="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:text="Pilih Wilayah &amp; Satuan Pendidikan"
         android:textSize="18sp"
         android:textStyle="bold"
         android:textColor="@color/bgn_primary" />
 
     <TextView
-        android:layoutWidth="match_parent"
-        android:layoutHeight="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:text="Pilih sekolah untuk melihat menu makan bergizi dan audit gizi harian."
         android:textSize="13sp"
@@ -26,8 +26,8 @@
 
     <!-- 1. Provinsi Spinner -->
     <TextView
-        android:layoutWidth="match_parent"
-        android:layoutHeight="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="1. Provinsi"
         android:textStyle="bold"
@@ -36,16 +36,16 @@
 
     <Spinner
         android:id="@+id/spProvinsi"
-        android:layoutWidth="match_parent"
-        android:layoutHeight="48dp"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
         android:layout_marginTop="6dp"
         android:background="@drawable/bg_gradient_primary"
         android:backgroundTint="@color/bgn_surface_container_low" />
 
     <!-- 2. Kota / Kab Spinner -->
     <TextView
-        android:layoutWidth="match_parent"
-        android:layoutHeight="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="2. Kota / Kabupaten"
         android:textStyle="bold"
@@ -54,16 +54,16 @@
 
     <Spinner
         android:id="@+id/spKota"
-        android:layoutWidth="match_parent"
-        android:layoutHeight="48dp"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
         android:layout_marginTop="6dp"
         android:background="@drawable/bg_gradient_primary"
         android:backgroundTint="@color/bgn_surface_container_low" />
 
     <!-- 3. Sekolah Spinner -->
     <TextView
-        android:layoutWidth="match_parent"
-        android:layoutHeight="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="3. Nama Sekolah"
         android:textStyle="bold"
@@ -72,32 +72,32 @@
 
     <Spinner
         android:id="@+id/spSekolah"
-        android:layoutWidth="match_parent"
-        android:layoutHeight="48dp"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
         android:layout_marginTop="6dp"
         android:background="@drawable/bg_gradient_primary"
         android:backgroundTint="@color/bgn_surface_container_low" />
 
     <!-- Action Buttons -->
     <LinearLayout
-        android:layoutWidth="match_parent"
-        android:layoutHeight="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:orientation="horizontal"
         android:gravity="end">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCancelDialog"
-            android:layoutWidth="wrap_content"
-            android:layoutHeight="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Batal"
             style="@style/Widget.Material3.Button.TextButton"
             android:textColor="@color/bgn_on_surface_variant" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirmSchool"
-            android:layoutWidth="wrap_content"
-            android:layoutHeight="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:text="Tampilkan Menu"
             android:backgroundTint="@color/bgn_primary"

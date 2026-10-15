@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bgn_background">#F8F9FF</color>
+    <color name="bgn_border_focus">#134074</color>
+    <color name="bgn_border_subtle">#E2E8F0</color>
+    <color name="bgn_on_primary">#FFFFFF</color>
+    <color name="bgn_on_primary_container">#778DB2</color>
+    <color name="bgn_on_secondary">#FFFFFF</color>
+    <color name="bgn_on_surface">#0B1C30</color>
+    <color name="bgn_on_surface_variant">#44474E</color>
+    <color name="bgn_outline">#74777F</color>
+    <color name="bgn_primary">#001026</color>
+    <color name="bgn_primary_container">#0B2545</color>
+    <color name="bgn_secondary">#395F95</color>
+    <color name="bgn_secondary_fixed">#D5E3FF</color>
+    <color name="bgn_status_error">#EF4444</color>
+    <color name="bgn_status_success">#059669</color>
+    <color name="bgn_status_warning">#F59E0B</color>
+    <color name="bgn_surface">#FFFFFF</color>
+    <color name="bgn_surface_container">#E5EEFF</color>
+    <color name="bgn_surface_container_low">#EFF4FF</color>
+    <color name="bgn_tertiary_container">#002B1B</color>
+    <color name="bgn_tertiary_fixed">#6FFBBE</color>
+    <color name="black">#FF000000</color>
+    <color name="transparent">#00000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <dimen name="bottom_nav_height">64dp</dimen>
+    <dimen name="button_height">48dp</dimen>
+    <dimen name="corner_full">999dp</dimen>
+    <dimen name="corner_lg">16dp</dimen>
+    <dimen name="corner_md">12dp</dimen>
+    <dimen name="corner_sm">8dp</dimen>
+    <dimen name="corner_xl">24dp</dimen>
+    <dimen name="space_lg">24dp</dimen>
+    <dimen name="space_md">16dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_xl">32dp</dimen>
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="toolbar_height">56dp</dimen>
+    <string name="action_call_hotline">Hubungi Halo MBG</string>
+    <string name="action_chat_whatsapp">WhatsApp Siaga</string>
+    <string name="action_open_maps">Buka di OpenStreetMap</string>
+    <string name="action_refresh">Muat Ulang</string>
+    <string name="action_retry">Coba Lagi</string>
+    <string name="app_full_name">Radar MBG Nasional</string>
+    <string name="app_name">Radar MBG</string>
+    <string name="app_tagline">Transparansi &amp; Pengawasan Makan Bergizi Gratis</string>
+    <string name="base_url">https://mbg.jack-ai.my.id/</string>
+    <string name="bgn_institution_name">Badan Gizi Nasional Republik Indonesia</string>
+    <string name="copyright_text">© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi.</string>
+    <string name="email_uri">mailto:halo@bgn.go.id</string>
+    <string name="hotline_email">halo@bgn.go.id</string>
+    <string name="hotline_hours">Senin - Minggu: 06.00 - 20.00 WIB</string>
+    <string name="hotline_phone">+62 811-1000-8008</string>
+    <string name="hotline_phone_clean">6281110008008</string>
+    <string name="nav_beranda">Beranda</string>
+    <string name="nav_distribusi">Distribusi SPPG</string>
+    <string name="nav_laporan">Lapor Satgas</string>
+    <string name="nav_menu">Menu Hari Ini</string>
+    <string name="network_error_message">Periksa kembali koneksi internet untuk memuat data pemantauan real-time Radar MBG.</string>
+    <string name="network_error_title">Koneksi Internet Terputus</string>
+    <string name="url_aduan">https://mbg.jack-ai.my.id/fitur/laporan-aduan.html</string>
+    <string name="url_distribusi">https://mbg.jack-ai.my.id/fitur/distribusi-sebaran-sppg.html</string>
+    <string name="url_home">https://mbg.jack-ai.my.id/index.html</string>
+    <string name="url_menu">https://mbg.jack-ai.my.id/fitur/menu-hari-ini.html</string>
+    <string name="url_privacy">https://mbg.jack-ai.my.id/fitur/kebijakan-privasi.html</string>
+    <string name="url_standar">https://mbg.jack-ai.my.id/fitur/standar-uji-akg.html</string>
+    <string name="whatsapp_url">https://wa.me/6281110008008</string>
+    <style name="Theme.RadarMBG" parent="Theme.Material3.DayNight.NoActionBar">
+        
+        <item name="colorPrimary">@color/bgn_primary</item>
+        <item name="colorOnPrimary">@color/bgn_on_primary</item>
+        <item name="colorPrimaryContainer">@color/bgn_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/bgn_on_primary_container</item>
+
+        
+        <item name="colorSecondary">@color/bgn_secondary</item>
+        <item name="colorOnSecondary">@color/bgn_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/bgn_secondary_fixed</item>
+
+        
+        <item name="android:colorBackground">@color/bgn_background</item>
+        <item name="colorSurface">@color/bgn_surface</item>
+        <item name="colorOnSurface">@color/bgn_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/bgn_on_surface_variant</item>
+
+        
+        <item name="android:statusBarColor">@color/bgn_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:navigationBarColor">@color/bgn_surface</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+    <style name="Theme.RadarMBG.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/bgn_primary</item>
+        <item name="android:statusBarColor">@color/bgn_primary</item>
+        <item name="android:navigationBarColor">@color/bgn_primary</item>
+    </style>
+</resources>

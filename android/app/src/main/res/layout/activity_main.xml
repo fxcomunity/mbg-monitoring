@@ -1,25 +1,25 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/coordinatorLayout"
-    android:layoutWidth="match_parent"
-    android:layoutHeight="match_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/bgn_background">
 
     <!-- Top App Bar -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
-        android:layoutWidth="match_parent"
-        android:layoutHeight="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:background="@color/bgn_primary"
         app:elevation="4dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/topToolbar"
-            android:layoutWidth="match_parent"
-            android:layoutHeight="@dimen/toolbar_height"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/toolbar_height"
             android:background="@color/bgn_primary"
             app:title="@string/app_name"
             app:titleTextColor="@color/bgn_on_primary"
@@ -27,8 +27,8 @@
             app:subtitleTextColor="@color/bgn_on_primary_container">
 
             <LinearLayout
-                android:layoutWidth="wrap_content"
-                android:layoutHeight="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginEnd="16dp"
                 android:orientation="horizontal"
@@ -36,16 +36,16 @@
 
                 <ImageView
                     android:id="@+id/ivStatusDot"
-                    android:layoutWidth="8dp"
-                    android:layoutHeight="8dp"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
                     android:layout_marginEnd="6dp"
                     android:src="@drawable/ic_location"
                     app:tint="@color/bgn_status_success"
                     android:contentDescription="Live Status" />
 
                 <TextView
-                    android:layoutWidth="wrap_content"
-                    android:layoutHeight="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:text="Online"
                     android:textSize="11sp"
                     android:textStyle="bold"
@@ -57,8 +57,8 @@
         <!-- Loading Progress Bar -->
         <com.google.android.material.progressindicator.LinearProgressIndicator
             android:id="@+id/pageProgressBar"
-            android:layoutWidth="match_parent"
-            android:layoutHeight="3dp"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
             android:indeterminate="false"
             android:visibility="gone"
             app:indicatorColor="@color/bgn_tertiary_fixed"
@@ -69,27 +69,27 @@
     <!-- Main Content: SwipeRefreshLayout + WebView -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLayout"
-        android:layoutWidth="match_parent"
-        android:layoutHeight="match_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_marginBottom="@dimen/bottom_nav_height"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <FrameLayout
-            android:layoutWidth="match_parent"
-            android:layoutHeight="match_parent">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
             <!-- Primary Web View -->
             <WebView
                 android:id="@+id/mainWebView"
-                android:layoutWidth="match_parent"
-                android:layoutHeight="match_parent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:overScrollMode="never" />
 
             <!-- Offline Error State Container -->
             <LinearLayout
                 android:id="@+id/errorContainer"
-                android:layoutWidth="match_parent"
-                android:layoutHeight="match_parent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:padding="32dp"
@@ -97,15 +97,15 @@
                 android:background="@color/bgn_background">
 
                 <ImageView
-                    android:layoutWidth="72dp"
-                    android:layoutHeight="72dp"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
                     android:src="@drawable/ic_laporan"
                     app:tint="@color/bgn_status_warning"
                     android:contentDescription="Error Icon" />
 
                 <TextView
-                    android:layoutWidth="wrap_content"
-                    android:layoutHeight="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:text="@string/network_error_title"
                     android:textSize="18sp"
@@ -114,8 +114,8 @@
                     android:textAlignment="center" />
 
                 <TextView
-                    android:layoutWidth="wrap_content"
-                    android:layoutHeight="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:text="@string/network_error_message"
                     android:textSize="14sp"
@@ -124,8 +124,8 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRetryConnection"
-                    android:layoutWidth="wrap_content"
-                    android:layoutHeight="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
                     android:text="@string/action_retry"
                     android:backgroundTint="@color/bgn_primary"
@@ -140,8 +140,8 @@
     <!-- Bottom Navigation Bar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationView"
-        android:layoutWidth="match_parent"
-        android:layoutHeight="@dimen/bottom_nav_height"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/bottom_nav_height"
         android:layout_gravity="bottom"
         android:background="@color/bgn_surface"
         app:elevation="8dp"
