@@ -99,10 +99,53 @@
         <span class="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
         <span>Status Hari Ini</span>
       </a>
-      <a class="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs transition-colors border border-border-subtle shadow-sm whitespace-nowrap" href="auth/login.html">
-        <span class="material-symbols-outlined text-[18px] text-secondary">admin_panel_settings</span>
-        <span>Portal Masuk</span>
-      </a>
+
+      <!-- User Profile Dropdown (jika sudah login) / Portal Masuk (jika belum) -->
+      <div class="relative" id="navUserDropdownWrap">
+
+        <!-- Belum login: tampil Portal Masuk -->
+        <a id="navBtnLogin" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs transition-colors border border-border-subtle shadow-sm whitespace-nowrap" href="auth/login.html">
+          <span class="material-symbols-outlined text-[18px] text-secondary">admin_panel_settings</span>
+          <span>Portal Masuk</span>
+        </a>
+
+        <!-- Sudah login: tampil avatar + dropdown -->
+        <button id="navUserBtn" type="button" class="hidden items-center gap-2 px-2.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-border-subtle shadow-sm transition-all" aria-haspopup="true" aria-expanded="false">
+          <!-- Avatar inisial -->
+          <div id="navUserAvatar" class="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-xs shrink-0">?</div>
+          <div class="hidden sm:flex flex-col items-start leading-tight">
+            <span id="navUserName" class="text-xs font-bold text-primary max-w-[80px] truncate">—</span>
+            <span id="navUserRole" class="text-[10px] font-semibold text-on-surface-variant">—</span>
+          </div>
+          <span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span>
+        </button>
+
+        <!-- Dropdown panel -->
+        <div id="navUserDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden py-1.5">
+          <!-- Header info -->
+          <div class="px-4 py-3 border-b border-slate-100">
+            <p id="dropUserName" class="font-bold text-sm text-primary truncate">—</p>
+            <p id="dropUserRole" class="text-[11px] text-slate-500 mt-0.5">—</p>
+          </div>
+          <!-- Menu items -->
+          <div class="py-1">
+            <a id="dropDashboardLink" href="dashboard/user/" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+              <span class="material-symbols-outlined text-[18px] text-secondary">dashboard</span>
+              Buka Dashboard
+            </a>
+            <a href="fitur/laporan-aduan.html" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+              <span class="material-symbols-outlined text-[18px] text-amber-500">receipt_long</span>
+              Laporan & Aduan
+            </a>
+          </div>
+          <div class="border-t border-slate-100 py-1">
+            <a id="dropLogoutBtn" href="auth/login.html" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors">
+              <span class="material-symbols-outlined text-[18px]">logout</span>
+              Keluar
+            </a>
+          </div>
+        </div>
+      </div>
       <!-- Mobile menu button (Hamburger SVG) with touch-manipulation and z-index -->
       <button id="btnMobileNavToggle" type="button" aria-label="Menu Navigasi" aria-expanded="false" class="xl:hidden w-10 h-10 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary flex items-center justify-center transition-colors cursor-pointer touch-manipulation relative z-50">
         <svg class="w-6 h-6 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1135,4 +1178,92 @@
 <script src="assets/js/api.js"></script>
 <script src="assets/js/script.js"></script>
 <script src="assets/js/live_chat.js"></script>
+<script>
+// ── Nav Profile Dropdown ─────────────────────────────────────────────────
+(function () {
+  var K = 'mbg_session';
+  var roleLabel = { admin: 'Admin Satgas BGN', sppg: 'Mitra Dapur SPPG', user: 'Wali Murid / Publik' };
+  var dashLink  = { admin: 'dashboard/admin/', sppg: 'dashboard/sppg/', user: 'dashboard/user/' };
+  var roleColor = { admin: 'background:linear-gradient(135deg,#dc2626,#9f1239)', sppg: 'background:linear-gradient(135deg,#2563eb,#1d4ed8)', user: 'background:linear-gradient(135deg,#059669,#047857)' };
+
+  function getSession() {
+    try { return JSON.parse(sessionStorage.getItem(K) || localStorage.getItem(K) || 'null'); } catch(e) { return null; }
+  }
+
+  function clearSession() {
+    try { sessionStorage.removeItem(K); localStorage.removeItem(K); } catch(e) {}
+  }
+
+  function init() {
+    var s = getSession();
+    var loginBtn   = document.getElementById('navBtnLogin');
+    var userBtn    = document.getElementById('navUserBtn');
+    var avatar     = document.getElementById('navUserAvatar');
+    var nameEl     = document.getElementById('navUserName');
+    var roleEl     = document.getElementById('navUserRole');
+    var dropName   = document.getElementById('dropUserName');
+    var dropRole   = document.getElementById('dropUserRole');
+    var dropDash   = document.getElementById('dropDashboardLink');
+    var dropLogout = document.getElementById('dropLogoutBtn');
+    var dropdown   = document.getElementById('navUserDropdown');
+    var wrap       = document.getElementById('navUserDropdownWrap');
+
+    if (!loginBtn || !userBtn) return;
+
+    if (s && s.name && s.role) {
+      // Sudah login — sembunyikan "Portal Masuk", tampilkan avatar button
+      loginBtn.classList.add('hidden');
+      userBtn.classList.remove('hidden');
+      userBtn.classList.add('flex');
+
+      var initial = s.name.charAt(0).toUpperCase();
+      var color   = roleColor[s.role] || 'background:#001026';
+      avatar.textContent  = initial;
+      avatar.style.cssText = color + ';width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px;flex-shrink:0;';
+
+      nameEl.textContent  = s.name;
+      roleEl.textContent  = roleLabel[s.role] || s.role;
+      if (dropName) dropName.textContent = s.name;
+      if (dropRole) dropRole.textContent = roleLabel[s.role] || s.role;
+      if (dropDash) dropDash.href = dashLink[s.role] || 'dashboard/user/';
+    } else {
+      // Belum login
+      loginBtn.classList.remove('hidden');
+      userBtn.classList.add('hidden');
+      userBtn.classList.remove('flex');
+    }
+
+    // Toggle dropdown
+    userBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = dropdown.classList.toggle('hidden') === false;
+      userBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      var icon = userBtn.querySelector('.material-symbols-outlined:last-child');
+      if (icon) icon.textContent = open ? 'expand_less' : 'expand_more';
+    });
+
+    // Tutup kalau klik di luar
+    document.addEventListener('click', function () {
+      dropdown.classList.add('hidden');
+      userBtn.setAttribute('aria-expanded', 'false');
+      var icon = userBtn.querySelector('.material-symbols-outlined:last-child');
+      if (icon) icon.textContent = 'expand_more';
+    });
+
+    // Logout
+    if (dropLogout) {
+      dropLogout.addEventListener('click', function () {
+        clearSession();
+        try { fetch('auth/logout.php', { credentials: 'same-origin', keepalive: true }).catch(function(){}); } catch(_) {}
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
 </body></html>
