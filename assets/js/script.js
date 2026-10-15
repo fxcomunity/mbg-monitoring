@@ -333,41 +333,9 @@ function readStaticSession() {
  * Return true kalau berhasil diterapkan.
  */
 function applyStaticSessionFallback() {
-  const s = readStaticSession();
-  if (!s) return false;
-
-  const labels = { admin: 'Admin Satgas BGN', sppg: 'Mitra SPPG', user: 'Wali Murid / Publik' };
-  const anchors = new Set(document.querySelectorAll('header a[href*="login.html"]:not([href*="logout"]), #mobileNavMenu a[href*="login.html"]:not([href*="logout"])'));
-
-  anchors.forEach(a => {
-    if (a.dataset.staticSession) return;
-    const isDesktopOnly = a.classList.contains('hidden');
-
-    const wrap = document.createElement('div');
-    wrap.className = isDesktopOnly ? 'hidden md:flex items-center gap-2' : 'flex items-center gap-2 w-full';
-    wrap.dataset.staticSessionWrap = '1';
-
-    a.href = 'dashboard/' + s.role + '/';
-    a.dataset.staticSession = '1';
-    a.title = (s.name || labels[s.role]) + ' "” ' + labels[s.role];
-    a.classList.remove('hidden', 'md:flex');
-    a.classList.add('flex');
-    if (!isDesktopOnly) a.classList.add('flex-1');
-    a.innerHTML = '<span class="material-symbols-outlined text-[18px] text-secondary">dashboard</span><span>Dashboard</span>';
-
-    const out = document.createElement('button');
-    out.type = 'button';
-    out.className = 'flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs border border-red-200 whitespace-nowrap transition-colors';
-    out.innerHTML = '<span class="material-symbols-outlined text-[18px]">logout</span><span>Keluar</span>';
-    out.addEventListener('click', () => {
-      clearStaticSession();
-      location.href = 'login.html?logout=1';
-    });
-
-    a.replaceWith(wrap);
-    wrap.append(a, out);
-  });
-  return anchors.size > 0;
+  // Digantikan oleh navbar dropdown di index.html
+  // Tidak inject Keluar button agar tidak duplikat
+  return false;
 }
 
 /**

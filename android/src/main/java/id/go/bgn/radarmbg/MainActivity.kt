@@ -21,12 +21,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var errorContainer: LinearLayout
     private lateinit var bottomNav: BottomNavigationView
 
-    private val BASE = "http://10.0.2.2/MBG-MONITORING/"
+    private val BASE = "https://mbg.jack-ai.my.id/"
     private val URLS = mapOf(
-        R.id.nav_home to "${BASE}index.html",
-        R.id.nav_menu_today to "${BASE}menu-hari-ini.html",
-        R.id.nav_distribution to "${BASE}distribusi-sebaran-sppg.html",
-        R.id.nav_report to "${BASE}laporan-aduan.html"
+        R.id.nav_home         to "${BASE}index.html",
+        R.id.nav_menu_today   to "${BASE}fitur/menu-hari-ini.html",
+        R.id.nav_distribution to "${BASE}fitur/distribusi-sebaran-sppg.html",
+        R.id.nav_report       to "${BASE}fitur/laporan-aduan.html"
     )
 
     @SuppressLint("SetJavaScriptEnabled")

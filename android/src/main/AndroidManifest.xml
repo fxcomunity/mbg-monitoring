@@ -67,8 +67,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="www.bgn.go.id"
-                    android:pathPrefix="/radar-mbg" />
+                    android:host="mbg.jack-ai.my.id" />
             </intent-filter>
         </activity>
 

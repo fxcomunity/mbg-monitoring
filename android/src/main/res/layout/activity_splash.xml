@@ -1,69 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layoutWidth="match_parent"
-    android:layoutHeight="match_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@drawable/bg_gradient_primary"
     android:padding="24dp">
 
     <!-- Center Branding Container -->
     <LinearLayout
-        android:layoutWidth="wrap_content"
-        android:layoutHeight="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:gravity="center"
         android:orientation="vertical">
 
-        <!-- Logo Icon Container -->
-        <FrameLayout
-            android:layoutWidth="88dp"
-            android:layoutHeight="88dp"
-            android:background="@drawable/bg_gradient_primary"
-            android:padding="16dp">
+        <!-- Logo BGN (ic_launcher dari mipmap) -->
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@mipmap/ic_launcher"
+            android:contentDescription="Logo Badan Gizi Nasional"
+            android:scaleType="centerInside" />
 
-            <ImageView
-                android:layoutWidth="match_parent"
-                android:layoutHeight="match_parent"
-                android:src="@drawable/ic_verified"
-                app:tint="@color/bgn_tertiary_fixed"
-                android:contentDescription="BGN Logo" />
-        </FrameLayout>
-
+        <!-- Nama Aplikasi -->
         <TextView
-            android:layoutWidth="wrap_content"
-            android:layoutHeight="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/app_full_name"
-            android:textSize="26sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Radar MBG"
+            android:textSize="28sp"
             android:textStyle="bold"
-            android:textColor="@color/bgn_on_primary"
+            android:textColor="#FFFFFF"
             android:letterSpacing="-0.02" />
 
+        <!-- Subtitle -->
         <TextView
-            android:layoutWidth="wrap_content"
-            android:layoutHeight="wrap_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/bgn_institution_name"
+            android:text="Badan Gizi Nasional RI"
             android:textSize="13sp"
-            android:textColor="@color/bgn_on_primary_container" />
+            android:textColor="#B0C4D8" />
 
+        <!-- Tagline -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Portal Monitoring Makan Bergizi Gratis"
+            android:textSize="11sp"
+            android:textColor="#7A9BB5" />
+
+        <!-- Loading spinner -->
         <ProgressBar
-            android:layoutWidth="32dp"
-            android:layoutHeight="32dp"
-            android:layout_marginTop="36dp"
-            android:indeterminateTint="@color/bgn_tertiary_fixed" />
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginTop="40dp"
+            android:indeterminateTint="#6FFBBE" />
+
     </LinearLayout>
 
     <!-- Bottom Copyright -->
     <TextView
-        android:layoutWidth="match_parent"
-        android:layoutHeight="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="16dp"
-        android:text="@string/copyright_text"
+        android:layout_marginBottom="24dp"
+        android:text="© 2026 Badan Gizi Nasional Republik Indonesia"
         android:textSize="10sp"
-        android:textColor="@color/bgn_on_primary_container"
+        android:textColor="#4A6A80"
         android:textAlignment="center" />
 
 </RelativeLayout>
