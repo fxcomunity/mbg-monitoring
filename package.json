@@ -1,0 +1,8 @@
+{
+  "name": "mbg-monitoring",
+  "version": "2.0.0",
+  "type": "module",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}

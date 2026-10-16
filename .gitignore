@@ -27,3 +27,7 @@ android/build/
 android/local.properties
 android/*.apk
 android/*.aab
+
+# Node modules (root - untuk Pages Functions)
+node_modules/
+package-lock.json
