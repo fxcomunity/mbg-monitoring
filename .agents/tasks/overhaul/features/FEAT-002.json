@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Database cleanup script + new API endpoints. Depends on FEAT-001 (db.php pattern). Creates: (a) database/scripts/cleanup.php for safe DB cleanup with confirmation gate; (b) api/sppg_provinsi.php for province-drill-down data; (c) api/sppg_map.php for map GeoJSON; (d) api/sppg_status.php for admin dashboard SPPG KPIs; (e) api/security_threats.php for admin security log. All endpoints follow the established pattern: require_once db.php + security.php, PDO parameterized queries, JSON output.",
+  "status": "completed",
+  "steps": [
+    "1. Create database/scripts/cleanup.php. Pattern: require_once __DIR__.'/../../database/db.php'. Without ?confirm=YES_DELETE param: show preview only (SELECT COUNT, GROUP BY source). With ?confirm=YES_DELETE: (a) DROP TABLE IF EXISTS dataset_sppg CASCADE; (b) DELETE FROM sppg WHERE source != 'MBGWatch' AND (source ILIKE '%BGN%' OR data_bulan ILIKE '%2025%' OR data_bulan ILIKE '%Maret%'); (c) print before/after row counts as JSON. Add a prominent warning comment: NEVER deletes source='MBGWatch' rows.",
+    "2. Create api/sppg_provinsi.php. Accept ?provinsi=<name>. Query: SELECT id, nama, provinsi, kabupaten_kota, kecamatan, alamat, latitude, longitude, status FROM sppg WHERE provinsi ILIKE ? ORDER BY kabupaten_kota, nama LIMIT 500. Add Cache-Control: public, max-age=300. Return {status, provinsi, count, data:[...]}.",
+    "3. Create api/sppg_map.php. Accept ?provinsi=<name> (optional), ?bbox=minlat,minlng,maxlat,maxlng (optional), ?limit=N (default 5000, max 30000). Query sppg table with WHERE latitude IS NOT NULL AND longitude IS NOT NULL plus optional filters. Return GeoJSON FeatureCollection: {type:'FeatureCollection', count:N, features:[{type:'Feature', geometry:{type:'Point', coordinates:[lng,lat]}, properties:{id,nama,provinsi,kabupaten_kota,status}}]}. Add Cache-Control: public, max-age=60.",
+    "4. Create api/sppg_status.php. Query users table for sppg role + query sppg table for status counts. Return: {status:'success', counts:{aktif:N, sertifikasi_habis:N, suspend:N, total:N}, data:[{name:sppg_name, city:sppg_code, status:'aktif', cert_expiry:'—', capacity:500, last_menu:'—'}...]} for up to 100 rows from users WHERE role='sppg'.",
+    "5. Create api/security_threats.php. Query exploit_logs table: SELECT ip_address as ip, exploit_type as type, requested_url as url, created_at as ts FROM exploit_logs ORDER BY created_at DESC LIMIT 50. Return {status:'success', data:[...]}. If exploit_logs table doesn't exist (42P01), return empty data array with status:success."
+  ],
+  "acceptance_criteria": [
+    "curl http://localhost/MBG-MONITORING/database/scripts/cleanup.php (no confirm param) returns JSON preview without deleting anything",
+    "curl http://localhost/MBG-MONITORING/api/sppg_provinsi.php?provinsi=BALI returns JSON with sppg array",
+    "curl http://localhost/MBG-MONITORING/api/sppg_map.php returns GeoJSON FeatureCollection",
+    "curl http://localhost/MBG-MONITORING/api/sppg_status.php returns JSON with counts object",
+    "curl http://localhost/MBG-MONITORING/api/security_threats.php returns JSON with data array"
+  ],
+  "verification": [
+    "curl http://localhost/MBG-MONITORING/database/scripts/cleanup.php — HTTP 200, JSON preview, no deletion",
+    "curl http://localhost/MBG-MONITORING/api/sppg_provinsi.php?provinsi=BALI — HTTP 200, JSON array",
+    "curl http://localhost/MBG-MONITORING/api/sppg_map.php — HTTP 200, GeoJSON FeatureCollection",
+    "curl http://localhost/MBG-MONITORING/api/sppg_status.php — HTTP 200, JSON with counts",
+    "curl http://localhost/MBG-MONITORING/api/security_threats.php — HTTP 200, JSON with data array"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
