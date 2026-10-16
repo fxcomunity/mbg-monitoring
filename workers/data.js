@@ -6,7 +6,12 @@
  * KV Bindings required:
  *   DATA     — stores telemetri, distribusi, menu data
  *   SESSIONS — shared with auth.js to validate admin sessions
+ *
+ * DATABASE_URL harus dikonfigurasi sebagai Wrangler secret:
+ *   wrangler secret put DATABASE_URL --name mbg-monitoring-api
  */
+
+import { neon } from '@neondatabase/serverless';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -81,6 +86,37 @@ export default {
         const data = stored ? JSON.parse(stored) : [];
         return json({ status: 'success', data });
       }
+
+      // SPPG endpoints — dari Neon PostgreSQL
+      if (type === 'sppg') {
+        if (!env.DATABASE_URL) {
+          return json({ status: 'error', message: 'DATABASE_URL tidak dikonfigurasi' }, 500);
+        }
+        const sql = neon(env.DATABASE_URL);
+        const provinsiFilter = url.searchParams.get('provinsi') || '';
+
+        let rows;
+        if (provinsiFilter) {
+          rows = await sql`
+            SELECT id, nama, provinsi, kabupaten_kota, kecamatan, kelurahan_desa,
+                   alamat, nama_yayasan, latitude, longitude, status, data_bulan
+            FROM sppg
+            WHERE latitude IS NOT NULL
+              AND LOWER(provinsi) = LOWER(${provinsiFilter})
+            ORDER BY provinsi, kabupaten_kota, nama
+          `;
+        } else {
+          rows = await sql`
+            SELECT id, nama, provinsi, kabupaten_kota, kecamatan, kelurahan_desa,
+                   alamat, nama_yayasan, latitude, longitude, status, data_bulan
+            FROM sppg
+            WHERE latitude IS NOT NULL
+            ORDER BY provinsi, kabupaten_kota, nama
+          `;
+        }
+        return json({ status: 'success', data: rows, total: rows.length });
+      }
+
       return json({ status: 'error', message: 'Parameter type tidak valid.' }, 400);
     }
 
