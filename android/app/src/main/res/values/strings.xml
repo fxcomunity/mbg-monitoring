@@ -138,4 +138,27 @@
     <!-- Profile password change -->
     <string name="hint_password_lama">Kata Sandi Lama</string>
     <string name="hint_password_baru">Kata Sandi Baru</string>
+
+    <!-- Dashboard Screen -->
+    <string name="dashboard_judul">Dashboard</string>
+    <string name="card_buka_dashboard">Buka Dashboard</string>
+    <string name="card_panel_admin">Panel Admin</string>
+    <string name="card_laporan_aduan">Laporan &amp; Aduan</string>
+    <string name="admin_panel_judul">Panel Admin</string>
+    <string name="tile_kpi_nasional">KPI Nasional</string>
+    <string name="tile_manajemen_akun">Manajemen Akun</string>
+    <string name="tile_status_sppg">Status SPPG</string>
+    <string name="tile_backup_menu">Backup Menu</string>
+    <string name="tile_log_keamanan">Log Keamanan</string>
+    <string name="tile_input_menu">Input Menu Harian</string>
+    <string name="tile_profil_dapur">Profil Dapur</string>
+    <string name="tile_laporan_distribusi">Laporan Distribusi</string>
+    <string name="tile_status_laporan">Status Laporan</string>
+    <string name="tile_menu_sekolah">Menu Sekolah Anak</string>
+    <string name="tile_kontak_satgas">Kontak Satgas</string>
+    <string name="label_fitur_segera">Segera Hadir</string>
+    <string name="label_versi_admin">Akses Admin</string>
+    <string name="webview_loading">Memuat halaman…</string>
+    <string name="panel_admin_deskripsi">Kelola data program MBG melalui portal web resmi Radar MBG.</string>
+    <string name="btn_buka_portal">Buka Portal Admin</string>
 </resources>

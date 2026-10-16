@@ -3,6 +3,7 @@
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,10 +12,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Report
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -33,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -41,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.go.bgn.radarmbg.R
 import id.go.bgn.radarmbg.data.api.models.UserData
+import id.go.bgn.radarmbg.ui.theme.BgnOnSurface
 import id.go.bgn.radarmbg.ui.theme.BgnOnSurfaceVariant
 import id.go.bgn.radarmbg.ui.theme.BgnPrimary
 import id.go.bgn.radarmbg.ui.theme.BgnPrimaryContainer
@@ -52,6 +63,8 @@ import id.go.bgn.radarmbg.viewmodel.AuthViewModel
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
+    onNavigateToDashboard: () -> Unit,
+    onNavigateToAdminPanel: () -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
     val uiState by authViewModel.uiState.collectAsState()
@@ -119,7 +132,7 @@ fun ProfileScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Fitur dalam pengembangan",
+                        text = stringResource(R.string.label_fitur_segera),
                         fontSize = 12.sp,
                         color = BgnOnSurfaceVariant
                     )
@@ -205,6 +218,45 @@ fun ProfileScreen(
                 )
             }
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Navigation section
+            Text(
+                text = stringResource(R.string.dashboard_judul),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = BgnOnSurfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            )
+
+            NavCard(
+                titleRes = R.string.card_buka_dashboard,
+                icon = Icons.Default.Dashboard,
+                subtitleRes = R.string.dashboard_judul,
+                onClick = onNavigateToDashboard
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (user?.role == "admin") {
+                NavCard(
+                    titleRes = R.string.card_panel_admin,
+                    icon = Icons.Default.AdminPanelSettings,
+                    subtitleRes = R.string.admin_panel_judul,
+                    onClick = onNavigateToAdminPanel
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            NavCard(
+                titleRes = R.string.card_laporan_aduan,
+                icon = Icons.Default.Report,
+                subtitleRes = R.string.laporan_judul,
+                onClick = {}
+            )
+
             Spacer(modifier = Modifier.height(40.dp))
 
             OutlinedButton(
@@ -230,6 +282,56 @@ fun ProfileScreen(
                     color = Color.Red
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun NavCard(
+    titleRes: Int,
+    icon: ImageVector,
+    subtitleRes: Int,
+    onClick: () -> Unit
+) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = BgnPrimary,
+                modifier = Modifier.size(24.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = stringResource(titleRes),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = BgnOnSurface
+                )
+                Text(
+                    text = stringResource(subtitleRes),
+                    fontSize = 12.sp,
+                    color = BgnOnSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = BgnOnSurfaceVariant
+            )
         }
     }
 }

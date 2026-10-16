@@ -20,6 +20,12 @@ object ApiClient {
     // karena Pages Function auth_user masih dalam perbaikan
     const val AUTH_WORKER_URL = "https://mbg-auth.aqsholhalqi4.workers.dev"
 
+    // Worker data (KV) — menggantikan Pages Functions yang gagal build
+    private const val DATA_WORKER_URL = "https://mbg-data.aqsholhalqi4.workers.dev"
+
+    // Worker menu (Neon DB via raw fetch) — menggantikan Pages Functions yang gagal build
+    private const val MENU_WORKER_URL = "https://mbg-menu.aqsholhalqi4.workers.dev"
+
     private val cookieStore = ConcurrentHashMap<String, List<Cookie>>()
 
     private val cookieJar = object : CookieJar {
@@ -71,6 +77,26 @@ object ApiClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(AuthApiService::class.java)
+    }
+
+    // Data instance — Worker KV standalone (telemetri & distribusi)
+    val dataInstance: DataApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl("$DATA_WORKER_URL/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(DataApiService::class.java)
+    }
+
+    // Menu instance — Worker Neon DB standalone (menu harian)
+    val menuInstance: MenuApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl("$MENU_WORKER_URL/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(MenuApiService::class.java)
     }
 
     fun clearCookies() {

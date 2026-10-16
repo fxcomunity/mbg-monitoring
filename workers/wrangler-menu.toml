@@ -1,0 +1,23 @@
+name = "mbg-menu"
+main = "menu.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# ─── Cron Trigger ──────────────────────────────────────────────────────────
+[triggers]
+crons = ["5 17 * * *"]
+
+# ─── KV Namespaces ─────────────────────────────────────────────────────────
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "2e12b6cbb1e64ab0a7d03ba739ada7de"
+
+[[kv_namespaces]]
+binding = "MENU_CACHE"
+id = "446e89c787a64c2c868e3a54c2025de8"
+
+# ─── Environment Variables ──────────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "production"
+
+# DATABASE_URL di-set via: npx wrangler secret put DATABASE_URL --config wrangler-menu.toml

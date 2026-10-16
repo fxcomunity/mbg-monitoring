@@ -11,15 +11,15 @@ import id.go.bgn.radarmbg.data.api.models.TiketWrapper
 object DataRepository {
 
     suspend fun getTelemetri(): Result<TelemetriData> = runCatching {
-        ApiClient.instance.getTelemetri().data
+        ApiClient.dataInstance.getTelemetri().data
     }
 
     suspend fun getDistribusi(): Result<List<ProvinsiData>> = runCatching {
-        ApiClient.instance.getDistribusi().data
+        ApiClient.dataInstance.getDistribusi().data
     }
 
     suspend fun getMenu(): Result<List<MenuData>> = runCatching {
-        ApiClient.instance.getMenu().data
+        ApiClient.menuInstance.getMenu().data
     }
 
     suspend fun getNotifikasi(): Result<NotifikasiData> = runCatching {

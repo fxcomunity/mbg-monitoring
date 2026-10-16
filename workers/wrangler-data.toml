@@ -1,0 +1,17 @@
+name = "mbg-data"
+main = "data.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# ─── KV Namespaces ─────────────────────────────────────────────────────────
+[[kv_namespaces]]
+binding = "DATA"
+id = "85539fc16a9b49558ef198e7fab116d4"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "2e12b6cbb1e64ab0a7d03ba739ada7de"
+
+# ─── Environment Variables ──────────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "production"

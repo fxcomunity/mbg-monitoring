@@ -12,6 +12,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import id.go.bgn.radarmbg.ui.screens.AdminPanelScreen
+import id.go.bgn.radarmbg.ui.screens.DashboardScreen
 import id.go.bgn.radarmbg.ui.screens.HomeScreen
 import id.go.bgn.radarmbg.ui.screens.LaporanScreen
 import id.go.bgn.radarmbg.ui.screens.LoginScreen
@@ -107,8 +109,27 @@ class MainActivity : ComponentActivity() {
                                     popUpTo(0) { inclusive = true }
                                 }
                             },
+                            onNavigateToDashboard = {
+                                navController.navigate("dashboard")
+                            },
+                            onNavigateToAdminPanel = {
+                                navController.navigate("admin_panel")
+                            },
                             authViewModel = authViewModel
                         )
+                    }
+
+                    composable("dashboard") {
+                        val role = (authViewModel.uiState.value as? AuthUiState.Success)?.user?.role ?: ""
+                        DashboardScreen(
+                            userRole = role,
+                            onNavigateToAdminPanel = { navController.navigate("admin_panel") },
+                            onNavigateToLaporan = { navController.navigate("main") }
+                        )
+                    }
+
+                    composable("admin_panel") {
+                        AdminPanelScreen(onBack = { navController.popBackStack() })
                     }
                 }
             }
