@@ -36,7 +36,7 @@
 <body class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
 
   <!-- Navbar Dashboard -->
-  <header class="w-full bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm">
+  <header class="w-full bg-primary text-white backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm">
     <div class="flex items-center gap-3">
       <div class="relative" id="mbgBellWrap">
         <button id="mbgBellBtn" type="button" title="Notifikasi" aria-haspopup="true" aria-expanded="false" class="relative p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center justify-center">
@@ -51,12 +51,12 @@
           <div id="mbgBellList" class="max-h-72 overflow-y-auto divide-y divide-slate-100"></div>
         </div>
       </div>
-      <img src="../../assets/images/ic_launcher.png" alt="Logo BGN" class="h-9 w-auto">
-      <span class="font-bold text-sm text-primary">Dashboard Wali Murid</span>
+      <img src="../../assets/images/ic_launcher.png" alt="Logo BGN" class="h-9 w-auto" loading="lazy">
+      <span class="font-bold text-sm text-white">Dashboard Wali Murid</span>
     </div>
 
     <div class="flex items-center gap-2">
-      <a href="../../index.html" class="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors">
+      <a href="../../index.html" class="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-xs font-semibold text-white hover:text-white/80 transition-colors">
         <span class="material-symbols-outlined text-sm">home</span>
         <span>Web Utama</span>
       </a>
@@ -65,7 +65,7 @@
         <span>Keluar</span>
       </a>
       <!-- Hamburger -->
-      <button id="dashHamburger" type="button" aria-expanded="false" aria-label="Menu navigasi" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-all flex items-center justify-center sm:hidden">
+      <button id="dashHamburger" type="button" aria-expanded="false" aria-label="Menu navigasi" class="p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all flex items-center justify-center sm:hidden">
         <span class="material-symbols-outlined text-xl">menu</span>
       </button>
     </div>
@@ -450,7 +450,7 @@
           </div>
         </div>
         <div class="flex flex-col items-center gap-4">
-          <img id="userAvatarPreview" src="../../assets/images/ic_launcher.png" alt="Avatar User" class="w-24 h-24 rounded-2xl object-cover border-2 border-slate-200 shadow-sm bg-white" onerror="this.src='../../assets/images/ic_launcher.png'">
+          <img id="userAvatarPreview" src="../../assets/images/ic_launcher.png" alt="Avatar User" class="w-24 h-24 rounded-2xl object-cover border-2 border-slate-200 shadow-sm bg-white" loading="lazy" onerror="this.src='../../assets/images/ic_launcher.png'">
           <form id="formUploadUserAvatar" enctype="multipart/form-data" class="w-full flex flex-col gap-3">
             <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required class="w-full text-xs file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-primary file:text-white file:font-bold file:text-xs file:cursor-pointer">
             <button type="submit" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all shadow-sm flex items-center justify-center gap-2">
