@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Inisialisasi Global Search
   initGlobalSearch();
+
+  // Inisialisasi Province Modal Drill-Down
+  initProvinsiModal();
 });
 
 /**
@@ -174,7 +177,7 @@ async function loadDistribusiTable(baseApi, region = 'semua') {
         const regCode = item.region_code || 'nasional';
 
         html += `
-          <tr class="hover:bg-surface-canvas transition-colors" data-region="${regCode}">
+          <tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-region="${regCode}" data-provinsi="${prov}" title="Klik untuk lihat SPPG">
             <td class="py-3 px-3 font-semibold text-primary">${prov}</td>
             <td class="py-3 px-3">${target}</td>
             <td class="py-3 px-3 text-status-success font-semibold">${ketepatan}</td>
@@ -791,3 +794,91 @@ function initInteractiveTelemetryMap() {
   });
 }
 
+
+/**
+ * ============================================================
+ * Province Modal: klik baris tabel distribusi → tampil SPPG
+ * ============================================================
+ */
+function initProvinsiModal() {
+  var tableBody = document.getElementById('tableRegionalBody');
+  var modal     = document.getElementById('provinsiModal');
+  var closeBtn  = document.getElementById('closeProvinsiModal');
+  var listEl    = document.getElementById('sppgModalList');
+  var titleEl   = document.getElementById('provinsiModalTitle');
+
+  if (!tableBody || !modal) return;
+
+  tableBody.addEventListener('click', function(e) {
+    var row = e.target.closest('tr[data-provinsi]');
+    if (!row) return;
+    var provinsi = row.getAttribute('data-provinsi');
+    if (!provinsi) return;
+    openProvinsiModal(provinsi);
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeProvinsiModal);
+  }
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeProvinsiModal();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeProvinsiModal();
+  });
+
+  function closeProvinsiModal() {
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function openProvinsiModal(provinsi) {
+    if (!modal || !titleEl || !listEl) return;
+    titleEl.textContent = 'SPPG di ' + provinsi;
+    listEl.innerHTML =
+      '<div class="py-10 text-center text-slate-400 text-sm">' +
+      '<div class="w-8 h-8 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mx-auto mb-3"></div>' +
+      'Memuat data SPPG...</div>';
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    var apiPrefix = getApiPrefix();
+    fetch(apiPrefix + 'sppg_provinsi.php?provinsi=' + encodeURIComponent(provinsi))
+      .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function(json) {
+        var data = json.data || json;
+        if (!Array.isArray(data) || data.length === 0) {
+          listEl.innerHTML =
+            '<div class="py-10 text-center text-slate-400 text-sm">' +
+            '<span class="material-symbols-outlined text-4xl text-slate-300 block mb-2">soup_kitchen</span>' +
+            'Belum ada data SPPG untuk <strong>' + _escM(provinsi) + '</strong>.</div>';
+          return;
+        }
+        listEl.innerHTML = data.map(function(s) {
+          var status = (s.status || 'operasional').toLowerCase();
+          var isAktif = status === 'aktif' || status === 'operasional';
+          var badgeStyle = isAktif
+            ? 'background:#d1fae5;color:#065f46;'
+            : 'background:#fee2e2;color:#991b1b;';
+          return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px;">' +
+            '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#001026,#395f95);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+            '<span class="material-symbols-outlined" style="font-size:18px;color:#6ffbbe;">soup_kitchen</span></div>' +
+            '<div style="flex:1;min-width:0;">' +
+            '<div style="font-weight:800;font-size:13px;color:#001026;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _escM(s.nama || s.name || '—') + '</div>' +
+            '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">' + _escM(s.kabupaten_kota || s.city || '—') + '</div>' +
+            '<span style="' + badgeStyle + 'font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;">' + _escM(s.status || 'Operasional') + '</span>' +
+            '</div></div>';
+        }).join('');
+      })
+      .catch(function() {
+        listEl.innerHTML =
+          '<div class="py-8 text-center text-slate-400 text-sm">' +
+          '<span class="material-symbols-outlined text-4xl text-slate-300 block mb-2">wifi_off</span>' +
+          'Gagal memuat data. Pastikan endpoint API tersedia.</div>';
+      });
+  }
+
+  function _escM(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+}
