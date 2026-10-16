@@ -131,6 +131,25 @@
     .mbg-marker-pin.sppg  { background: #2563eb; }
     .mbg-marker-pin.user  { background: #059669; }
     .mbg-marker-pin.me    { background: #6ffbbe; border-color: #001026; animation: ping 1.5s infinite; }
+    /* SPPG Dapur marker */
+    .sppg-marker {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: #059669; border: 2px solid #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      transform: none;
+    }
+    .sppg-layer-control {
+      position: absolute; bottom: 130px; left: 12px; z-index: 800;
+      background: rgba(0,16,38,0.92); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; padding: 10px 14px;
+      font-size: 11px; color: #f1f5f9;
+    }
+    .sppg-layer-control label {
+      display: flex; align-items: center; gap: 8px; cursor: pointer;
+      margin-bottom: 4px;
+    }
+    .sppg-layer-control label:last-child { margin-bottom: 0; }
     @keyframes ping {
       0%,100%{box-shadow:0 0 0 0 rgba(111,251,190,0.6)}
       70%{box-shadow:0 0 0 12px rgba(111,251,190,0)}
@@ -177,6 +196,13 @@
   <div id="map-wrap">
     <div id="map"></div>
 
+    <!-- SPPG data notice -->
+    <div id="sppg-notice" style="position:absolute;top:0;left:0;right:0;z-index:700;background:#fef3c7;border-bottom:1px solid #f59e0b;padding:6px 12px;font-size:11px;text-align:center;color:#92400e;">
+      ⚠️ Data dapur SPPG ditampilkan berdasarkan data historis per <strong>Maret 2025</strong>. 
+      Koordinat sebagian lokasi belum tersedia dan sedang dalam proses verifikasi.
+      <button onclick="this.parentElement.style.display='none'" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:11px;color:#92400e;font-weight:700;">✕</button>
+    </div>
+
     <!-- Sidebar toggle (mobile) -->
     <button id="btn-sidebar-toggle" title="Lihat daftar pengguna" onclick="toggleSidebar()">
       <span class="material-symbols-outlined" style="font-size:20px;">people</span>
@@ -195,6 +221,19 @@
     <button id="btn-locate" title="Ke lokasi saya" onclick="centerOnMe()">
       <span class="material-symbols-outlined" style="font-size:20px;">my_location</span>
     </button>
+
+    <!-- Layer toggle -->
+    <div class="sppg-layer-control">
+      <div style="font-weight:700;font-size:10px;color:#6ffbbe;margin-bottom:6px;letter-spacing:.05em;">LAYER PETA</div>
+      <label>
+        <input type="checkbox" id="layer-van" checked onchange="toggleVanLayer(this.checked)">
+        <span>🚐 Van Logistik</span>
+      </label>
+      <label>
+        <input type="checkbox" id="layer-sppg" checked onchange="toggleSppgLayer(this.checked)">
+        <span>🏭 Dapur SPPG</span>
+      </label>
+    </div>
   </div>
 
 </div>
@@ -253,10 +292,78 @@
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
+  // Load SPPG markers
+  loadSppgData();
+
   /* ══════════════════════════════════════════════════
      MARKER MANAGEMENT
   ════════════════════════════════════════════════ */
   var markers = {};   // id → { marker, circle, info }
+
+  var sppgMarkers = [];   // array dari L.Marker untuk SPPG
+  var sppgLayerVisible = true;
+  var vanLayerVisible = true;
+
+  function toggleSppgLayer(show) {
+    sppgLayerVisible = show;
+    sppgMarkers.forEach(function(m) {
+      if (show) m.addTo(map); else map.removeLayer(m);
+    });
+  }
+
+  function toggleVanLayer(show) {
+    vanLayerVisible = show;
+    Object.values(markers).forEach(function(obj) {
+      if (show) { obj.marker.addTo(map); if (obj.circle) obj.circle.addTo(map); }
+      else { map.removeLayer(obj.marker); if (obj.circle) map.removeLayer(obj.circle); }
+    });
+  }
+
+  function makeSppgIcon() {
+    return L.divIcon({
+      html: '<div class="sppg-marker">🏭</div>',
+      className: '',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -16]
+    });
+  }
+
+  function renderSppgMarkers(data) {
+    // Remove existing SPPG markers
+    sppgMarkers.forEach(function(m) { map.removeLayer(m); });
+    sppgMarkers = [];
+
+    data.forEach(function(sppg) {
+      if (!sppg.latitude || !sppg.longitude) return;
+      var popupHtml =
+        '<div style="font-family:Plus Jakarta Sans,sans-serif;min-width:180px;">' +
+          '<div style="font-weight:800;font-size:13px;color:#001026;margin-bottom:4px;">🏭 ' + escHTML(sppg.nama || '') + '</div>' +
+          '<div style="font-size:11px;color:#059669;margin-bottom:4px;font-weight:600;">' + escHTML(sppg.provinsi || '') + ' — ' + escHTML(sppg.kabupaten_kota || '') + '</div>' +
+          (sppg.alamat ? '<div style="font-size:10px;color:#475569;margin-bottom:3px;">📍 ' + escHTML(sppg.alamat) + '</div>' : '') +
+          (sppg.nama_yayasan ? '<div style="font-size:10px;color:#64748b;margin-bottom:3px;">🏛 ' + escHTML(sppg.nama_yayasan) + '</div>' : '') +
+          '<div style="font-size:10px;color:#94a3b8;margin-top:4px;">Status: <strong>' + escHTML(sppg.status || 'operasional') + '</strong> · ' + escHTML(sppg.data_bulan || '') + '</div>' +
+        '</div>';
+
+      var marker = L.marker([sppg.latitude, sppg.longitude], { icon: makeSppgIcon(), zIndexOffset: -100 });
+      marker.bindPopup(popupHtml, { maxWidth: 260 });
+      if (sppgLayerVisible) marker.addTo(map);
+      sppgMarkers.push(marker);
+    });
+
+    showToast('🏭 ' + sppgMarkers.length + ' dapur SPPG dimuat', 'success');
+  }
+
+  // Load SPPG data on map init
+  function loadSppgData() {
+    fetch('/api/data?type=sppg', { headers: { 'X-Requested-By': 'mbg-radar' } })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res.data && res.data.length > 0) renderSppgMarkers(res.data);
+        else if (res.data && res.data.length === 0) showToast('SPPG: belum ada koordinat terverifikasi', 'info');
+      })
+      .catch(function(e) { console.warn('SPPG fetch error:', e); });
+  }
 
   function makeIcon(role, isMe) {
     var cls = 'mbg-marker-pin ' + (isMe ? 'me' : (role || 'user'));
