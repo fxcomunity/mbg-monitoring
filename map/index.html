@@ -10,6 +10,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"/>
@@ -244,6 +248,8 @@
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Leaflet MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
 (function () {
@@ -304,11 +310,19 @@
   var sppgLayerVisible = true;
   var vanLayerVisible = true;
 
+  // MarkerCluster group untuk SPPG
+  var sppgClusterGroup = null;
+
   function toggleSppgLayer(show) {
     sppgLayerVisible = show;
-    sppgMarkers.forEach(function(m) {
-      if (show) m.addTo(map); else map.removeLayer(m);
-    });
+    if (sppgClusterGroup) {
+      if (show) map.addLayer(sppgClusterGroup);
+      else map.removeLayer(sppgClusterGroup);
+    } else {
+      sppgMarkers.forEach(function(m) {
+        if (show) m.addTo(map); else map.removeLayer(m);
+      });
+    }
   }
 
   function toggleVanLayer(show) {
@@ -330,9 +344,18 @@
   }
 
   function renderSppgMarkers(data) {
-    // Remove existing SPPG markers
-    sppgMarkers.forEach(function(m) { map.removeLayer(m); });
+    // Remove existing SPPG markers / cluster group
+    if (sppgClusterGroup) {
+      map.removeLayer(sppgClusterGroup);
+    } else {
+      sppgMarkers.forEach(function(m) { map.removeLayer(m); });
+    }
     sppgMarkers = [];
+
+    // Create marker cluster group
+    sppgClusterGroup = (typeof L.markerClusterGroup === 'function')
+      ? L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 60 })
+      : null;
 
     data.forEach(function(sppg) {
       if (!sppg.latitude || !sppg.longitude) return;
@@ -347,9 +370,18 @@
 
       var marker = L.marker([sppg.latitude, sppg.longitude], { icon: makeSppgIcon(), zIndexOffset: -100 });
       marker.bindPopup(popupHtml, { maxWidth: 260 });
-      if (sppgLayerVisible) marker.addTo(map);
+
+      if (sppgClusterGroup) {
+        sppgClusterGroup.addLayer(marker);
+      } else {
+        if (sppgLayerVisible) marker.addTo(map);
+      }
       sppgMarkers.push(marker);
     });
+
+    if (sppgClusterGroup && sppgLayerVisible) {
+      map.addLayer(sppgClusterGroup);
+    }
 
     showToast('🏭 ' + sppgMarkers.length + ' dapur SPPG dimuat', 'success');
   }
@@ -357,12 +389,25 @@
   // Load SPPG data on map init
   function loadSppgData() {
     fetch('/api/data?type=sppg', { headers: { 'X-Requested-By': 'mbg-radar' } })
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) throw new Error('not-ok');
+        return r.json();
+      })
       .then(function(res) {
         if (res.data && res.data.length > 0) renderSppgMarkers(res.data);
         else if (res.data && res.data.length === 0) showToast('SPPG: belum ada koordinat terverifikasi', 'info');
       })
-      .catch(function(e) { console.warn('SPPG fetch error:', e); });
+      .catch(function(e) {
+        console.warn('SPPG primary fetch failed, trying fallback /api/sppg_map.php:', e);
+        fetch('/api/sppg_map.php', { headers: { 'X-Requested-By': 'mbg-radar' } })
+          .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+          .then(function(res) {
+            var data = res.data || res;
+            if (Array.isArray(data) && data.length > 0) renderSppgMarkers(data);
+            else showToast('SPPG: belum ada koordinat terverifikasi', 'info');
+          })
+          .catch(function(e2) { console.warn('SPPG fallback fetch error:', e2); });
+      });
   }
 
   function makeIcon(role, isMe) {
