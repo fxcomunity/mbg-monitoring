@@ -131,6 +131,11 @@ fun MainScaffold(
         else -> "U"
     }
 
+    val userRole = when (val s = authUiState.value) {
+        is AuthUiState.Success -> s.user.role
+        else -> ""
+    }
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -138,7 +143,8 @@ fun MainScaffold(
                 badgeCount = 0,
                 onNotificationClick = { outerNavController.navigate("notifikasi") },
                 onProfileClick = { outerNavController.navigate("profile") },
-                userInitial = userInitial
+                userInitial = userInitial,
+                userRole = userRole
             )
         },
         bottomBar = {
