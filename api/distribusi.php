@@ -5,6 +5,7 @@ if (!class_exists('Security')) { require_once __DIR__ . '/../database/security.p
 
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
+header('Cache-Control: public, max-age=300');
 
 try {
     $pdo = getDB();
