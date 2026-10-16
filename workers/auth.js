@@ -1,7 +1,6 @@
 /**
  * Cloudflare Worker — Auth API
  * Route: GET/POST /api/auth
- * Replaces: api/auth_user.php
  */
 
 import { neon } from '@neondatabase/serverless';
@@ -44,12 +43,12 @@ async function getSession(request, env) {
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
-
     if (!env.DATABASE_URL) return json({ status: 'error', message: 'DATABASE_URL tidak dikonfigurasi' }, 500);
 
+    // neon() diinisialisasi di sini — pakai template literal untuk query
     const sql = neon(env.DATABASE_URL);
 
-    // ── GET: cek sesi ────────────────────────────────────────────────────────
+    // ── GET: cek sesi ─────────────────────────────────────────────────────
     if (request.method === 'GET') {
       const session = await getSession(request, env);
       if (!session) return json({ logged_in: false });
@@ -66,7 +65,7 @@ export default {
       });
     }
 
-    // ── POST ─────────────────────────────────────────────────────────────────
+    // ── POST ─────────────────────────────────────────────────────────────
     if (request.method === 'POST') {
       let body = {};
       const ct = request.headers.get('Content-Type') || '';
@@ -82,6 +81,7 @@ export default {
 
       // LOGIN
       if (action === 'login') {
+        // Rate limiting
         if (env.RATE) {
           const rk  = `rate:login:${ip}`;
           const cnt = parseInt(await env.RATE.get(rk) || '0');
@@ -94,27 +94,48 @@ export default {
         if (!username || !password) return json({ status: 'error', message: 'Username dan kata sandi wajib diisi.' });
 
         try {
-          const rows = await sql.query(
-            `SELECT id, username, full_name, email, role, sppg_name, password_hash, salt, avatar_url, avatar_status
-             FROM users WHERE (username = $1 OR email = $1) AND active = TRUE LIMIT 1`,
-            [username]
-          );
+          // Pakai template literal — cara yang benar untuk @neondatabase/serverless
+          const rows = await sql`
+            SELECT id, username, full_name, email, role, sppg_name,
+                   password_hash, salt, avatar_url, avatar_status
+            FROM users
+            WHERE (username = ${username} OR email = ${username})
+              AND active = TRUE
+            LIMIT 1
+          `;
+
           const user = rows[0];
           if (!user) return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
 
-          const hash = await hashPassword(password, user.salt || '');
-          if (hash !== user.password_hash) return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
+          // Cek apakah salt sudah diset (belum jalankan setup_users.sql)
+          if (!user.salt) {
+            return json({ status: 'error', message: 'Akun belum diaktivasi. Hubungi admin BGN.' });
+          }
+
+          const hash = await hashPassword(password, user.salt);
+          if (hash !== user.password_hash) {
+            return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
+          }
 
           const token   = generateToken();
-          const session = { username: user.username, name: user.full_name, role: user.role, sppg_name: user.sppg_name || '', avatar: user.avatar_url || '' };
+          const session = {
+            username:  user.username,
+            name:      user.full_name,
+            role:      user.role,
+            sppg_name: user.sppg_name || '',
+            avatar:    user.avatar_url || ''
+          };
           if (env.SESSIONS) await env.SESSIONS.put(token, JSON.stringify(session), { expirationTtl: SESSION_TTL });
 
           const headers = new Headers(CORS);
           headers.set('Set-Cookie', `mbg_token=${token}; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_TTL}; Path=/`);
-          return new Response(JSON.stringify({ status: 'success', user: { full_name: user.full_name, role: user.role } }), { status: 200, headers });
+          return new Response(JSON.stringify({
+            status: 'success',
+            user: { full_name: user.full_name, role: user.role }
+          }), { status: 200, headers });
 
         } catch (err) {
-          return json({ status: 'error', message: 'Gagal memproses login: ' + err.message }, 500);
+          return json({ status: 'error', message: 'Error DB: ' + err.message }, 500);
         }
       }
 
@@ -128,20 +149,19 @@ export default {
         const sppg_name = String(body.sppg_name || '').trim();
 
         if (!full_name || !email || !username || !password) return json({ status: 'error', message: 'Semua kolom wajib diisi.' });
-        if (username.length < 3)  return json({ status: 'error', message: 'Username minimal 3 karakter.' });
-        if (password.length < 6)  return json({ status: 'error', message: 'Kata sandi minimal 6 karakter.' });
+        if (username.length < 3) return json({ status: 'error', message: 'Username minimal 3 karakter.' });
+        if (password.length < 6) return json({ status: 'error', message: 'Kata sandi minimal 6 karakter.' });
 
         try {
-          const check = await sql.query(`SELECT id FROM users WHERE username = $1 OR email = $2 LIMIT 1`, [username, email]);
+          const check = await sql`SELECT id FROM users WHERE username = ${username} OR email = ${email} LIMIT 1`;
           if (check.length) return json({ status: 'error', message: 'Username atau email sudah digunakan.' });
 
           const salt = generateToken().substring(0, 16);
           const hash = await hashPassword(password, salt);
-          await sql.query(
-            `INSERT INTO users (username, full_name, email, role, sppg_name, password_hash, salt, active, created_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,TRUE,NOW())`,
-            [username, full_name, email, role, sppg_name || null, hash, salt]
-          );
+          await sql`
+            INSERT INTO users (username, full_name, email, role, sppg_name, password_hash, salt, active, created_at)
+            VALUES (${username}, ${full_name}, ${email}, ${role}, ${sppg_name || null}, ${hash}, ${salt}, TRUE, NOW())
+          `;
           return json({ status: 'success', message: 'Akun berhasil didaftarkan. Silakan masuk.' });
         } catch (err) {
           return json({ status: 'error', message: 'Gagal mendaftar: ' + err.message }, 500);
@@ -153,7 +173,10 @@ export default {
         const session = await getSession(request, env);
         if (!session || session.role !== 'admin') return json({ status: 'error', message: 'Hanya admin.' }, 403);
         try {
-          const rows = await sql.query(`SELECT id, username, full_name, email, role, sppg_name, avatar_status, active, created_at FROM users ORDER BY created_at DESC LIMIT 200`);
+          const rows = await sql`
+            SELECT id, username, full_name, email, role, sppg_name, avatar_status, active, created_at
+            FROM users ORDER BY created_at DESC LIMIT 200
+          `;
           return json({ status: 'success', data: rows });
         } catch (err) {
           return json({ status: 'error', message: err.message }, 500);
