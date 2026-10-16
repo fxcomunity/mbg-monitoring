@@ -1,9 +1,10 @@
 /**
  * Cloudflare Pages Function
  * Route: GET/POST /api/auth_user
+ *
+ * Menggunakan Neon HTTP API langsung tanpa npm dependency
+ * agar bisa di-bundle oleh Cloudflare Pages tanpa build step.
  */
-
-import { neon } from '@neondatabase/serverless';
 
 const CORS = {
   'Content-Type': 'application/json; charset=UTF-8',
@@ -33,6 +34,40 @@ function generateToken() {
   return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
+// Query Neon via HTTP — tidak perlu npm package
+// Neon mendukung REST API query via fetch dengan Basic Auth
+async function dbQuery(databaseUrl, query, params = []) {
+  if (!databaseUrl) throw new Error('DATABASE_URL tidak dikonfigurasi');
+
+  // Parse connection string
+  const m = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^\/]+)\/([^?]+)/);
+  if (!m) throw new Error('DATABASE_URL format salah');
+  const [, user, password, host, db] = m;
+
+  // Neon serverless HTTP endpoint
+  // Format: POST https://{host}/sql
+  // Headers: Authorization Basic, Neon-Connection-String
+  // Body: { query, params }
+  const res = await fetch(`https://${host}/sql`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Basic ' + btoa(`${user}:${password}`),
+      'Neon-Connection-String': databaseUrl,
+    },
+    body: JSON.stringify({ query, params })
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`Neon ${res.status}: ${txt.substring(0,200)}`);
+  }
+
+  const data = await res.json();
+  // Neon HTTP returns { rows: [], fields: [] }
+  return data.rows ?? data;
+}
+
 async function getSession(request, env) {
   const cookie = request.headers.get('Cookie') || '';
   const match  = cookie.match(/mbg_token=([a-f0-9]{64})/);
@@ -51,9 +86,7 @@ export async function onRequest(context) {
   const { request, env } = context;
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
 
-  if (!env.DATABASE_URL) return json({ status: 'error', message: 'DATABASE_URL tidak dikonfigurasi' }, 500);
-
-  const sql = neon(env.DATABASE_URL);
+  if (!env.DATABASE_URL) return json({ status: 'error', message: 'DATABASE_URL tidak dikonfigurasi di Cloudflare Pages' }, 500);
 
   // ── GET: cek sesi ─────────────────────────────────────────────────────────
   if (request.method === 'GET') {
@@ -62,12 +95,12 @@ export async function onRequest(context) {
     return json({
       logged_in: true,
       user: {
-        username:   session.username || '',
-        full_name:  session.name || '',
-        role:       session.role,
-        role_label: ROLE_LABELS[session.role] || session.role,
-        sppg_name:  session.sppg_name || '',
-        avatar:     session.avatar || '',
+        username:     session.username || '',
+        full_name:    session.name || '',
+        role:         session.role,
+        role_label:   ROLE_LABELS[session.role] || session.role,
+        sppg_name:    session.sppg_name || '',
+        avatar:       session.avatar || '',
         avatar_status: session.avatar_status || 'approved'
       }
     });
@@ -101,29 +134,28 @@ export async function onRequest(context) {
       if (!username || !password) return json({ status: 'error', message: 'Username dan kata sandi wajib diisi.' });
 
       try {
-        const rows = await sql`
-          SELECT id, username, full_name, email, role, sppg_name,
-                 password_hash, salt, avatar_url, avatar_status
-          FROM users
-          WHERE (username = ${username} OR email = ${username})
-            AND active = TRUE
-          LIMIT 1
-        `;
+        const rows = await dbQuery(env.DATABASE_URL,
+          `SELECT id, username, full_name, email, role, sppg_name,
+                  password_hash, salt, avatar_url, avatar_status
+           FROM users
+           WHERE (username = $1 OR email = $1) AND active = TRUE
+           LIMIT 1`,
+          [username]
+        );
         const user = rows[0];
         if (!user) return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
-
-        if (!user.salt) return json({ status: 'error', message: 'Akun belum diaktivasi. Hubungi admin BGN.' });
+        if (!user.salt) return json({ status: 'error', message: 'Akun belum diaktivasi. Jalankan setup_users.sql di Neon.' });
 
         const hash = await hashPassword(password, user.salt);
         if (hash !== user.password_hash) return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
 
         const token   = generateToken();
         const session = {
-          username:  user.username,
-          name:      user.full_name,
-          role:      user.role,
-          sppg_name: user.sppg_name || '',
-          avatar:    user.avatar_url || '',
+          username:     user.username,
+          name:         user.full_name,
+          role:         user.role,
+          sppg_name:    user.sppg_name || '',
+          avatar:       user.avatar_url || '',
           avatar_status: user.avatar_status || 'approved'
         };
         if (env.SESSIONS) await env.SESSIONS.put(token, JSON.stringify(session), { expirationTtl: SESSION_TTL });
@@ -136,7 +168,7 @@ export async function onRequest(context) {
         }), { status: 200, headers });
 
       } catch (err) {
-        return json({ status: 'error', message: 'Error: ' + err.message }, 500);
+        return json({ status: 'error', message: 'DB Error: ' + err.message }, 500);
       }
     }
 
@@ -154,15 +186,19 @@ export async function onRequest(context) {
       if (password.length < 6) return json({ status: 'error', message: 'Kata sandi minimal 6 karakter.' });
 
       try {
-        const check = await sql`SELECT id FROM users WHERE username = ${username} OR email = ${email} LIMIT 1`;
+        const check = await dbQuery(env.DATABASE_URL,
+          `SELECT id FROM users WHERE username = $1 OR email = $2 LIMIT 1`,
+          [username, email]
+        );
         if (check.length) return json({ status: 'error', message: 'Username atau email sudah digunakan.' });
 
         const salt = generateToken().substring(0, 16);
         const hash = await hashPassword(password, salt);
-        await sql`
-          INSERT INTO users (username, full_name, email, role, sppg_name, password_hash, salt, active, created_at)
-          VALUES (${username}, ${full_name}, ${email}, ${role}, ${sppg_name || null}, ${hash}, ${salt}, TRUE, NOW())
-        `;
+        await dbQuery(env.DATABASE_URL,
+          `INSERT INTO users (username, full_name, email, role, sppg_name, password_hash, salt, active, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, NOW())`,
+          [username, full_name, email, role, sppg_name || null, hash, salt]
+        );
         return json({ status: 'success', message: 'Akun berhasil didaftarkan. Silakan masuk.' });
       } catch (err) {
         return json({ status: 'error', message: 'Gagal mendaftar: ' + err.message }, 500);
@@ -174,10 +210,10 @@ export async function onRequest(context) {
       const session = await getSession(request, env);
       if (!session || session.role !== 'admin') return json({ status: 'error', message: 'Hanya admin.' }, 403);
       try {
-        const rows = await sql`
-          SELECT id, username, full_name, email, role, sppg_name, avatar_status, active, created_at
-          FROM users ORDER BY created_at DESC LIMIT 200
-        `;
+        const rows = await dbQuery(env.DATABASE_URL,
+          `SELECT id, username, full_name, email, role, sppg_name, avatar_status, active, created_at
+           FROM users ORDER BY created_at DESC LIMIT 200`
+        );
         return json({ status: 'success', data: rows });
       } catch (err) {
         return json({ status: 'error', message: err.message }, 500);

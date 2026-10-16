@@ -1,6 +1,6 @@
 /**
  * _shared.js — Shared utilities untuk semua Pages Functions di /api/
- * Neon PostgreSQL via @neondatabase/serverless (HTTP mode)
+ * Tidak pakai npm package — semua vanilla JS agar Cloudflare Pages bisa bundle.
  */
 
 export const CORS = {
@@ -21,43 +21,33 @@ export function escHTML(s) {
 }
 
 /**
- * Neon PostgreSQL query via HTTP fetch
- * Neon serverless HTTP endpoint: https://{host}/sql
- * dengan header Neon-Connection-String
- * Format: POST body = { query: string, params: any[] }
+ * Query Neon PostgreSQL via HTTP API
+ * Tidak perlu npm package — Neon mendukung REST query via fetch + Basic Auth
  */
-export async function dbQuery(databaseUrl, sql, params = []) {
-  if (!databaseUrl) throw new Error('DATABASE_URL tidak terkonfigurasi');
+export async function dbQuery(databaseUrl, query, params = []) {
+  if (!databaseUrl) throw new Error('DATABASE_URL tidak dikonfigurasi');
 
-  // Parse connection string
-  // Format: postgresql://user:password@host/database?sslmode=require
-  const match = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^\/]+)\/([^?]+)/);
-  if (!match) throw new Error('DATABASE_URL format tidak valid: ' + databaseUrl.substring(0, 30));
+  const m = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^\/]+)\/([^?]+)/);
+  if (!m) throw new Error('DATABASE_URL format salah');
+  const [, user, password, host] = m;
 
-  const [, user, password, host, database] = match;
-
-  // Neon HTTP SQL endpoint
-  // Docs: https://neon.com/docs/serverless/serverless-driver
-  const endpoint = `https://${host}/sql`;
-
-  const res = await fetch(endpoint, {
+  const res = await fetch(`https://${host}/sql`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Neon-Connection-String': databaseUrl,
       'Authorization': 'Basic ' + btoa(`${user}:${password}`),
+      'Neon-Connection-String': databaseUrl,
     },
-    body: JSON.stringify({ query: sql, params })
+    body: JSON.stringify({ query, params })
   });
 
   if (!res.ok) {
-    const errText = await res.text().catch(() => 'unknown error');
-    throw new Error(`Neon HTTP ${res.status}: ${errText.substring(0, 300)}`);
+    const txt = await res.text().catch(() => '');
+    throw new Error(`Neon ${res.status}: ${txt.substring(0, 200)}`);
   }
 
   const data = await res.json();
-  // Neon returns { rows: [...], fields: [...] }
-  return data;
+  return data.rows ?? data;
 }
 
 export function todayWIB() {
@@ -71,19 +61,18 @@ export function nowISO() {
 export function generateToken() {
   const arr = new Uint8Array(32);
   crypto.getRandomValues(arr);
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
 export async function hashPassword(password, salt) {
   const data = new TextEncoder().encode(salt + password);
-  const buf = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const buf  = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-// Ambil session dari cookie → lookup KV SESSIONS
 export async function getSession(request, env) {
   const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(/mbg_token=([a-f0-9]{64})/);
+  const match  = cookie.match(/mbg_token=([a-f0-9]{64})/);
   if (!match) return null;
   if (!env?.SESSIONS) return null;
   const data = await env.SESSIONS.get(match[1]);
