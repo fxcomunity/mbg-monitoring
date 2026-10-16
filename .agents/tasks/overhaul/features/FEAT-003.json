@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "UI/UX overhaul: video fallback, province modal drill-down, map clustering, and dashboard panel fixes. Depends on FEAT-002 (new API endpoints must exist before wiring them to UI). Changes span index.html, auth/login.html, fitur/*.html, map/index.html, dashboard/admin/panel.html, dashboard/admin/index.html. All UI changes follow the existing Tailwind color palette: primary=#001026, secondary=#395f95, tertiary-fixed=#6ffbbe.",
+  "status": "completed",
+  "steps": [
+    "1. auth/login.html — video fallback: In the <style> block, add CSS keyframe animation: @keyframes bgShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }. Add class 'video-bg-fallback' with background: linear-gradient(135deg, #001026, #0b2545, #001a3d, #001026); background-size: 400% 400%; animation: bgShift 8s ease infinite; On the <video> element add: onerror=\"this.style.display='none';document.querySelector('.video-bg-fallback').style.display='block'\". Add a <div class='fixed inset-0 -z-20 video-bg-fallback' style='display:none'></div> inside the fixed inset-0 video container.",
+    "2. index.html — hero video performance: Change preload='none' to preload='metadata' on the hero <video> element. Add poster='assets/images/og-preview.png' attribute. Add same onerror fallback gradient div.",
+    "3. index.html — province click modal: (a) In the distribution table rows rendered by JS (in assets/js/script.js's renderDistribusiTable or inline JS), add data-provinsi attribute to each row <tr>. (b) Add modal HTML skeleton at end of <main> before </body>: a div#provinsiModal with fixed overlay, inner scrollable card with province name <h2>, SPPG list container #sppgModalList, close button. Style using existing Tailwind classes: fixed inset-0 bg-black/60 z-50 flex items-center justify-center. (c) In assets/js/script.js, add function initProvinsiModal() that: attaches click delegation on #tableRegionalBody, reads data-provinsi, fetches ../api/sppg_provinsi.php?provinsi=<name>, renders SPPG cards in #sppgModalList. Call initProvinsiModal() from DOMContentLoaded. (d) Each SPPG card shows: nama (bold), kabupaten_kota (small text), status badge (green/red).",
+    "4. map/index.html — MarkerCluster: (a) Add CDN links in <head>: <link rel='stylesheet' href='https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'/>, <link rel='stylesheet' href='https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css'/>, <script src='https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js'></script>. (b) In the loadSppgData() function, add a fallback: if Worker fetch to /api/data?type=sppg fails (non-ok or network error), try fetch('/api/sppg_map.php') instead. (c) Replace plain L.layerGroup() with L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 60 }). (d) On marker click, show L.popup with: <b>${nama}</b><br>${kabupaten_kota}, ${provinsi}<br><span class='status'>${status}</span>.",
+    "5. dashboard/admin/panel.html — fix broken endpoints: (a) Replace fetch('/api/data?type=sppg_status',...) with fetch('../../api/sppg_status.php',{credentials:'include'}). (b) Replace fetch('/api/security/threats',...) with fetch('../../api/security_threats.php',{credentials:'include'}). (c) Replace fetch('/api/data?type=telemetri',...) with fetch('../../api/telemetri.php').",
+    "6. dashboard/admin/index.html — SheetJS and Log Keamanan: (a) Add before </body>: <script src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'></script>. (b) Find the 'Log Keamanan' anchor link (href='#security-log') and change to href='panel.html#security-log'. (c) Verify the Backup Menu download button has onclick that calls the download function from dashboard-common.js."
+  ],
+  "acceptance_criteria": [
+    "auth/login.html: breaking video src shows animated dark gradient background instead of blank screen",
+    "index.html hero: loads poster image immediately while video buffers",
+    "index.html distribution table: clicking a province row opens a modal with SPPG list",
+    "map/index.html: markers cluster into groups, clicking expands; popup shows nama and kabupaten_kota",
+    "dashboard/admin/panel.html: SPPG Status section loads (either live data or graceful fallback) without 404 in Network tab",
+    "dashboard/admin/panel.html: Log Keamanan section loads (either live data or graceful fallback)",
+    "dashboard/admin/index.html: 'Log Keamanan' nav link navigates to panel.html#security-log",
+    "dashboard/admin/index.html: Backup Menu download button does not throw JS error"
+  ],
+  "verification": [
+    "Open http://localhost/MBG-MONITORING/auth/login.html — video background visible; temporarily change video src to invalid URL, reload — gradient fallback activates",
+    "Open http://localhost/MBG-MONITORING/ — hero section shows poster image, video plays when loaded",
+    "Open http://localhost/MBG-MONITORING/ — click any province row in distribution table — modal appears with SPPG list",
+    "Open http://localhost/MBG-MONITORING/map/ — map loads with clustered markers; click cluster to expand",
+    "Open http://localhost/MBG-MONITORING/dashboard/admin/panel.html (logged in as admin) — no 404/500 in DevTools Network for sppg_status and security_threats calls"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

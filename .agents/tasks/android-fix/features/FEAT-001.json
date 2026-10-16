@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Deploy standalone Cloudflare Workers for the data (KV) and menu (Neon DB) APIs, each with their own wrangler config. The root wrangler.toml only handles auth.js. The broken HTTP 500 calls all come from the Android app hitting Pages Functions which fail at build time (Cannot resolve @neondatabase/serverless in functions/). The fix is to give data.js and menu.js each a separate wrangler config so they deploy as standalone Workers, then bind the same KV namespaces and secrets they already reference. Independent of FEAT-002 and FEAT-003.",
+  "status": "completed",
+  "steps": [
+    "Create workers/wrangler-data.toml: name='mbg-data', main='data.js', compatibility_date='2024-09-23', compatibility_flags=['nodejs_compat']. Bind KV namespaces: DATA (id=85539fc16a9b49558ef198e7fab116d4), SESSIONS (id=2e12b6cbb1e64ab0a7d03ba739ada7de). No DATABASE_URL needed — data.js uses only KV. Add [vars] ENVIRONMENT='production'.",
+    "Create workers/wrangler-menu.toml: name='mbg-menu', main='menu.js', compatibility_date='2024-09-23', compatibility_flags=['nodejs_compat']. Bind KV namespaces: SESSIONS (id=2e12b6cbb1e64ab0a7d03ba739ada7de), MENU_CACHE (id=446e89c787a64c2c868e3a54c2025de8). Add cron trigger crons=['5 17 * * *'] for the daily archive. DATABASE_URL must be set as a secret (already uploaded via wrangler secret put for mbg-auth; run `npx wrangler secret put DATABASE_URL --config wrangler-menu.toml` if not already set for this worker name). Add [vars] ENVIRONMENT='production'.",
+    "Verify data.js does NOT import @neondatabase/serverless (it already uses only env.DATA KV — confirm by reading workers/data.js lines 1-10). No code change needed for data.js itself.",
+    "Verify menu.js does NOT import @neondatabase/serverless (it already uses raw fetch to Neon HTTP API via dbQuery() helper — confirm by reading workers/menu.js lines 1-20). No code change needed for menu.js itself.",
+    "Deploy data worker: run `npx wrangler deploy --config wrangler-data.toml` from c:\\laragon\\www\\MBG-MONITORING\\workers. Record the deployed URL (format: https://mbg-data.<account>.workers.dev) in this FEAT's findings field.",
+    "Deploy menu worker: run `npx wrangler deploy --config wrangler-menu.toml` from c:\\laragon\\www\\MBG-MONITORING\\workers. Record the deployed URL (format: https://mbg-menu.<account>.workers.dev) in findings."
+  ],
+  "acceptance_criteria": [
+    "workers/wrangler-data.toml exists with name='mbg-data', main='data.js', DATA and SESSIONS KV bindings",
+    "workers/wrangler-menu.toml exists with name='mbg-menu', main='menu.js', SESSIONS and MENU_CACHE KV bindings, cron trigger",
+    "`npx wrangler deploy --config wrangler-data.toml` completes with 'Deployed' in output",
+    "`npx wrangler deploy --config wrangler-menu.toml` completes with 'Deployed' in output",
+    "Deployed data worker URLs recorded in findings for use by FEAT-002"
+  ],
+  "verification": [
+    "cd c:\\laragon\\www\\MBG-MONITORING\\workers; npx wrangler deploy --config wrangler-data.toml — confirm 'Deployed' and note the worker URL",
+    "cd c:\\laragon\\www\\MBG-MONITORING\\workers; npx wrangler deploy --config wrangler-menu.toml — confirm 'Deployed' and note the worker URL"
+  ],
+  "blocked_reason": null,
+  "findings": "mbg-data deployed at: https://mbg-data.aqsholhalqi4.workers.dev (Version ID: 294f134b-8bee-4cf3-9736-bacc336e6b34). mbg-menu deployed at: https://mbg-menu.aqsholhalqi4.workers.dev (Version ID: 40955e7c-b56f-458b-a17b-128e079b95da, cron: 5 17 * * *). NOTE: DATABASE_URL secret must be set manually for mbg-menu via Cloudflare dashboard (Workers > mbg-menu > Settings > Variables > Add Secret: DATABASE_URL) — the value is the same DATABASE_URL already set for mbg-auth. data.js confirmed uses only KV (no @neondatabase/serverless import). menu.js confirmed uses raw fetch to Neon HTTP API via dbQuery() helper (no @neondatabase/serverless import)."
+}

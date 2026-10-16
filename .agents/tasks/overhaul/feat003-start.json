@@ -1,0 +1,142 @@
+{
+  "committed_feats": [
+    {
+      "id": "FEAT-001",
+      "commit": "ccf6cd5",
+      "message": "fix HTTP 500 api paths and require_once guards",
+      "files_changed": [
+        "api/distribusi.php",
+        "api/juknis.php",
+        "api/menu.php",
+        "api/telemetri.php",
+        "assets/js/script.js",
+        "fitur/laporan-aduan.html",
+        "fitur/menu-hari-ini.html"
+      ]
+    },
+    {
+      "id": "FEAT-002",
+      "commit": "174c82a",
+      "message": "add sppg_provinsi, sppg_map, sppg_status, security_threats, cleanup endpoints",
+      "files_changed": [
+        "api/sppg_provinsi.php",
+        "api/sppg_map.php",
+        "api/sppg_status.php",
+        "api/security_threats.php",
+        "database/scripts/cleanup.php",
+        ".agents/tasks/overhaul/features/FEAT-002.json"
+      ]
+    }
+  ],
+
+  "existing_api_files": [
+    "api/sppg_provinsi.php",
+    "api/sppg_map.php",
+    "api/sppg_status.php",
+    "api/security_threats.php"
+  ],
+
+  "missing_api_files": [],
+
+  "new_files": [],
+
+  "files_to_edit": [
+    {
+      "file": "auth/login.html",
+      "plan_item": 6,
+      "reason": "Add CSS animated gradient fallback for video background"
+    },
+    {
+      "file": "index.html",
+      "plan_item": 7,
+      "reason": "Change video preload to 'metadata', add poster attribute, animated gradient fallback CSS"
+    },
+    {
+      "file": "index.html",
+      "plan_item": 9,
+      "reason": "Add data-provinsi attributes to province rows and modal HTML skeleton at bottom of body"
+    },
+    {
+      "file": "assets/js/script.js",
+      "plan_item": 9,
+      "reason": "Add initProvinsiModal() function wiring province click -> sppg_provinsi.php -> modal overlay"
+    },
+    {
+      "file": "map/index.html",
+      "plan_item": 11,
+      "reason": "Add Leaflet.MarkerCluster CDN links + replace loadSppgData() to use api/sppg_map.php with cluster group"
+    },
+    {
+      "file": "dashboard/admin/panel.html",
+      "plan_item": 12,
+      "reason": "Replace /api/data?type=sppg_status with ../../api/sppg_status.php and /api/security/threats with ../../api/security_threats.php"
+    },
+    {
+      "file": "dashboard/admin/index.html",
+      "plan_item": 13,
+      "reason": "Add SheetJS CDN script tag and wire Backup Menu download button to downloadBackupXLSX()"
+    },
+    {
+      "file": "dashboard/admin/index.html",
+      "plan_item": 14,
+      "reason": "Fix #security-log anchor to href='panel.html#security-log'"
+    },
+    {
+      "file": "api/distribusi.php",
+      "plan_item": 15,
+      "reason": "Add Cache-Control: public, max-age=300 header"
+    },
+    {
+      "file": "dashboard/admin/index.html",
+      "plan_item": 15,
+      "reason": "Add loading='lazy' to all <img> tags"
+    },
+    {
+      "file": "dashboard/sppg/index.html",
+      "plan_item": 15,
+      "reason": "Add loading='lazy' to all <img> tags"
+    },
+    {
+      "file": "dashboard/user/index.html",
+      "plan_item": 15,
+      "reason": "Add loading='lazy' to all <img> tags"
+    },
+    {
+      "file": "fitur/menu-hari-ini.html",
+      "plan_item": 16,
+      "reason": "Add missing <script src='../assets/js/script.js'></script> before </body> — FEAT-001 only fixed API paths, script.js inclusion not confirmed added"
+    },
+    {
+      "file": "fitur/distribusi-sebaran-sppg.html",
+      "plan_item": 16,
+      "reason": "Add missing script.js reference; also fix any remaining fetch('api/...) relative paths"
+    },
+    {
+      "file": "fitur/standar-uji-akg.html",
+      "plan_item": 16,
+      "reason": "Add missing script.js reference"
+    },
+    {
+      "file": "dashboard/sppg/index.html",
+      "plan_item": 17,
+      "reason": "Change header from bg-white/95 to bg-primary text-white to match admin dashboard"
+    },
+    {
+      "file": "dashboard/user/index.html",
+      "plan_item": 17,
+      "reason": "Change header from bg-white/95 to bg-primary text-white to match admin dashboard"
+    },
+    {
+      "file": "map/index.html",
+      "plan_item": 18,
+      "reason": "Verify/fix 'Beranda' back-link uses href='../index.html'"
+    }
+  ],
+
+  "notes": {
+    "feat001_partial": "FEAT-001 fixed menu-hari-ini.html and laporan-aduan.html API paths; distribusi-sebaran-sppg.html and standar-uji-akg.html were NOT in the FEAT-001 commit — still need plan item 5 fixes applied.",
+    "feat002_all_apis_created": "All 4 new API endpoints (sppg_provinsi, sppg_map, sppg_status, security_threats) are confirmed present on disk and committed.",
+    "feat003_scope": "FEAT-003 is pure UI/UX: video fallbacks, province modal, map clustering, dashboard fixes (SheetJS, security-log link, panel.html endpoint swap), performance headers, script.js inclusion, header consistency.",
+    "no_new_files_needed": "All new API files were created in FEAT-002. FEAT-003 only edits existing files."
+  }
+}

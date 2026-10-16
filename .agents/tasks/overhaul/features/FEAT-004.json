@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Consistency and polish pass: header standardization across all dashboard and public pages, add missing script.js references to fitur/*.html, fix dashboard header colors for sppg and user dashboards, add Cache-Control headers to API endpoints, add lazy loading to images, add 'Lihat di Peta' links from province modal to map. This FEAT is independent of FEAT-002 and FEAT-003 for most items, but the province modal 'Lihat di Peta' link enhancement depends on FEAT-003's modal being in place.",
+  "status": "pending",
+  "steps": [
+    "1. fitur/menu-hari-ini.html, fitur/distribusi-sebaran-sppg.html, fitur/laporan-aduan.html, fitur/standar-uji-akg.html — add missing script.js: before </body> in each file, check if <script src='../assets/js/script.js'></script> exists; if not, add it. Also verify <link rel='stylesheet' href='../assets/css/security.css'/> is in <head>.",
+    "2. dashboard/sppg/index.html — header color: find the <header> element (class includes bg-white/95 backdrop-blur-md border-b border-slate-200). Change to bg-primary text-white border-b border-white/10. Change the logo text <span class='font-bold text-sm text-primary'> to text-white. Change bell button class from bg-slate-100 hover:bg-slate-200 text-slate-700 to bg-white/10 hover:bg-white/20 text-white.",
+    "3. dashboard/user/index.html — same header color fix as step 2.",
+    "4. api/distribusi.php — add Cache-Control header: after the existing header('Content-Type:...') line, add header('Cache-Control: public, max-age=300');",
+    "5. api/telemetri.php — add Cache-Control: header('Cache-Control: public, max-age=60');",
+    "6. dashboard/admin/index.html, dashboard/sppg/index.html, dashboard/user/index.html — add loading='lazy' to all <img> tags that don't already have it. Exception: logo images (h-9 or h-10 class) should keep eager loading — only add lazy to content images like avatars and placeholder images.",
+    "7. index.html — verify the 'Peta Realtime' nav link in the desktop nav is href='map/' (it is, per code reading). Verify that the province modal (added in FEAT-003) has a 'Lihat di Peta' link pointing to map/?provinsi=<encodedName>.",
+    "8. map/index.html — add back-link in topbar: verify href for '← Beranda' or logo link points to '../index.html' (not just 'index.html'). The topbar brand logo already links back — confirm the path is correct.",
+    "9. fitur/menu-hari-ini.html — the KPI script block calls fetch('api/telemetri.php') (relative from fitur/) — this was fixed in FEAT-001. Verify the fix is in place; if not, fix it here as well.",
+    "10. Add a <meta name='viewport'> and responsive images to auth/login.html header section — verify it already exists (it does per code reading), just confirm."
+  ],
+  "acceptance_criteria": [
+    "All fitur/*.html pages have notification bell working (requires script.js to be loaded)",
+    "dashboard/sppg/index.html header is dark navy (bg-primary) matching admin dashboard",
+    "dashboard/user/index.html header is dark navy (bg-primary) matching admin dashboard",
+    "api/distribusi.php and api/telemetri.php responses include Cache-Control header in browser DevTools",
+    "No img tags without loading attribute on dashboard pages (except logos)",
+    "Clicking 'Lihat di Peta' in province modal navigates to map/ page filtered by that province"
+  ],
+  "verification": [
+    "Open http://localhost/MBG-MONITORING/fitur/standar-uji-akg.html — notification bell badge updates",
+    "Open http://localhost/MBG-MONITORING/dashboard/sppg/ (logged in as sppg) — header is dark navy",
+    "Open http://localhost/MBG-MONITORING/dashboard/user/ (logged in as user) — header is dark navy",
+    "curl -I http://localhost/MBG-MONITORING/api/distribusi.php — response headers include Cache-Control: public, max-age=300",
+    "Open http://localhost/MBG-MONITORING/ — DevTools > Network > click province row > modal shows 'Lihat di Peta' button"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

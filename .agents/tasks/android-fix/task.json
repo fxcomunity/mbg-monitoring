@@ -1,0 +1,7 @@
+{
+  "task_id": "task-android-fix",
+  "task_description": "Fix data loading (HTTP 500) by deploying standalone Cloudflare Workers for data and menu APIs and pointing Android app at those workers instead of broken Pages Functions. Add DashboardScreen with role-based tiles and improve ProfileScreen with navigation cards. Build APK, commit, push, create GitHub release.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

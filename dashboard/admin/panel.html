@@ -523,7 +523,7 @@
 
   // ── Load SPPG status ──────────────────────────────────────────────────────
   function loadSppgStatus() {
-    fetch('/api/data?type=sppg_status', { headers: {'X-Requested-By':'mbg-radar'}, credentials:'include' })
+    fetch('../../api/sppg_status.php', { headers: {'X-Requested-By':'mbg-radar'}, credentials:'include' })
     .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
     .then(function(res){
       var data = res.data || [];
@@ -574,7 +574,7 @@
     var logs = [];
     try { logs = JSON.parse(localStorage.getItem('mbg_security_log') || '[]'); } catch(e) {}
     // Fetch dari Worker juga
-    fetch('/api/security/threats', { headers: {'X-Requested-By':'mbg-radar'}, credentials:'include' })
+    fetch('../../api/security_threats.php', { headers: {'X-Requested-By':'mbg-radar'}, credentials:'include' })
     .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
     .then(function(res){
       var all = (res.data || []).concat(logs.map(function(l){ return { type: l.type, ip: 'Client', country: '—', url: l.url, ts: l.ts }; }));
@@ -603,7 +603,7 @@
   // ── Maintenance actions ───────────────────────────────────────────────────
   function checkDbHealth() {
     showToast('Mengecek koneksi database...', 'info');
-    fetch('/api/data?type=telemetri', { headers: {'X-Requested-By':'mbg-radar'} })
+    fetch('../../api/telemetri.php', { headers: {'X-Requested-By':'mbg-radar'} })
     .then(function(r){ document.getElementById('dbStatus').textContent = r.ok ? 'Online ✓' : 'Error'; document.getElementById('dbStatus').className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (r.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'); showToast(r.ok ? 'Database online dan responsif.' : 'Database error!', r.ok ? 'success' : 'error'); })
     .catch(function(){ document.getElementById('dbStatus').textContent = 'Offline'; showToast('Tidak dapat menjangkau database.', 'error'); });
   }

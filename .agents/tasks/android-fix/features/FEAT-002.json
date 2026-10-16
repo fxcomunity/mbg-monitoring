@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Rewire the Android data layer to call the standalone Workers instead of the broken Pages Functions. Depends on FEAT-001 for the deployed worker URLs. Create two new Retrofit service interfaces (DataApiService and MenuApiService), add two new Retrofit instances in ApiClient.kt (dataInstance and menuInstance pointing at the deployed worker URLs from FEAT-001 findings), then update DataRepository.kt to call those instances. The existing ApiService and ApiClient.instance (BASE_URL) are left in place as they are still used for other endpoints (notifications, tiket, live_chat). Strings.xml must also be updated with new string keys needed by FEAT-003 screens — doing it here keeps the build green across all FEATs.",
+  "status": "completed",
+  "steps": [
+    "Read FEAT-001 findings to get the deployed URLs for mbg-data and mbg-menu workers.",
+    "Create android/app/src/main/java/id/go/bgn/radarmbg/data/api/DataApiService.kt. Interface with: @GET(\"/\") suspend fun getTelemetri(@Query(\"type\") type: String = \"telemetri\"): TelemetriWrapper; @GET(\"/\") suspend fun getDistribusi(@Query(\"type\") type: String = \"distribusi\"): DistribusiWrapper. Import TelemetriWrapper and DistribusiWrapper from models package.",
+    "Create android/app/src/main/java/id/go/bgn/radarmbg/data/api/MenuApiService.kt. Interface with: @GET(\"/\") suspend fun getMenu(@Query(\"date\") date: String? = null): MenuWrapper. Import MenuWrapper from models package.",
+    "Edit android/app/src/main/java/id/go/bgn/radarmbg/data/api/ApiClient.kt. Add two constants: DATA_WORKER_URL (the mbg-data worker URL from FEAT-001 findings, e.g. 'https://mbg-data.aqsholhalqi4.workers.dev') and MENU_WORKER_URL (the mbg-menu URL). Add two lazy vals: dataInstance: DataApiService using DATA_WORKER_URL; menuInstance: MenuApiService using MENU_WORKER_URL. Both reuse the existing okHttpClient (which already injects X-Requested-By header).",
+    "Edit android/app/src/main/java/id/go/bgn/radarmbg/data/repository/DataRepository.kt. Change getTelemetri() to call ApiClient.dataInstance.getTelemetri().data. Change getDistribusi() to call ApiClient.dataInstance.getDistribusi().data. Change getMenu() to call ApiClient.menuInstance.getMenu().data. Leave getNotifikasi(), getTiket(), sendChat() calling ApiClient.instance (Pages Functions) unchanged for now.",
+    "Edit android/app/src/main/res/values/strings.xml. Add new string resources for DashboardScreen and ProfileScreen nav cards (needed by FEAT-003): dashboard_judul='Dashboard', card_buka_dashboard='Buka Dashboard', card_panel_admin='Panel Admin', card_laporan_aduan='Laporan & Aduan', admin_panel_judul='Panel Admin', tile_kpi_nasional='KPI Nasional', tile_manajemen_akun='Manajemen Akun', tile_status_sppg='Status SPPG', tile_backup_menu='Backup Menu', tile_log_keamanan='Log Keamanan', tile_input_menu='Input Menu Harian', tile_profil_dapur='Profil Dapur', tile_laporan_distribusi='Laporan Distribusi', tile_status_laporan='Status Laporan', tile_menu_sekolah='Menu Sekolah Anak', tile_kontak_satgas='Kontak Satgas', label_fitur_segera='Segera Hadir', label_versi_admin='Akses Admin', webview_loading='Memuat halaman...'."
+  ],
+  "acceptance_criteria": [
+    "DataApiService.kt exists with getTelemetri() and getDistribusi() methods returning correct wrapper types",
+    "MenuApiService.kt exists with getMenu() method",
+    "ApiClient.kt has DATA_WORKER_URL, MENU_WORKER_URL constants and dataInstance, menuInstance lazy vals",
+    "DataRepository.kt uses dataInstance for telemetri/distribusi and menuInstance for menu",
+    "strings.xml contains all new string keys listed above",
+    "cd c:\\laragon\\www\\MBG-MONITORING\\android; .\\gradlew.bat assembleDebug — BUILD SUCCESSFUL"
+  ],
+  "verification": [
+    "cd c:\\laragon\\www\\MBG-MONITORING\\android; .\\gradlew.bat assembleDebug — confirm BUILD SUCCESSFUL"
+  ],
+  "blocked_reason": null,
+  "findings": "DataApiService.kt and MenuApiService.kt created. ApiClient.kt updated with DATA_WORKER_URL (https://mbg-data.aqsholhalqi4.workers.dev), MENU_WORKER_URL (https://mbg-menu.aqsholhalqi4.workers.dev), dataInstance and menuInstance lazy vals. DataRepository.kt rewired: getTelemetri() and getDistribusi() use dataInstance, getMenu() uses menuInstance. strings.xml updated with 18 new string keys for DashboardScreen/ProfileScreen tiles. Build verified: assembleDebug BUILD SUCCESSFUL in 38s."
+}

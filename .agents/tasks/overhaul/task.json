@@ -1,0 +1,7 @@
+{
+  "task_id": "task-mbg-overhaul",
+  "task_description": "Full overhaul of MBG-MONITORING: database cleanup (Neon PostgreSQL), fix HTTP 500 on Menu Hari Ini, UI/UX overhaul to match website quality, and consistency across all pages",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}
