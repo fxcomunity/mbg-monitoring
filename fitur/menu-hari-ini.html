@@ -246,7 +246,7 @@
 // Ambil KPI dari database telemetri_nasional
 (async function(){
   try {
-    const r = await fetch('api/telemetri.php');
+    const r = await fetch('../api/telemetri.php');
     const j = await r.json();
     if(j.status==='success' && j.data){
       const d=j.data;
@@ -1329,7 +1329,7 @@
     // Inisialisasi & Ambil Data Riil dari Database Neon
     async function loadLiveMenuDatabase() {
       try {
-        const res = await fetch('api/menu.php?all_schools=1');
+        const res = await fetch('../api/menu.php?all_schools=1');
         const json = await res.json();
         if (json.status === 'success' && json.schools) {
           // Hapus cache lama agar HANYA sekolah dengan menu hari ini yang muncul
@@ -1464,7 +1464,7 @@
 
       // 2. Tarik update terbaru langsung dari PostgreSQL database
       try {
-        const res = await fetch('api/menu.php?school_key=' + encodeURIComponent(schoolKey));
+        const res = await fetch('../api/menu.php?school_key=' + encodeURIComponent(schoolKey));
         const json = await res.json();
         if (json.status === 'success' && json.data) {
           schoolDb[schoolKey] = json.data;

@@ -4,7 +4,8 @@
  * Radar MBG - Badan Gizi Nasional
  */
 
-require_once __DIR__ . '/../database/db.php';
+if (!function_exists('getDB')) { require_once __DIR__ . '/../database/db.php'; }
+if (!class_exists('Security')) { require_once __DIR__ . '/../database/security.php'; }
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');

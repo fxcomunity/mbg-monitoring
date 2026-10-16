@@ -384,7 +384,7 @@
 
         try {
           const formData = new FormData(form);
-          const response = await fetch('aduan.php', {
+          const response = await fetch('../api/tiket.php', {
             method: 'POST',
             body: formData
           });

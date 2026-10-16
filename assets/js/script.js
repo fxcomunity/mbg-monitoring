@@ -28,6 +28,18 @@ document.addEventListener('DOMContentLoaded', function() {
   initGlobalSearch();
 });
 
+/**
+ * Mendeteksi prefix path API relatif terhadap lokasi halaman saat ini.
+ * Halaman di fitur/ memerlukan '../api/' sedangkan halaman di root memakai 'api/'.
+ */
+function getApiPrefix() {
+  const path = window.location.pathname;
+  if (path.includes('/fitur/') || path.includes('/dashboard/') || path.includes('/auth/') || path.includes('/map/')) {
+    return '../api/';
+  }
+  return 'api/';
+}
+
 function initMobileNav() {
   const toggleBtn = document.getElementById('btnMobileNavToggle');
   const mobileMenu = document.getElementById('mobileNavMenu');
@@ -345,7 +357,7 @@ async function initUserAuthStatus() {
   // Sesi statis (login.html) punya prioritas; kalau ada, tidak perlu cek PHP
   if (applyStaticSessionFallback()) return;
   try {
-    const res = await fetch('api/auth_user.php', { credentials: 'same-origin' });
+    const res = await fetch(getApiPrefix() + 'auth_user.php', { credentials: 'same-origin' });
     if (!res.ok) { applyStaticSessionFallback(); return; }
     const data = await res.json();
 
@@ -530,7 +542,7 @@ function initNotificationBell() {
 
   async function fetchNotifications() {
     try {
-      const res = await fetch('api/notifications.php');
+      const res = await fetch(getApiPrefix() + 'notifications.php');
       const json = await res.json();
       if (!json || json.status !== 'success') return;
 

@@ -11,7 +11,7 @@ require_once __DIR__ . '/../database/security.php';
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 
-$pdo = getDB();
+$pdo = null;
 
 $schoolKey    = trim($_GET['school_key'] ?? '');
 $allSchools   = isset($_GET['all_schools']) || isset($_GET['list_all']);
@@ -99,6 +99,7 @@ function mapInstansiRow(array $r): array {
 }
 
 try {
+    $pdo = getDB();
     // --------------------------------------------------------------------------
     // 1. Ambil Detail Tunggal Menu Berdasarkan school_key / id_instansi
     // --------------------------------------------------------------------------
@@ -416,9 +417,27 @@ try {
     exit;
 
 } catch (Throwable $e) {
-    http_response_code(500);
-    echo json_encode([
-        'status'  => 'error',
-        'message' => 'Gagal mengambil data dari database: ' . $e->getMessage()
-    ], JSON_UNESCAPED_UNICODE);
+    // SQLSTATE 42P01 = undefined_table, 42703 = undefined_column
+    // Both indicate DB not yet fully seeded; return empty payload (200)
+    $sqlState = ($e instanceof \PDOException) ? $e->getCode() : '';
+    $msg = $e->getMessage();
+    if ($sqlState === '42P01' || $sqlState === '42703' ||
+        strpos($msg, '42P01') !== false || strpos($msg, '42703') !== false ||
+        stripos($msg, 'undefined table') !== false || stripos($msg, 'undefined column') !== false ||
+        stripos($msg, 'does not exist') !== false) {
+        http_response_code(200);
+        echo json_encode([
+            'status'         => 'success',
+            'source'         => 'empty',
+            'schools'        => (object)[],
+            'region_cascade' => (object)[],
+            'total_schools'  => 0
+        ], JSON_UNESCAPED_UNICODE);
+    } else {
+        http_response_code(500);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'Gagal mengambil data dari database: ' . $e->getMessage()
+        ], JSON_UNESCAPED_UNICODE);
+    }
 }

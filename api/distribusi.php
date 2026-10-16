@@ -1,5 +1,11 @@
 <?php
 // api/distribusi.php — Data Distribusi Provinsi Riil dari Database
+if (!function_exists('getDB')) { require_once __DIR__ . '/../database/db.php'; }
+if (!class_exists('Security')) { require_once __DIR__ . '/../database/security.php'; }
+
+header('Content-Type: application/json; charset=UTF-8');
+header('X-Content-Type-Options: nosniff');
+
 try {
     $pdo = getDB();
     $region = trim($_GET['region'] ?? '');

@@ -1,5 +1,11 @@
 <?php
 // api/telemetri.php — Data Telemetri Nasional Riil dari Database
+if (!function_exists('getDB')) { require_once __DIR__ . '/../database/db.php'; }
+if (!class_exists('Security')) { require_once __DIR__ . '/../database/security.php'; }
+
+header('Content-Type: application/json; charset=UTF-8');
+header('X-Content-Type-Options: nosniff');
+
 try {
     $pdo = getDB();
     $stmt = $pdo->query('SELECT porsi_tersalurkan, persen_target, sppg_aktif, sekolah_terlayani, kepatuhan_akg, suhu_rata_rata, sla_distribusi, pembaruan_teks, updated_at FROM telemetri_nasional ORDER BY id DESC LIMIT 1');
