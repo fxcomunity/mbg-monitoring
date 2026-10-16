@@ -1,0 +1,7 @@
+{
+  "feat": "FEAT-003+FEAT-004",
+  "status": "completed",
+  "commit": "92a2abd",
+  "php_lint": "all pass",
+  "manual_step": "Run database/scripts/cleanup.php?confirm=YES_DELETE to delete BGN-2025 rows"
+}
