@@ -12,7 +12,7 @@ const CORS = {
   'Content-Type': 'application/json'
 };
 
-const SESSION_TTL = 43200;
+const SESSION_TTL = 259200; // 3 days (72 hours)
 const RATE_MAX    = 5;
 const RATE_WINDOW = 900;
 
