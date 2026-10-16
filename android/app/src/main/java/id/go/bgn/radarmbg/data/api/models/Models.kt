@@ -106,3 +106,24 @@ data class ChatResponse(
     val reply: String = "",
     val session_id: String = ""
 )
+
+data class SppgData(
+    val id: Long = 0,
+    val nama: String = "",
+    val provinsi: String = "",
+    val kabupaten_kota: String? = null,
+    val kecamatan: String? = null,
+    val kelurahan_desa: String? = null,
+    val alamat: String? = null,
+    val nama_yayasan: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val status: String = "operasional",
+    val data_bulan: String? = null
+)
+
+data class SppgWrapper(
+    val status: String = "",
+    val data: List<SppgData> = emptyList(),
+    val total: Int = 0
+)
