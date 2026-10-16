@@ -6,11 +6,11 @@ import id.go.bgn.radarmbg.data.api.models.AuthResponse
 object AuthRepository {
 
     suspend fun checkSession(): Result<AuthResponse> = runCatching {
-        ApiClient.instance.checkSession()
+        ApiClient.authInstance.checkSession()
     }
 
     suspend fun login(username: String, password: String): Result<AuthResponse> = runCatching {
-        ApiClient.instance.login(username = username, password = password)
+        ApiClient.authInstance.login(username = username, password = password)
     }
 
     suspend fun register(
@@ -21,7 +21,7 @@ object AuthRepository {
         role: String,
         sppgName: String
     ): Result<AuthResponse> = runCatching {
-        ApiClient.instance.register(
+        ApiClient.authInstance.register(
             fullName = fullName,
             email = email,
             username = username,

@@ -13,7 +13,12 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
+    // Endpoint utama (Pages Functions)
     private const val BASE_URL = "https://mbg.jack-ai.my.id/"
+
+    // Worker auth standalone — dipakai khusus untuk login/register/session
+    // karena Pages Function auth_user masih dalam perbaikan
+    const val AUTH_WORKER_URL = "https://mbg-auth.aqsholhalqi4.workers.dev"
 
     private val cookieStore = ConcurrentHashMap<String, List<Cookie>>()
 
@@ -56,6 +61,16 @@ object ApiClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
+    }
+
+    // Auth instance — pakai Worker standalone yang sudah terbukti bekerja
+    val authInstance: AuthApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl("$AUTH_WORKER_URL/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(AuthApiService::class.java)
     }
 
     fun clearCookies() {
