@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.go.bgn.radarmbg.R
 import id.go.bgn.radarmbg.ui.components.MenuCard
+import id.go.bgn.radarmbg.ui.components.SkeletonBox
 import id.go.bgn.radarmbg.ui.theme.BgnPrimary
 import id.go.bgn.radarmbg.viewmodel.MenuUiState
 import id.go.bgn.radarmbg.viewmodel.MenuViewModel
@@ -63,11 +64,17 @@ fun MenuScreen(menuViewModel: MenuViewModel = viewModel()) {
     ) { innerPadding ->
         when (val state = uiState) {
             is MenuUiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(16.dp)
                 ) {
-                    CircularProgressIndicator(color = BgnPrimary)
+                    SkeletonBox(modifier = Modifier.fillMaxWidth().height(120.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    SkeletonBox(modifier = Modifier.fillMaxWidth().height(120.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    SkeletonBox(modifier = Modifier.fillMaxWidth().height(120.dp))
                 }
             }
 
@@ -120,18 +127,11 @@ fun MenuScreen(menuViewModel: MenuViewModel = viewModel()) {
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "🍽️",
-                                    fontSize = 40.sp
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = stringResource(R.string.menu_empty),
-                                    color = BgnPrimary,
-                                    fontSize = 14.sp
-                                )
-                            }
+                            Text(
+                                text = stringResource(R.string.menu_empty),
+                                color = BgnPrimary,
+                                fontSize = 14.sp
+                            )
                         }
                     } else {
                         LazyColumn(

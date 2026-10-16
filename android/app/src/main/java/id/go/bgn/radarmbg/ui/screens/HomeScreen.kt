@@ -44,6 +44,7 @@ import id.go.bgn.radarmbg.R
 import id.go.bgn.radarmbg.data.api.models.ProvinsiData
 import id.go.bgn.radarmbg.ui.components.AppTopBar
 import id.go.bgn.radarmbg.ui.components.KpiCard
+import id.go.bgn.radarmbg.ui.components.SkeletonBox
 import id.go.bgn.radarmbg.ui.theme.BgnOnSurface
 import id.go.bgn.radarmbg.ui.theme.BgnOnSurfaceVariant
 import id.go.bgn.radarmbg.ui.theme.BgnPrimary
@@ -120,8 +121,38 @@ fun HomeScreen(
         ) {
             when (val state = homeUiState) {
                 is HomeUiState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = BgnPrimary)
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // 2 rows of 2 skeleton KPI cards
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                SkeletonBox(modifier = Modifier.weight(1f).height(100.dp))
+                                SkeletonBox(modifier = Modifier.weight(1f).height(100.dp))
+                            }
+                        }
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                SkeletonBox(modifier = Modifier.weight(1f).height(100.dp))
+                                SkeletonBox(modifier = Modifier.weight(1f).height(100.dp))
+                            }
+                        }
+                        // Section header skeleton
+                        item {
+                            SkeletonBox(modifier = Modifier.fillMaxWidth().height(20.dp))
+                        }
+                        // 5 table row skeletons
+                        items(5) {
+                            SkeletonBox(modifier = Modifier.fillMaxWidth().height(60.dp))
+                        }
                     }
                 }
 
