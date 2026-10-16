@@ -43,6 +43,23 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
     }
+    @keyframes bgShift {
+      0%, 100% { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+    }
+    .video-bg-fallback {
+      background: linear-gradient(135deg, #001026, #0b2545, #001a3d, #001026);
+      background-size: 400% 400%;
+      animation: bgShift 8s ease infinite;
+    }
+    #login-bg-fallback {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #001026, #0b2545, #001a3d, #001026);
+      background-size: 300% 300%;
+      animation: bgShift 8s ease infinite;
+      z-index: 0;
+    }
   </style>
   <!-- Auto-redirect: kalau sesi masih aktif, langsung ke dashboard sesuai role (admin / sppg / user) -->
   <script>
@@ -67,9 +84,11 @@
 
   <!-- Fullscreen Video Background -->
   <div class="fixed inset-0 overflow-hidden pointer-events-none -z-20">
-    <video autoplay muted loop playsinline preload="metadata" class="w-full h-full object-cover">
+    <video autoplay muted loop playsinline preload="metadata" fetchpriority="high" class="w-full h-full object-cover"
+           onerror="this.style.display='none';document.getElementById('login-bg-fallback').style.display='block'">
       <source src="https://res.cloudinary.com/dgenxagit/video/upload/v1791923878/gemini_generated_video_22b0321d.mp4" type="video/mp4">
     </video>
+    <div id="login-bg-fallback" class="fixed inset-0 -z-20 video-bg-fallback" style="display:none"></div>
   </div>
   <!-- High Contrast Dark Glass Overlay -->
   <div class="fixed inset-0 bg-gradient-to-b from-[#001026]/85 via-[#001026]/75 to-[#001026]/90 backdrop-blur-[2px] pointer-events-none -z-10"></div>
