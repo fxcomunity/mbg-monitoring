@@ -44,7 +44,32 @@
 <link rel="stylesheet" href="../assets/css/security.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-</head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-secondary-container selection:text-on-secondary-container"><header class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+</head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-secondary-container selection:text-on-secondary-container"><script>
+/* Maintenance check */
+(function() {
+  function maintenanceHTML(message, eta) {
+    var countdown = eta ? '<div id="mbg-cd-wrap" style="margin-bottom:1.5rem"><p style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6ffbbe;margin-bottom:.5rem">Estimasi Selesai</p><div style="display:flex;justify-content:center;gap:.6rem"><div style="display:flex;flex-direction:column;align-items:center"><div id="mbg-cd-h" style="font-size:1.6rem;font-weight:800;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:.6rem;width:52px;height:52px;display:flex;align-items:center;justify-content:center">00</div><div style="font-size:.6rem;color:#7090b0;margin-top:.3rem;text-transform:uppercase">Jam</div></div><div style="font-size:1.4rem;font-weight:800;color:rgba(255,255,255,.3);align-self:center">:</div><div style="display:flex;flex-direction:column;align-items:center"><div id="mbg-cd-m" style="font-size:1.6rem;font-weight:800;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:.6rem;width:52px;height:52px;display:flex;align-items:center;justify-content:center">00</div><div style="font-size:.6rem;color:#7090b0;margin-top:.3rem;text-transform:uppercase">Menit</div></div><div style="font-size:1.4rem;font-weight:800;color:rgba(255,255,255,.3);align-self:center">:</div><div style="display:flex;flex-direction:column;align-items:center"><div id="mbg-cd-s" style="font-size:1.6rem;font-weight:800;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:.6rem;width:52px;height:52px;display:flex;align-items:center;justify-content:center">00</div><div style="font-size:.6rem;color:#7090b0;margin-top:.3rem;text-transform:uppercase">Detik</div></div></div></div>' : '';
+    return '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Maintenance \u2014 Radar MBG</title><style>@keyframes bgShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#001026,#0b2545,#001a3d,#001026);background-size:400% 400%;animation:bgShift 10s ease infinite;min-height:100vh;display:flex;align-items:center;justify-content:center;color:#e2eaff;padding:2rem 1rem;text-align:center;margin:0}</style></head><body><div style="background:rgba(255,255,255,.05);border:1px solid rgba(111,251,190,.15);border-radius:2rem;padding:3rem 2.5rem;max-width:540px;width:100%;backdrop-filter:blur(16px);box-shadow:0 25px 60px rgba(0,0,0,.5)"><div style="font-size:1rem;font-weight:800;color:#fff;margin-bottom:.25rem">Radar MBG</div><div style="font-size:.65rem;color:#6ffbbe;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2rem">Badan Gizi Nasional RI</div><div style="width:72px;height:72px;border-radius:1.25rem;background:rgba(251,191,36,.15);border:2px solid rgba(251,191,36,.3);display:flex;align-items:center;justify-content:center;font-size:2.25rem;margin:0 auto 1.5rem;animation:pulse 2.5s ease-in-out infinite">\ud83d\udd27</div><div style="display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .9rem;border-radius:999px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:rgba(251,191,36,.2);color:#fbbf24;border:1px solid rgba(251,191,36,.3);margin-bottom:1.25rem"><span style="width:6px;height:6px;border-radius:50%;background:#fbbf24;animation:blink 1.2s ease infinite"></span> Pemeliharaan Sistem</div><h1 style="font-size:1.5rem;font-weight:800;color:#fff;margin-bottom:.5rem">Sedang dalam Perbaikan</h1><p style="font-size:.9rem;line-height:1.65;color:#a8bcd4;margin-bottom:1.75rem">' + (message || 'Sedang dalam pemeliharaan sistem.') + '</p>' + countdown + '<div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.08);font-size:.7rem;color:#4a6070">&copy; Badan Gizi Nasional Republik Indonesia</div></div></body></html>';
+  }
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '../api/maintenance.php', true);
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          if (data && data.active) {
+            document.open();
+            document.write(maintenanceHTML(data.message, data.eta));
+            document.close();
+          }
+        } catch(e) {}
+      }
+    };
+    xhr.send();
+  } catch(e) {}
+})();
+</script><header class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
   <div class="h-20 w-full px-space-md sm:px-space-lg flex items-center justify-between gap-space-md">
     <a href="../index.html" class="flex items-center gap-space-md group">
       <img src="../assets/images/ic_launcher.png" alt="Logo Badan Gizi Nasional" class="h-10 sm:h-12 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-sm" loading="lazy" />

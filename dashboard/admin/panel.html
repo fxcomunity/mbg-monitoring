@@ -332,16 +332,41 @@
           <button onclick="triggerManualBackup()" class="w-full py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold text-[11px] transition-all">Jalankan Arsip Manual</button>
         </div>
 
-        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 sm:col-span-2 lg:col-span-3">
           <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-slate-700 uppercase">Mode Maintenance</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-700 uppercase">Mode Maintenance</span>
+              <span id="maintenanceStatusBadge" class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold">Memeriksa...</span>
+            </div>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="maintenanceToggle" class="sr-only peer" onchange="toggleMaintenance(this.checked)"/>
               <div class="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-amber-500 transition-all"></div>
               <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all peer-checked:translate-x-4"></div>
             </label>
           </div>
-          <p class="text-[11px] text-slate-500">Aktifkan mode pemeliharaan — tampilkan halaman maintenance ke pengunjung.</p>
+          <p class="text-[11px] text-slate-500 mb-3">Aktifkan mode pemeliharaan — tampilkan halaman maintenance ke semua pengunjung.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Pesan Maintenance</label>
+              <textarea id="maintenanceMessage" rows="2" placeholder="Sedang dalam pemeliharaan sistem. Mohon maaf atas ketidaknyamanannya." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-400 outline-none resize-none">Sedang dalam pemeliharaan sistem. Mohon maaf atas ketidaknyamanannya.</textarea>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Estimasi Selesai (opsional)</label>
+              <input type="datetime-local" id="maintenanceEta" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-400 outline-none"/>
+              <p class="text-[10px] text-slate-400 mt-1">Kosongkan jika tidak diketahui.</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="activateMaintenance()" class="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] flex items-center gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-sm">build</span> Aktifkan Maintenance
+            </button>
+            <button onclick="deactivateMaintenance()" class="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-sm">check_circle</span> Nonaktifkan
+            </button>
+            <a href="../../maintenance.html" target="_blank" class="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] flex items-center gap-1.5 transition-all">
+              <span class="material-symbols-outlined text-sm">open_in_new</span> Preview Halaman
+            </a>
+          </div>
         </div>
 
         <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50">
@@ -610,7 +635,82 @@
 
   function clearMenuCache() { showToast('Cache menu dibersihkan (client-side).', 'success'); try { var keys=[]; for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith('mbg_menu'))keys.push(k);} keys.forEach(function(k){localStorage.removeItem(k);}); } catch(e){} }
   function triggerManualBackup() { showToast('Memicu arsip manual via cron endpoint...', 'info'); fetch('/api/menu/cron', { method:'POST', headers:{'X-Cron-Secret':'mbg-cron-secret-2026','X-Requested-By':'mbg-radar'} }).then(function(r){return r.json();}).then(function(d){ showToast('Arsip selesai: ' + (d.archived_count||0) + ' menu diarsip.', 'success'); document.getElementById('lastBackupBadge').textContent = 'Baru saja'; }).catch(function(){ showToast('Gagal memicu arsip. Cek cron endpoint.', 'error'); }); }
-  function toggleMaintenance(on) { showToast(on ? 'Mode maintenance AKTIF.' : 'Mode maintenance dimatikan.', on ? 'warning' : 'success'); }
+
+  // ── Maintenance mode ──────────────────────────────────────────────────────
+  function loadMaintenanceStatus() {
+    fetch('../../api/maintenance.php')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var toggle = document.getElementById('maintenanceToggle');
+        var badge  = document.getElementById('maintenanceStatusBadge');
+        if (!toggle || !badge) return;
+        var active = !!data.active;
+        toggle.checked = active;
+        badge.textContent = active ? 'MAINTENANCE AKTIF' : 'Normal';
+        badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' +
+          (active ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+        if (data.message) {
+          var ta = document.getElementById('maintenanceMessage');
+          if (ta && !ta.value) ta.value = data.message;
+        }
+        if (data.eta) {
+          var etaInput = document.getElementById('maintenanceEta');
+          if (etaInput && !etaInput.value) {
+            // datetime-local expects "YYYY-MM-DDTHH:MM"
+            try { etaInput.value = new Date(data.eta).toISOString().slice(0,16); } catch(e) {}
+          }
+        }
+      })
+      .catch(function() {
+        var badge = document.getElementById('maintenanceStatusBadge');
+        if (badge) { badge.textContent = 'Tidak Tersambung'; badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700'; }
+      });
+  }
+
+  function toggleMaintenance(on) {
+    if (on) { activateMaintenance(); } else { deactivateMaintenance(); }
+  }
+
+  function activateMaintenance() {
+    var msg = (document.getElementById('maintenanceMessage') || {}).value || 'Sedang dalam pemeliharaan sistem.';
+    var eta = (document.getElementById('maintenanceEta') || {}).value || '';
+    showToast('Mengaktifkan mode maintenance...', 'info');
+    fetch('../../api/maintenance.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'enable', message: msg, eta: eta })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.success) {
+        showToast('Mode maintenance AKTIF. Pengunjung kini diarahkan ke halaman maintenance.', 'warning');
+        loadMaintenanceStatus();
+      } else {
+        showToast('Gagal mengaktifkan maintenance.', 'error');
+      }
+    })
+    .catch(function() { showToast('Gagal menghubungi API maintenance.', 'error'); });
+  }
+
+  function deactivateMaintenance() {
+    showToast('Menonaktifkan mode maintenance...', 'info');
+    fetch('../../api/maintenance.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'disable' })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      if (res.success) {
+        showToast('Mode maintenance dinonaktifkan. Situs kembali normal.', 'success');
+        loadMaintenanceStatus();
+      } else {
+        showToast('Gagal menonaktifkan maintenance.', 'error');
+      }
+    })
+    .catch(function() { showToast('Gagal menghubungi API maintenance.', 'error'); });
+  }
+
   function vacuumDb() { showToast('VACUUM hanya bisa dijalankan via psql langsung ke Neon.', 'info'); }
   function approvePhoto(btn, id) { btn.closest('.border').style.borderColor = '#059669'; btn.closest('.border').style.background = '#f0fdf4'; showToast('Foto profil disetujui.', 'success'); }
   function rejectPhoto(btn, id) { btn.closest('.border').remove(); showToast('Foto profil ditolak.', 'error'); }
@@ -620,6 +720,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     loadUsers();
     loadSppgStatus();
+    loadMaintenanceStatus();
 
     // Cek hash fragment untuk scroll
     if (location.hash) {

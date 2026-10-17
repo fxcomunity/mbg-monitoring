@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maintenance — Radar MBG</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: linear-gradient(135deg, #001026 0%, #0b2545 40%, #001a3d 70%, #001026 100%);
+      background-size: 400% 400%;
+      animation: bgShift 10s ease infinite;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #e2eaff;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+
+    @keyframes bgShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(111,251,190,0.15);
+      border-radius: 2rem;
+      padding: 3rem 2.5rem;
+      max-width: 540px;
+      width: 100%;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .logo-wrap img {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 0 8px rgba(111,251,190,0.4));
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .logo-text span:first-child {
+      font-size: 1.125rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-text span:last-child {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #6ffbbe;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .icon-wrap {
+      width: 80px;
+      height: 80px;
+      border-radius: 1.5rem;
+      background: rgba(251,191,36,0.15);
+      border: 2px solid rgba(251,191,36,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin: 0 auto 1.5rem;
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%       { transform: scale(1.07); opacity: 0.85; }
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: rgba(251,191,36,0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(251,191,36,0.3);
+      margin-bottom: 1.25rem;
+    }
+
+    .badge span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #fbbf24;
+      animation: blink 1.2s ease infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    .message {
+      font-size: 0.9rem;
+      line-height: 1.65;
+      color: #a8bcd4;
+      margin-bottom: 1.75rem;
+    }
+
+    .countdown-wrap {
+      display: none;
+      margin-bottom: 1.75rem;
+    }
+
+    .countdown-wrap.visible {
+      display: block;
+    }
+
+    .countdown-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6ffbbe;
+      margin-bottom: 0.75rem;
+    }
+
+    .countdown-tiles {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 56px;
+    }
+
+    .tile-num {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #ffffff;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 0.75rem;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tile-lbl {
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: #7090b0;
+      margin-top: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .divider {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: rgba(255,255,255,0.3);
+      align-self: center;
+      margin-top: -10px;
+    }
+
+    .footer-note {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.7rem;
+      color: #4a6070;
+    }
+
+    .footer-note a {
+      color: #6ffbbe;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-wrap">
+      <img src="assets/images/ic_launcher.png" alt="Logo BGN" onerror="this.style.display='none'"/>
+      <div class="logo-text">
+        <span>Radar MBG</span>
+        <span>Badan Gizi Nasional RI</span>
+      </div>
+    </div>
+
+    <div class="icon-wrap">🔧</div>
+
+    <div class="badge"><span></span> Pemeliharaan Sistem</div>
+
+    <h1>Sedang dalam Perbaikan</h1>
+
+    <p class="message" id="maintenanceMessage">
+      Sedang dalam pemeliharaan sistem. Mohon maaf atas ketidaknyamanannya.
+    </p>
+
+    <div class="countdown-wrap" id="countdownWrap">
+      <p class="countdown-label">Estimasi Selesai</p>
+      <div class="countdown-tiles">
+        <div class="tile">
+          <div class="tile-num" id="cdHours">00</div>
+          <div class="tile-lbl">Jam</div>
+        </div>
+        <div class="divider">:</div>
+        <div class="tile">
+          <div class="tile-num" id="cdMins">00</div>
+          <div class="tile-lbl">Menit</div>
+        </div>
+        <div class="divider">:</div>
+        <div class="tile">
+          <div class="tile-num" id="cdSecs">00</div>
+          <div class="tile-lbl">Detik</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Jika mendesak, hubungi <a href="mailto:admin@bgn.go.id">admin@bgn.go.id</a><br/>
+      &copy; Badan Gizi Nasional Republik Indonesia
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    // Baca param dari URL: ?message=...&eta=...
+    var params = new URLSearchParams(window.location.search);
+    var msg = params.get('message');
+    var eta = params.get('eta');
+
+    if (msg) {
+      document.getElementById('maintenanceMessage').textContent = decodeURIComponent(msg);
+    }
+
+    if (eta) {
+      startCountdown(eta);
+    } else {
+      // Coba ambil dari maintenance.json
+      fetch('./api/maintenance.php')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.message) {
+            document.getElementById('maintenanceMessage').textContent = data.message;
+          }
+          if (data.eta) {
+            startCountdown(data.eta);
+          }
+        })
+        .catch(function() {});
+    }
+
+    function startCountdown(etaStr) {
+      var target = new Date(etaStr).getTime();
+      if (isNaN(target)) return;
+
+      var wrap = document.getElementById('countdownWrap');
+      wrap.classList.add('visible');
+
+      function tick() {
+        var now = Date.now();
+        var diff = target - now;
+        if (diff <= 0) {
+          document.getElementById('cdHours').textContent = '00';
+          document.getElementById('cdMins').textContent  = '00';
+          document.getElementById('cdSecs').textContent  = '00';
+          return;
+        }
+        var h = Math.floor(diff / 3600000);
+        var m = Math.floor((diff % 3600000) / 60000);
+        var s = Math.floor((diff % 60000) / 1000);
+        document.getElementById('cdHours').textContent = String(h).padStart(2, '0');
+        document.getElementById('cdMins').textContent  = String(m).padStart(2, '0');
+        document.getElementById('cdSecs').textContent  = String(s).padStart(2, '0');
+        setTimeout(tick, 1000);
+      }
+      tick();
+    }
+  })();
+  </script>
+</body>
+</html>
