@@ -1,8 +1,0 @@
-name = "sppg-mbg-api"
-main = "src/index.js"
-compatibility_date = "2026-10-16"
-node_compat = true
-
-[[hyperdrive]]
-binding = "DB"
-id = "GANTI_DENGAN_ID_HYPERDRIVE"
