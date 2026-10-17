@@ -1,62 +1,76 @@
-# Radar MBG — Android APK
+# Radar MBG — Android App
 
-## Cara Build APK via Terminal Android Studio
-
-### 1. Buka Terminal di Android Studio
-`View → Tool Windows → Terminal`
-
-### 2. Masuk ke folder android
-```
-cd c:\laragon\www\MBG-MONITORING\android
-```
-
-### 3. Build APK Debug
-```
-.\gradlew.bat assembleDebug
-```
-Tunggu ~3-5 menit (download Gradle pertama kali lebih lama).
-
-APK tersimpan di:
-```
-android\app\build\outputs\apk\debug\app-debug.apk
-```
-
-### 4. Build APK Release (tanpa signing, untuk test)
-```
-.\gradlew.bat assembleRelease
-```
-
----
-
-## Struktur Project
-```
-android/
-  app/
-    build.gradle          ← dependencies & config
-    src/main/
-      AndroidManifest.xml
-      java/.../
-        MainActivity.kt   ← WebView utama
-        SplashActivity.kt ← Splash logo BGN
-      res/
-        layout/           ← XML layout
-        values/           ← strings, colors, themes
-        mipmap-*/         ← ic_launcher.png (semua densitas)
-        drawable/         ← background gradient
-        xml/              ← network security config
-  build.gradle            ← plugin versions
-  settings.gradle         ← module config
-  gradlew.bat             ← build script Windows
-  gradle.properties       ← JVM & Android flags
-  gradle/wrapper/
-    gradle-wrapper.jar
-    gradle-wrapper.properties
-```
+Aplikasi Android native untuk monitoring Program Makan Bergizi Gratis.
 
 ## Info APK
+
 | Field | Value |
 |---|---|
 | Package | `id.go.bgn.radarmbg` |
+| Version | 1.1.0 (versionCode 2) |
 | Min Android | 7.0 (API 24) |
 | Target Android | 14 (API 35) |
-| URL | `https://mbg.jack-ai.my.id` |
+| Base URL | `https://mbg.jack-ai.my.id` |
+
+## Download
+
+APK tersedia di [GitHub Releases](https://github.com/fxcomunity/mbg-monitoring/releases/latest).
+
+## Build APK
+
+**Prerequisite:** Android Studio + JDK 17
+
+```bash
+# Dari root project
+cd android
+
+# Windows — debug
+.\gradlew.bat assembleDebug
+
+# Windows — release
+.\gradlew.bat assembleRelease
+
+# Mac/Linux
+./gradlew assembleDebug
+```
+
+Output APK:
+```
+app/build/outputs/apk/debug/Radar-MBG-V2.apk
+```
+
+## Struktur
+
+```
+android/
+├── app/
+│   ├── build.gradle              ← dependencies & config (versionCode, versionName)
+│   └── src/main/
+│       ├── AndroidManifest.xml
+│       └── java/id/go/bgn/radarmbg/
+│           ├── MainActivity.kt   ← NavHost utama (Compose)
+│           ├── ui/
+│           │   ├── screens/      ← Splash, Login, Register, Home, Menu,
+│           │   │                    Peta, Laporan, Dashboard, AdminPanel,
+│           │   │                    Profile, Notifikasi
+│           │   ├── components/   ← AppTopBar, RadarNavBar
+│           │   └── theme/        ← RadarMBGTheme
+│           ├── data/
+│           │   ├── api/          ← ApiClient, ApiService, AuthApiService,
+│           │   │                    DataApiService, MenuApiService, Models
+│           │   ├── local/        ← SessionDataStore
+│           │   └── repository/   ← AuthRepository
+│           └── viewmodel/        ← AuthViewModel
+└── gradle/
+    └── wrapper/
+        └── gradle-wrapper.properties
+```
+
+## API Endpoints
+
+| Instance | URL | Kegunaan |
+|---|---|---|
+| `authInstance` | `mbg-auth.aqsholhalqi4.workers.dev` | Login, register, session |
+| `dataInstance` | `mbg-data.aqsholhalqi4.workers.dev` | Telemetri & distribusi |
+| `menuInstance` | `mbg-menu.aqsholhalqi4.workers.dev` | Menu harian |
+| `instance` | `mbg.jack-ai.my.id` | Endpoint utama |
