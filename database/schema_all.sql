@@ -1,3 +1,7 @@
+-- CATATAN: File ini adalah skema lengkap dalam satu file.
+-- Untuk versi modular per fitur, lihat database/migrations/
+-- Jalankan database/migrations/*.sql secara berurutan untuk setup modular.
+
 -- ==============================================================================
 -- RADAR MBG NASIONAL — SKEMA BASIS DATA TERPADU (FULL COMPREHENSIVE SCHEMA)
 -- Platform : Neon Cloud PostgreSQL / PostgreSQL 14+
