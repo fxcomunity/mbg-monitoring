@@ -1,6 +1,11 @@
 # ── Env & Secrets ───────────────────────────────────────────
 .env
+.env.local
 database/certs/
+
+# ── Folder data besar (JSON raw) ────────────────────────────
+data_sppg/
+dataset_sppg/
 
 # ── Uploads (file user) ──────────────────────────────────────
 uploads/
@@ -30,10 +35,13 @@ android/*.aab
 
 # Node modules (root - untuk Pages Functions)
 node_modules/
+*/node_modules/
 package-lock.json
 
 # ── Local DB dumps (generated, tidak perlu di-commit) ───────
-database/scripts/local_dump.sql
-database/scripts/local_dump_clean.sql
-database/scripts/neon_import_log.txt
-database/scripts/neon_sppg_log.txt
+database/scripts/local_dump*.sql
+database/scripts/*_log.txt
+
+# ── Build artifacts ──────────────────────────────────────────
+*.apk
+*.aab
