@@ -12,17 +12,12 @@ try {
     $row = $stmt->fetch();
 
     if (!$row) {
-        // Fallback default
-        $row = [
-            'porsi_tersalurkan' => 4850210,
-            'persen_target'     => 99.20,
-            'sppg_aktif'        => 1284,
-            'sekolah_terlayani' => 18420,
-            'kepatuhan_akg'     => 99.60,
-            'suhu_rata_rata'    => 65.8,
-            'sla_distribusi'    => 99.80,
-            'pembaruan_teks'    => 'Hari ini, Pukul 11.45 WIB'
-        ];
+        http_response_code(503);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => 'Data telemetri belum tersedia di basis data'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 
     echo json_encode([
@@ -42,5 +37,6 @@ try {
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     error_log('[api/telemetri.php error] ' . $e->getMessage());
+    http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Gagal mengambil data telemetri']);
 }

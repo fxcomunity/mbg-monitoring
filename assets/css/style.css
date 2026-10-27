@@ -203,3 +203,68 @@ html, body {
 .leaflet-overlay-pane { z-index: 4; }
 .leaflet-marker-pane { z-index: 6; }
 .leaflet-popup-pane { z-index: 7; }
+
+/* Homepage refinements */
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(177, 199, 240, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(177, 199, 240, 0.07) 1px, transparent 1px),
+    radial-gradient(ellipse at 78% 18%, rgba(77, 222, 163, 0.16), transparent 35%);
+  background-size: 48px 48px, 48px 48px, auto;
+  mask-image: linear-gradient(to bottom, black, transparent 94%);
+}
+
+#homepageMenuPreview {
+  background:
+    radial-gradient(circle at 100% 0, rgba(157, 195, 255, 0.22), transparent 42%),
+    var(--bgn-surface-card);
+  min-height: 13rem;
+}
+
+#homepageMenuPreview h3 {
+  line-height: 1.25;
+}
+
+#regionFilterBar {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+#regionFilterBar button {
+  white-space: nowrap;
+}
+
+#tableRegionalBody tr {
+  transition: background-color 160ms ease;
+}
+
+#tableRegionalBody td {
+  vertical-align: middle;
+}
+
+#schoolModalBackdrop input {
+  min-height: 2.75rem;
+}
+
+@media (max-width: 640px) {
+  #mbgInteractiveMap {
+    height: 340px !important;
+  }
+
+  #homepageMenuPreview {
+    min-height: 11rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-hover,
+  .btn-primary-bgn,
+  .btn-secondary-bgn {
+    transition: none;
+  }
+
+  .card-hover:hover,
+  .btn-primary-bgn:hover {
+    transform: none;
+  }
+}

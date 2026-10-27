@@ -67,30 +67,6 @@ CREATE TABLE IF NOT EXISTS aduan_log (
 CREATE INDEX IF NOT EXISTS idx_log_laporan ON aduan_log (laporan_id);
 
 -- ----------------------------------------------------------------
--- Data contoh (3 baris demo) – pakai ON CONFLICT agar aman dijalankan ulang
--- ----------------------------------------------------------------
-INSERT INTO laporan_aduan
-  (ticket_code, reporter_name, reporter_phone, reporter_role,
-   issue_category, school_target, incident_date, description,
-   status, priority, ip_address)
-VALUES
-  ('TKT-BGN-20261013-1001', 'Budi S.', '082111000001', 'wali',
-   'suhu', 'SDN 01 Senayan Jakarta', '2026-10-13',
-   'Makanan tiba sudah dingin, suhu jauh di bawah 60°C.',
-   'verifikasi', 'tinggi', '127.0.0.1'),
-
-  ('TKT-BGN-20261013-1002', 'Sari (Guru)', '081200000002', 'guru',
-   'menu', 'SMPN 19 Kebayoran Baru', '2026-10-13',
-   'Menu tertulis ayam panggang tapi yang datang hanya tahu kukus tanpa lauk utama.',
-   'masuk', 'sedang', '127.0.0.1'),
-
-  ('TKT-BGN-20261013-1003', 'Komite RW.05', '087800000003', 'komite',
-   'waktu', 'SDN Sukajadi 03 Bandung', '2026-10-12',
-   'Pengantaran terlambat lebih dari 90 menit tanpa pemberitahuan.',
-   'proses', 'sedang', '127.0.0.1')
-ON CONFLICT (ticket_code) DO NOTHING;
-
--- ----------------------------------------------------------------
 -- Tabel: data_penerima_mbg (8 Jenjang BGN Pusat 2026)
 -- ----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS data_penerima_mbg (

@@ -47,6 +47,13 @@
       0%, 100% { background-position: 0% 50%; }
       50%  { background-position: 100% 50%; }
     }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
     .video-bg-fallback {
       background: linear-gradient(135deg, #001026, #0b2545, #001a3d, #001026);
       background-size: 400% 400%;
@@ -124,8 +131,8 @@
     <div class="w-full max-w-[480px]">
       
       <!-- AUTH CARD -->
-      <div class="glass-card rounded-3xl shadow-2xl shadow-slate-900/40 border border-white/20 p-6 sm:p-8 relative overflow-hidden">
-        
+      <div class="glass-card rounded-3xl shadow-2xl shadow-slate-900/40 border border-white/20 p-6 sm:p-8 relative overflow-hidden animate-fade-in-up">
+
         <!-- Top Accent Bar -->
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#001026] via-[#134074] to-[#6ffbbe]"></div>
 
@@ -148,14 +155,14 @@
         </div>
 
         <!-- TABS SWITCHER: MASUK vs DAFTAR -->
-        <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-2xl mb-6 border border-slate-200/80">
+        <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-2xl mb-6 border border-slate-200/80 transition-all duration-300">
           <button type="button" id="tabBtnLogin" onclick="switchAuthTab('login')"
-                  class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 bg-white text-primary shadow-sm">
+                  class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-1.5 bg-white text-primary shadow-sm">
             <span class="material-symbols-outlined text-[18px]">login</span>
             <span>Masuk Akun</span>
           </button>
           <button type="button" id="tabBtnRegister" onclick="switchAuthTab('register')"
-                  class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:text-primary">
+                  class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 flex items-center justify-center gap-1.5 text-slate-600 hover:text-primary">
             <span class="material-symbols-outlined text-[18px]">how_to_reg</span>
             <span>Daftar Akun</span>
           </button>

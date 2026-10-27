@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="id"><head>
   <meta charset="utf-8"/>
@@ -13,7 +13,7 @@
   <!-- Primary SEO Meta Tags -->
   <title>Radar MBG - Pusat Monitoring &amp; Transparansi Badan Gizi Nasional</title>
   <meta name="title" content="Radar MBG - Pusat Monitoring &amp; Transparansi Badan Gizi Nasional"/>
-  <meta name="description" content="Portal Resmi Pemantauan Program Makan Bergizi Gratis (MBG) Badan Gizi Nasional RI. Pantau menu harian sekolah, kepatuhan gizi AKG, telemetri 1.284+ dapur SPPG, dan pengaduan publik secara realtime."/>
+  <meta name="description" content="Pantau informasi program Makan Bergizi Gratis melalui data yang tersedia dari basis data aplikasi."/>
   <meta name="keywords" content="Makan Bergizi Gratis, MBG, Badan Gizi Nasional, BGN, SPPG, Menu MBG, Pemantauan MBG, Gizi Anak Sekolah, Satgas BGN"/>
   <meta name="author" content="Badan Gizi Nasional Republik Indonesia"/>
   <meta name="theme-color" content="#001026"/>
@@ -23,7 +23,7 @@
   <meta property="og:type" content="website"/>
   <meta property="og:url" content="https://mbg.jack-ai.my.id/"/>
   <meta property="og:title" content="Radar MBG Nasional — Badan Gizi Nasional RI"/>
-  <meta property="og:description" content="Portal Resmi Pemantauan Program Makan Bergizi Gratis (MBG) Nasional. Pantau menu harian sekolah, kepatuhan gizi AKG, telemetri 1.284+ dapur SPPG, dan pengaduan publik secara realtime."/>
+  <meta property="og:description" content="Pantau informasi program Makan Bergizi Gratis melalui data yang tersedia dari basis data aplikasi."/>
   <meta property="og:image" content="https://mbg.jack-ai.my.id/assets/images/og-preview.png"/>
   <meta property="og:image:secure_url" content="https://mbg.jack-ai.my.id/assets/images/og-preview.png"/>
   <meta property="og:image:type" content="image/png"/>
@@ -54,6 +54,7 @@
   try {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', './api/maintenance.php', true);
+    xhr.timeout = 3000;
     xhr.onload = function() {
       if (xhr.status === 200) {
         try {
@@ -66,6 +67,8 @@
         } catch(e) {}
       }
     };
+    xhr.onerror = function() {};
+    xhr.ontimeout = function() {};
     xhr.send();
   } catch(e) {}
 })();
@@ -118,14 +121,13 @@
           </div>
           <div class="pt-2 px-4 border-t border-slate-100 flex justify-between items-center text-[11px]">
             <a href="fitur/laporan-aduan.html" class="text-blue-600 font-semibold hover:underline">Buat Laporan Baru</a>
-            <span class="text-slate-400">Sinkronisasi Realtime</span>
+            <span class="text-slate-400">Status koneksi</span>
           </div>
         </div>
       </div>
 
       <a class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-on-primary hover:bg-primary-container text-xs font-semibold transition-colors shadow-sm whitespace-nowrap" href="fitur/menu-hari-ini.html">
-        <span class="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
-        <span>Status Hari Ini</span>
+        <span>Menu Hari Ini</span>
       </a>
 
       <!-- User Profile Dropdown (jika sudah login) / Portal Masuk (jika belum) -->
@@ -210,8 +212,7 @@
     <a class="px-4 py-2.5 font-medium text-sm text-on-surface hover:bg-surface-container rounded-xl transition-all" href="fitur/laporan-aduan.html">Laporan & Aduan Publik</a>
     <div class="pt-2 mt-1 border-t border-border-subtle flex flex-col gap-2">
       <a class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-semibold shadow-sm" href="fitur/menu-hari-ini.html">
-        <span class="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
-        <span>Status MBG Hari Ini</span>
+        <span>Menu MBG Hari Ini</span>
       </a>
       <a class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs border border-border-subtle shadow-sm" href="auth/login.html">
         <span class="material-symbols-outlined text-[18px] text-secondary">admin_panel_settings</span>
@@ -222,12 +223,8 @@
 </header><main class="w-full pt-20 bg-surface min-h-[calc(100vh-20rem)]"><div class="flex flex-col w-full">
 <!-- Hero Section with Deep Navy Institutional Architecture -->
 <section class="relative w-full overflow-hidden bg-primary text-on-primary px-space-md sm:px-space-lg lg:px-margin py-space-xl">
-<!-- Video Background -->
-<video autoplay loop muted playsinline preload="metadata" fetchpriority="high" poster="assets/images/og-preview.png" class="absolute inset-0 w-full h-full object-cover opacity-65 pointer-events-none z-0 transition-opacity duration-1000"
-       onerror="this.style.display='none';document.getElementById('heroBgFallback').style.display='block'">
-  <source src="https://res.cloudinary.com/dgenxagit/video/upload/v1791923878/gemini_generated_video_22b0321d.mp4" type="video/mp4">
-</video>
-<div id="heroBgFallback" class="absolute inset-0 w-full h-full pointer-events-none z-0" style="display:none;background:linear-gradient(135deg,#001026,#0b2545,#001a3d,#001026);background-size:400% 400%;animation:bgShift 8s ease infinite;"></div>
+<!-- Decorative grid background -->
+<div class="hero-grid absolute inset-0 pointer-events-none z-0"></div>
 <div class="absolute inset-0 bg-gradient-to-r from-[#00172E]/90 via-[#002B49]/70 to-[#002B49]/50 z-0 pointer-events-none"></div>
 
 <!-- Ambient Backdrop Effects -->
@@ -237,14 +234,14 @@
 <!-- State Department Badges -->
 <div class="flex flex-wrap items-center gap-space-sm">
 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-lowest/10 backdrop-blur-md">
-<span class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed animate-ping"></span>
-<span class="font-label-sm text-label-sm text-surface-container-high tracking-wider uppercase">Live Telemetri Nasional</span>
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed"></span>
+<span class="font-label-sm text-label-sm text-surface-container-high tracking-wider uppercase">Data Pemantauan Nasional</span>
 </div>
 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container text-tertiary-fixed font-label-sm text-label-sm">
 <span class="material-symbols-outlined text-[16px]">security</span>
-<span>Sistem Informasi Eksekutif &amp; Monitoring Publik MBG Terintegrasi</span>
+<span>Informasi program MBG berbasis data</span>
 </div>
-<span id="telemetryUpdateText" class="font-body-sm text-body-sm text-outline-variant hidden sm:inline">Pembaruan: Hari ini, Pukul 11.45 WIB</span>
+<span id="telemetryUpdateText" class="font-body-sm text-body-sm text-outline-variant hidden sm:inline" aria-live="polite">Menunggu data basis data…</span>
 </div>
 <!-- Headline & Subtitle -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-end">
@@ -253,14 +250,14 @@
             Pusat Monitoring &amp; Transparansi Makan Bergizi Gratis (MBG) Nasional
           </h1>
 <p class="font-body-lg text-body-lg text-surface-container-high/90 max-w-3xl leading-relaxed">
-            Memantau pelaksanaan harian program Makan Bergizi Gratis dari hulu ke hilir: ketepatan distribusi, mutu gizi AKG terverifikasi, higienitas dapur SPPG, dan serapan pangan lokal untuk 82+ juta generasi penerus bangsa.
+            Satu tempat untuk melihat informasi penyaluran, data SPPG, dan menu yang tercatat. Informasi hanya ditampilkan saat tersedia dari basis data.
           </p>
 </div>
 <div class="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-space-sm justify-end">
 <div class="p-space-md rounded-xl bg-surface-container-lowest/10 backdrop-blur-md flex items-center justify-between">
 <div class="flex flex-col">
 <span class="font-label-sm text-label-sm text-surface-container-high">SLA Distribusi Pagi</span>
-<span id="telemetrySlaDisplay" class="font-headline-md text-headline-md text-tertiary-fixed font-bold">99.8% Tepat Waktu</span>
+<span id="telemetrySlaDisplay" class="font-headline-md text-headline-md text-tertiary-fixed font-bold">—</span>
 </div>
 <div class="w-10 h-10 rounded-lg bg-tertiary-container flex items-center justify-center text-tertiary-fixed">
 <span class="material-symbols-outlined text-[22px]">timer</span>
@@ -273,7 +270,7 @@
 <div class="flex flex-col lg:flex-row items-stretch lg:items-center gap-space-md">
 <div class="relative flex-1">
 <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
-<input class="w-full pl-11 pr-4 py-3 bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md rounded-xl focus:outline-none focus:ring-2 focus:ring-border-focus" id="schoolSearchInput" placeholder="Cari nama sekolah (misal: SDN 01 Senayan, SMPN 3 Surabaya), atau kode SPPG..." type="text"/>
+<input class="w-full pl-11 pr-4 py-3 bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md rounded-xl focus:outline-none focus:ring-2 focus:ring-border-focus" id="schoolSearchInput" placeholder="Cari nama sekolah atau SPPG…" type="text"/>
 </div>
 <div class="flex flex-wrap items-center gap-space-sm">
 <button class="flex-1 sm:flex-none px-space-md py-3 rounded-xl bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-lg text-label-lg flex items-center justify-center gap-2" id="btnSchoolModal">
@@ -292,11 +289,7 @@
 </div>
 <!-- Search Autocomplete / Quick Suggestion Row -->
 <div class="mt-space-sm flex items-center gap-2 pt-space-xs overflow-x-auto pb-1 no-scrollbar">
-<span class="font-label-sm text-label-sm text-on-surface-variant">Pencarian Terpopuler:</span>
-<button class="suggestion-chip px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-all" data-value="SDN 01 Menteng Jakarta">SDN 01 Menteng Jakarta</button>
-<button class="suggestion-chip px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-all" data-value="SPPG Sukajadi Bandung">SPPG Sukajadi Bandung</button>
-<button class="suggestion-chip px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-all" data-value="SMPN 1 Semarang">SMPN 1 Semarang</button>
-<button class="suggestion-chip px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-all" data-value="SPPG Denpasar Timur">SPPG Denpasar Timur</button>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Masukkan nama sekolah atau SPPG untuk mencari data.</span>
 </div>
 </div>
 </div>
@@ -311,10 +304,10 @@
 <span>Porsi Tersalurkan</span>
 <span class="material-symbols-outlined text-secondary text-[18px]">bento</span>
 </div>
-<span id="kpiPorsiTersalurkan" class="font-headline-lg text-headline-lg text-primary font-bold">4.850.210</span>
+<span id="kpiPorsiTersalurkan" class="font-headline-lg text-headline-lg text-primary font-bold">—</span>
 <div class="flex items-center gap-1 font-label-sm text-label-sm text-status-success">
 <span class="material-symbols-outlined text-[14px]">trending_up</span>
-<span id="kpiPersenTarget">99.2% dari target harian</span>
+<span id="kpiPersenTarget">Menunggu data</span>
 </div>
 </div>
 <!-- Metric 2 -->
@@ -323,10 +316,10 @@
 <span>SPPG Aktif Beroperasi</span>
 <span class="material-symbols-outlined text-secondary text-[18px]">outdoor_grill</span>
 </div>
-<span id="kpiSppgAktif" class="font-headline-lg text-headline-lg text-primary font-bold">1.284</span>
+<span id="kpiSppgAktif" class="font-headline-lg text-headline-lg text-primary font-bold">—</span>
 <div class="flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
 <span class="w-2 h-2 rounded-full bg-status-success"></span>
-<span>100% Sertifikasi Higienis</span>
+<span>Data dari basis data</span>
 </div>
 </div>
 <!-- Metric 3 -->
@@ -335,8 +328,8 @@
 <span>Sekolah Terlayani</span>
 <span class="material-symbols-outlined text-secondary text-[18px]">school</span>
 </div>
-<span id="kpiSekolahTerlayani" class="font-headline-lg text-headline-lg text-primary font-bold">18.420</span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Tersebar di 38 Provinsi RI</span>
+<span id="kpiSekolahTerlayani" class="font-headline-lg text-headline-lg text-primary font-bold">—</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Jumlah dari basis data</span>
 </div>
 <!-- Metric 4 -->
 <div class="flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
@@ -344,7 +337,7 @@
 <span>Kepatuhan AKG</span>
 <span class="material-symbols-outlined text-tertiary-fixed-dim text-[18px]">nutrition</span>
 </div>
-<span id="kpiKepatuhanAkg" class="font-headline-lg text-headline-lg text-primary font-bold">99.6%</span>
+<span id="kpiKepatuhanAkg" class="font-headline-lg text-headline-lg text-primary font-bold">—</span>
 <div class="flex items-center gap-1 font-label-sm text-label-sm text-status-success">
 <span class="material-symbols-outlined text-[14px]">check_circle</span>
 <span>Dietisien Terverifikasi</span>
@@ -356,29 +349,24 @@
 <span>Rantai Hangat Makanan</span>
 <span class="material-symbols-outlined text-status-warning text-[18px]">thermostat</span>
 </div>
-<span id="kpiSuhuMakanan" class="font-headline-lg text-headline-lg text-primary font-bold">65.8°C</span>
+<span id="kpiSuhuMakanan" class="font-headline-lg text-headline-lg text-primary font-bold">—</span>
 <div class="flex items-center gap-1 font-label-sm text-label-sm text-status-success">
 <span class="material-symbols-outlined text-[14px]">format_image_left</span>
-<span>100% Sensor IoT &gt;60°C</span>
+<span>Nilai dari basis data</span>
 </div>
 </div>
 </div>
 </div>
 </section>
-<!-- Live Feed Real-Time Ticker -->
+<!-- Database-backed recent activity -->
 <section class="w-full bg-surface-container px-space-md sm:px-space-lg lg:px-margin py-2.5">
 <div class="max-w-7xl mx-auto flex items-center gap-space-md">
 <div class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary text-tertiary-fixed font-label-sm text-label-sm flex-shrink-0">
 <span class="material-symbols-outlined text-[14px]">broadcast_on_home</span>
-<span class="font-bold uppercase tracking-wider">Log Live SPPG</span>
+<span class="font-bold uppercase tracking-wider">Laporan Terkini</span>
 </div>
 <div class="overflow-hidden whitespace-nowrap flex-1">
-<div class="inline-block transition-transform duration-700 ease-in-out font-body-sm text-body-sm text-primary font-medium" id="liveTicker">
-<span class="inline-flex items-center gap-1.5 mr-6"><span class="w-1.5 h-1.5 rounded-full bg-status-success"></span>SPPG Kebayoran Baru 02: Mengirim 1.250 porsi ke SDN 01 Senayan (Suhu: 68.4°C)</span>
-<span class="inline-flex items-center gap-1.5 mr-6"><span class="w-1.5 h-1.5 rounded-full bg-status-success"></span>Labkesda Bandung Wetan: Uji Swab Mikrobiologi Dapur Selesai — Negatif Bakteri E.coli</span>
-<span class="inline-flex items-center gap-1.5 mr-6"><span class="w-1.5 h-1.5 rounded-full bg-status-success"></span>Koperasi Peternak Blitar: Memasok 32.000 butir telur omega-3 lokal ke 6 SPPG</span>
-<span class="inline-flex items-center gap-1.5 mr-6"><span class="w-1.5 h-1.5 rounded-full bg-status-success"></span>SPPG Medan Kota 01: Porsi MBG telah diterima 840 siswa SDN 060812 tepat pukul 10.15 WIB</span>
-</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant" id="liveTicker" aria-live="polite">Memuat laporan dari basis data…</div>
 </div>
 </div>
 </section>
@@ -478,7 +466,7 @@
 <div>
 <div class="flex items-center gap-2">
 <span class="w-2.5 h-2.5 rounded-full bg-status-success"></span>
-<span class="font-label-sm text-label-sm text-status-success uppercase font-bold tracking-wider">Telemetri Distribusi 38 Provinsi</span>
+<span class="font-label-sm text-label-sm text-status-success uppercase font-bold tracking-wider">Data Distribusi Regional</span>
 </div>
 <h2 class="font-headline-xl text-headline-xl text-primary font-bold mt-1">Status Penyaluran Regional Indonesia</h2>
 </div>
@@ -500,29 +488,18 @@
   <div>
     <h3 class="font-headline-sm text-headline-sm text-primary font-bold flex items-center gap-2">
       <span class="material-symbols-outlined text-secondary text-[22px]">map</span>
-      <span>Peta Telemetri Wilayah Logistik MBG</span>
+      <span>Peta Lokasi SPPG</span>
     </h3>
-    <p class="font-body-sm text-body-sm text-on-surface-variant">Titik sensor IoT suhu kendaraan van termal dan radius dapur SPPG</p>
+    <p class="font-body-sm text-body-sm text-on-surface-variant">Lokasi yang memiliki koordinat tercatat pada basis data.</p>
   </div>
   <div class="flex items-center gap-2">
-    <span id="telemetryTempBadge" class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-sm text-label-sm font-semibold">
-      Rata-rata 64.2°C
-    </span>
-    <a id="btnMapGoogleLink" href="https://www.openstreetmap.org/search?query=Badan+Gizi+Nasional+SPPG+DKI+Jakarta" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm">
+    <span id="telemetryTempBadge" class="px-2.5 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-sm text-label-sm font-semibold">Data peta dari basis data</span>
+    <a id="btnMapGoogleLink" href="https://www.openstreetmap.org/#map=5/-2.5/118" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm">
       <span class="material-symbols-outlined text-[16px]">location_on</span>
       <span id="mapLinkText">Buka di OpenStreetMap</span>
       <span class="material-symbols-outlined text-[14px]">open_in_new</span>
     </a>
   </div>
-</div>
-<!-- Quick Region Telemetry Switcher -->
-<div class="flex flex-wrap items-center gap-2 pt-1 pb-1">
-  <span class="text-xs font-semibold text-primary">Pilih Wilayah Peta:</span>
-  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm transition-all" data-region="dki" data-label="DKI Jakarta" data-query="Badan Gizi Nasional SPPG DKI Jakarta" data-temp="64.2°C">DKI Jakarta</button>
-  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="jabar" data-label="Jawa Barat" data-query="Badan Gizi Nasional SPPG Kota Bandung Jawa Barat" data-temp="65.0°C">Jawa Barat</button>
-  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="jateng" data-label="Jawa Tengah" data-query="Badan Gizi Nasional SPPG Kota Semarang Jawa Tengah" data-temp="63.8°C">Jawa Tengah</button>
-  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="jatim" data-label="Jawa Timur" data-query="Badan Gizi Nasional SPPG Surabaya Jawa Timur" data-temp="66.1°C">Jawa Timur</button>
-  <button type="button" class="region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all" data-region="nasional" data-label="Seluruh Indonesia" data-query="Badan Gizi Nasional Indonesia" data-temp="64.5°C">Seluruh Indonesia</button>
 </div>
 <!-- Map View Container with Leaflet Interactive Map -->
 <div style="position:relative;width:100%;height:420px;border-radius:12px;overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,0.08);">
@@ -533,10 +510,10 @@
   <!-- Floating badge kiri atas -->
   <div style="position:absolute;top:12px;left:12px;z-index:10;pointer-events:none;">
     <div style="pointer-events:auto;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);box-shadow:0 2px 8px rgba(0,0,0,0.12);display:flex;align-items:center;gap:8px;border:1px solid #e2e8f0;">
-      <span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;animation:pulse 1.5s infinite;flex-shrink:0;"></span>
+      <span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;flex-shrink:0;"></span>
       <div>
-        <div style="font-size:11px;font-weight:700;color:#001026;">Telemetri Satgas IoT Aktif</div>
-        <div id="mapVanCount" style="font-size:10px;color:#64748b;">38.410 Armada Van &amp; 1.284 SPPG</div>
+        <div style="font-size:11px;font-weight:700;color:#001026;">Lokasi SPPG pada basis data</div>
+        <div id="mapLocationCount" style="font-size:10px;color:#64748b;">Memuat lokasi dari basis data…</div>
       </div>
     </div>
   </div>
@@ -544,8 +521,7 @@
   <!-- Floating badge kanan atas -->
   <div style="position:absolute;top:12px;right:12px;z-index:10;">
     <div style="padding:6px 12px;border-radius:10px;background:rgba(0,16,38,0.88);backdrop-filter:blur(8px);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
-      <span style="width:8px;height:8px;border-radius:50%;background:#34d399;display:inline-block;animation:pulse 1s infinite;"></span>
-      Transmisi GPS Realtime
+      Lokasi berdasarkan koordinat terdaftar
     </div>
   </div>
 
@@ -556,37 +532,12 @@
         <span style="width:10px;height:10px;border-radius:50%;background:#059669;display:inline-block;"></span>
         <span style="color:#1e293b;font-weight:500;">Dapur SPPG</span>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;">
-        <span style="width:10px;height:10px;border-radius:50%;background:#2563eb;display:inline-block;"></span>
-        <span style="color:#1e293b;font-weight:500;">Van Termal (&gt;60°C)</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;">
-        <span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>
-        <span style="color:#1e293b;font-weight:500;">Sekolah Penerima</span>
-      </div>
     </div>
     <span style="font-size:10px;color:#94a3b8;font-family:monospace;">Scroll = Zoom · Drag = Geser</span>
   </div>
 
 </div>
 <!-- Regional Macro Performance Strip -->
-<div class="grid grid-cols-3 gap-space-sm pt-space-xs">
-<div class="p-space-sm rounded-xl bg-surface-container-low flex flex-col">
-<span class="font-label-sm text-label-sm text-on-surface-variant">Realisasi Jawa-Bali</span>
-<span class="font-headline-sm text-headline-sm text-primary font-bold">99.7%</span>
-<span class="font-body-sm text-body-sm text-status-success">2.910.400 porsi</span>
-</div>
-<div class="p-space-sm rounded-xl bg-surface-container-low flex flex-col">
-<span class="font-label-sm text-label-sm text-on-surface-variant">Realisasi Sumatera</span>
-<span class="font-headline-sm text-headline-sm text-primary font-bold">98.9%</span>
-<span class="font-body-sm text-body-sm text-status-success">1.020.150 porsi</span>
-</div>
-<div class="p-space-sm rounded-xl bg-surface-container-low flex flex-col">
-<span class="font-label-sm text-label-sm text-on-surface-variant">Wilayah 3T &amp; Timur</span>
-<span class="font-headline-sm text-headline-sm text-primary font-bold">97.4%</span>
-<span class="font-body-sm text-body-sm text-status-success">919.660 porsi</span>
-</div>
-</div>
 </div>
 </div>
 <!-- Telemetry Table & Regional Standings -->
@@ -595,7 +546,7 @@
 <div class="flex flex-col gap-space-sm">
 <div class="flex items-center justify-between">
 <h3 class="font-headline-sm text-headline-sm text-primary font-bold">Kepatuhan Distribusi Terkini</h3>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Per 11:45 WIB</span>
+<span id="distributionUpdateText" class="font-label-sm text-label-sm text-on-surface-variant">Memuat data…</span>
 </div>
 <!-- Scrollable Table -->
 <div class="overflow-x-auto mt-2">
@@ -609,69 +560,7 @@
 </tr>
 </thead>
 <tbody class="divide-y divide-border-subtle" id="tableRegionalBody">
-<!-- Row 1 -->
-<tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-region="jawa" data-provinsi="DKI Jakarta" title="Klik untuk lihat SPPG">
-<td class="py-3 px-3 font-semibold text-primary">DKI Jakarta</td>
-<td class="py-3 px-3">480.200</td>
-<td class="py-3 px-3 text-status-success font-semibold">99.9%</td>
-<td class="py-3 px-3">
-<span class="px-2 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">Selesai Salur</span>
-</td>
-</tr>
-<!-- Row 2 -->
-<tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-region="jawa" data-provinsi="Jawa Barat" title="Klik untuk lihat SPPG">
-<td class="py-3 px-3 font-semibold text-primary">Jawa Barat</td>
-<td class="py-3 px-3">1.250.000</td>
-<td class="py-3 px-3 text-status-success font-semibold">99.4%</td>
-<td class="py-3 px-3">
-<span class="px-2 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">Selesai Salur</span>
-</td>
-</tr>
-<!-- Row 3 -->
-<tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-region="jawa" data-provinsi="Jawa Timur" title="Klik untuk lihat SPPG">
-<td class="py-3 px-3 font-semibold text-primary">Jawa Timur</td>
-<td class="py-3 px-3">1.180.500</td>
-<td class="py-3 px-3 text-status-success font-semibold">99.1%</td>
-<td class="py-3 px-3">
-<span class="px-2 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">Selesai Salur</span>
-</td>
-</tr>
-<!-- Row 4 -->
-<tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-region="sumatera" data-provinsi="Sumatera Utara" title="Klik untuk lihat SPPG">
-<td class="py-3 px-3 font-semibold text-primary">Sumatera Utara</td>
-<td class="py-3 px-3">540.000</td>
-<td class="py-3 px-3 text-status-success font-semibold">98.8%</td>
-<td class="py-3 px-3">
-<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-secondary-container font-label-sm text-label-sm">94% Salur</span>
-</td>
-</tr>
-<!-- Row 5 -->
-<tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-region="kalimantan" data-provinsi="Kalimantan Timur" title="Klik untuk lihat SPPG">
-<td class="py-3 px-3 font-semibold text-primary">Kalimantan Timur</td>
-<td class="py-3 px-3">210.300</td>
-<td class="py-3 px-3 text-status-success font-semibold">98.6%</td>
-<td class="py-3 px-3">
-<span class="px-2 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">Selesai Salur</span>
-</td>
-</tr>
-<!-- Row 6 -->
-<tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-region="sulawesi" data-provinsi="Sulawesi Selatan" title="Klik untuk lihat SPPG">
-<td class="py-3 px-3 font-semibold text-primary">Sulawesi Selatan</td>
-<td class="py-3 px-3">360.400</td>
-<td class="py-3 px-3 text-status-success font-semibold">98.2%</td>
-<td class="py-3 px-3">
-<span class="px-2 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">Selesai Salur</span>
-</td>
-</tr>
-<!-- Row 7 -->
-<tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-region="timur" data-provinsi="Papua Induk" title="Klik untuk lihat SPPG">
-<td class="py-3 px-3 font-semibold text-primary">Papua Induk</td>
-<td class="py-3 px-3">125.800</td>
-<td class="py-3 px-3 text-status-success font-semibold">96.5%</td>
-<td class="py-3 px-3">
-<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-secondary-container font-label-sm text-label-sm">Jalur Khusus</span>
-</td>
-</tr>
+<tr><td class="px-3 py-8 text-center text-on-surface-variant" colspan="4">Memuat data distribusi dari basis data…</td></tr>
 </tbody>
 </table>
 </div>
@@ -679,154 +568,11 @@
 <div class="mt-space-md pt-space-sm flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
 <span class="flex items-center gap-1">
 <span class="material-symbols-outlined text-[16px] text-status-success">verified</span>
-                Data divalidasi sistem SIM-MBG
+                Data bersumber dari basis data
               </span>
 <a class="text-secondary hover:text-primary font-semibold flex items-center gap-0.5" href="#">
-                Lihat Seluruh 38 Provinsi <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+                Lihat seluruh data <span class="material-symbols-outlined text-[14px]">chevron_right</span>
 </a>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- Detail Menu Preview & Nutritional Balance Today (Spotlight Sajian) -->
-<section class="w-full px-space-md sm:px-space-lg lg:px-margin py-space-xl">
-<div class="max-w-7xl mx-auto flex flex-col gap-space-lg">
-<div class="flex flex-col md:flex-row items-start md:items-end justify-between gap-space-md">
-<div>
-<span class="font-label-sm text-label-sm text-secondary uppercase font-bold tracking-wider">Transparansi Menu &amp; Gizi Hari Ini</span>
-<h2 class="font-headline-xl text-headline-xl text-primary font-bold mt-1">Sajian MBG Terverifikasi Dietisien Nasional</h2>
-</div>
-<div class="flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant">
-<span class="material-symbols-outlined text-status-success text-[18px]">verified</span>
-<span>Sesuai Surat Edaran BGN No. 04/SE/BGN/2025</span>
-</div>
-</div>
-<!-- Bento Visual Food Display & Nutrient Breakdown -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
-<!-- Visual Food Card with Image Placeholder -->
-<div class="lg:col-span-5 flex flex-col rounded-2xl bg-surface-card overflow-hidden shadow-sm">
-<div class="w-full h-64 bg-cover bg-center relative" data-alt="A wholesome Indonesian school lunch meal set for the MBG program: steamed rice, tender grilled turmeric chicken breast, steamed green beans and sweet corn, a bowl of fresh clear vegetable soup with tofu, a sweet Cavendish banana, and a carton of fresh local milk, presented cleanly on an eco-friendly compartment tray with natural daylight in a calm aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAwR5CVQiGD-H1fLUUponcAoEgYaN5aHuUlkSYx7VYibymErkMuxd4kpHCINI0yNwww28_Q20uaOh0k6QpFqdvgze341zsESFy56Wh7KKDq13nMkXC2fmc3f0kDvQKaCVaayI2ON_fnRnWIfuUo0Uq4TrCGbz9CKsnotxUVJNd0XPHiaWRAXyHcoK--j04X6sgwHcdFptTmLPtO5jB9ICGczB-XGXe7_7N-42Vddd89h3t6MQo4pX3P')">
-<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent flex items-end p-space-lg">
-<div class="flex flex-col text-on-primary">
-<span class="font-label-sm text-label-sm text-tertiary-fixed font-bold tracking-wider uppercase">Menu Nasional: Siklus Hari ke-14</span>
-<h3 class="font-headline-lg text-headline-lg font-bold">Ayam Panggang Kunyit &amp; Sayur Bening Jagung Manis</h3>
-</div>
-</div>
-</div>
-<div class="p-space-lg flex flex-col gap-space-md">
-<div class="flex items-center justify-between pb-space-sm">
-<div class="flex items-center gap-2">
-<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-secondary">
-<span class="material-symbols-outlined text-[18px]">person</span>
-</div>
-<div class="flex flex-col">
-<span class="font-label-sm text-label-sm text-primary font-bold">dr. Rian Satria, Sp.GK</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Dietisien Kepala BGN Wilayah Barat</span>
-</div>
-</div>
-<span class="px-2.5 py-1 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">Lolos Uji Sensoris</span>
-</div>
-<!-- Meal Content List -->
-<div class="grid grid-cols-2 gap-2 text-on-surface font-body-sm text-body-sm">
-<div class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low">
-<span class="material-symbols-outlined text-secondary text-[16px]">grain</span>
-<span>Nasi Putih Pulen Lokal (150g)</span>
-</div>
-<div class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low">
-<span class="material-symbols-outlined text-secondary text-[16px]">egg</span>
-<span>Ayam Panggang Bumbu Rempah (80g)</span>
-</div>
-<div class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low">
-<span class="material-symbols-outlined text-secondary text-[16px]">eco</span>
-<span>Sayur Jagung Manis &amp; Labu (100g)</span>
-</div>
-<div class="flex items-center gap-2 p-2 rounded-lg bg-surface-container-low">
-<span class="material-symbols-outlined text-secondary text-[16px]">lunch_dining</span>
-<span>Pisang Cavendish Lokal &amp; Susu Segar</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Nutrient Metrics and Lab Verification Breakdown -->
-<div class="lg:col-span-7 flex flex-col justify-between p-space-lg rounded-2xl bg-surface-card shadow-sm gap-space-lg">
-<div class="flex flex-col gap-space-md">
-<div class="flex items-center justify-between">
-<div>
-<h3 class="font-headline-md text-headline-md text-primary font-bold">Keseimbangan Angka Kecukupan Gizi (AKG)</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Porsi standar jenjang Sekolah Dasar (7-12 Tahun) - Standar 30-35% Kebutuhan Harian</p>
-</div>
-<span class="px-3 py-1 rounded-full bg-tertiary-container text-tertiary-fixed font-label-sm text-label-sm font-semibold">
-                680 kkal
-              </span>
-</div>
-<!-- Nutrition Progress Bars -->
-<div class="flex flex-col gap-space-md pt-2">
-<!-- Protein -->
-<div class="flex flex-col gap-1">
-<div class="flex justify-between font-label-sm text-label-sm">
-<span class="text-primary font-bold">Protein Hewani &amp; Nabati</span>
-<span class="text-status-success font-semibold">28.4 g (102% Target Porsi)</span>
-</div>
-<div class="w-full h-2.5 rounded-full bg-surface-container-low overflow-hidden">
-<div class="h-full rounded-full bg-primary" style="width: 100%"></div>
-</div>
-</div>
-<!-- Karbohidrat -->
-<div class="flex flex-col gap-1">
-<div class="flex justify-between font-label-sm text-label-sm">
-<span class="text-primary font-bold">Karbohidrat Kompleks</span>
-<span class="text-on-surface-variant font-semibold">82.5 g (98% Target Porsi)</span>
-</div>
-<div class="w-full h-2.5 rounded-full bg-surface-container-low overflow-hidden">
-<div class="h-full rounded-full bg-secondary" style="width: 98%"></div>
-</div>
-</div>
-<!-- Lemak Baik -->
-<div class="flex flex-col gap-1">
-<div class="flex justify-between font-label-sm text-label-sm">
-<span class="text-primary font-bold">Lemak Esensial Sehat</span>
-<span class="text-on-surface-variant font-semibold">18.2 g (95% Target Porsi)</span>
-</div>
-<div class="w-full h-2.5 rounded-full bg-surface-container-low overflow-hidden">
-<div class="h-full rounded-full bg-secondary-container" style="width: 95%"></div>
-</div>
-</div>
-<!-- Kalsium & Mikronutrien -->
-<div class="flex flex-col gap-1">
-<div class="flex justify-between font-label-sm text-label-sm">
-<span class="text-primary font-bold">Kalsium &amp; Zat Besi</span>
-<span class="text-status-success font-semibold">320 mg (100% Target Porsi)</span>
-</div>
-<div class="w-full h-2.5 rounded-full bg-surface-container-low overflow-hidden">
-<div class="h-full rounded-full bg-primary" style="width: 100%"></div>
-</div>
-</div>
-</div>
-</div>
-<!-- Bottom Transparency Matrix -->
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm pt-space-md">
-<div class="p-space-sm rounded-xl bg-surface-container-low flex items-start gap-2.5">
-<span class="material-symbols-outlined text-status-success text-[20px] mt-0.5">check_circle</span>
-<div class="flex flex-col">
-<span class="font-label-sm text-label-sm text-primary font-bold">Bebas 3 Cemaran</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">0 Formalin, 0 Boraks, 0 Pewarna Tekstil</span>
-</div>
-</div>
-<div class="p-space-sm rounded-xl bg-surface-container-low flex items-start gap-2.5">
-<span class="material-symbols-outlined text-secondary text-[20px] mt-0.5">agriculture</span>
-<div class="flex flex-col">
-<span class="font-label-sm text-label-sm text-primary font-bold">Serapan Lokal</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">100% Bahan Tani &amp; Ternak UMKM Daerah</span>
-</div>
-</div>
-<div class="p-space-sm rounded-xl bg-surface-container-low flex items-start gap-2.5">
-<span class="material-symbols-outlined text-secondary text-[20px] mt-0.5">health_and_safety</span>
-<div class="flex flex-col">
-<span class="font-label-sm text-label-sm text-primary font-bold">Protokol Alergen</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Sedia Menu Substitusi Bebas Kacang/Telur</span>
-</div>
 </div>
 </div>
 </div>
@@ -898,7 +644,7 @@
 </div>
 </div>
 </section>
-<!-- Interactive Search / Filter Modal Dialog (Quick Menu Lookup Simulation) -->
+<!-- Database-backed menu lookup -->
 <div class="fixed inset-0 z-50 bg-primary/70 backdrop-blur-md hidden items-center justify-center p-space-md" id="schoolModalBackdrop">
 <div class="w-full max-w-lg bg-surface-card rounded-2xl p-space-lg shadow-2xl flex flex-col gap-space-md animate-fade-in">
 <div class="flex items-center justify-between pb-space-sm">
@@ -913,38 +659,16 @@
 </button>
 </div>
 <div class="flex flex-col gap-space-sm">
-<label class="font-label-sm text-label-sm text-on-surface-variant">Pilih Provinsi &amp; Kabupaten/Kota</label>
-<div class="grid grid-cols-2 gap-space-xs">
-<select class="px-3 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-sm text-body-sm border border-border-subtle focus:outline-none focus:ring-2 focus:ring-border-focus">
-<option>DKI Jakarta</option>
-<option>Jawa Barat</option>
-<option>Jawa Timur</option>
-<option>Sumatera Utara</option>
-</select>
-<select class="px-3 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-sm text-body-sm border border-border-subtle focus:outline-none focus:ring-2 focus:ring-border-focus">
-<option>Jakarta Selatan</option>
-<option>Jakarta Pusat</option>
-<option>Jakarta Barat</option>
-<option>Jakarta Timur</option>
-</select>
-</div>
 <label class="font-label-sm text-label-sm text-on-surface-variant mt-2">Nama Sekolah / Lembaga Pendidikan</label>
-<input class="px-3 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-sm text-body-sm border border-border-subtle focus:outline-none focus:ring-2 focus:ring-border-focus" id="modalSchoolQuery" type="text" value="SDN 01 Senayan"/>
+<input class="px-3 py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-sm text-body-sm border border-border-subtle focus:outline-none focus:ring-2 focus:ring-border-focus" id="modalSchoolQuery" type="text" placeholder="Masukkan nama sekolah atau SPPG"/>
 <!-- Result Box in Modal -->
-<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-2 mt-2">
-<div class="flex items-center justify-between">
-<span class="font-label-sm text-label-sm text-status-success font-bold flex items-center gap-1">
-<span class="material-symbols-outlined text-[16px]">check_circle</span> Terjadwal Salur Pukul 10.30 WIB
-            </span>
-<span class="font-label-sm text-label-sm text-secondary">SPPG Kebayoran 02</span>
-</div>
-<span class="font-headline-sm text-headline-sm text-primary font-bold">Paket Porsi Standar SD</span>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Ayam Panggang Kunyit, Nasi Pulen, Tumis Jagung Labu Manis, Buah Pisang, Susu Segar Pasteurisasi (680 kkal).</p>
+<div id="menuLookupResult" class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-2 mt-2" aria-live="polite">
+<p class="font-body-sm text-body-sm text-on-surface-variant">Hasil pencarian akan dimuat dari basis data.</p>
 </div>
 </div>
 <div class="flex items-center gap-space-sm pt-space-xs">
 <button class="flex-1 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-semibold transition-colors" id="btnConfirmModal">
-          Tampilkan Lembar Verifikasi
+          Buka Hasil Pencarian
         </button>
 </div>
 </div>
@@ -952,38 +676,11 @@
 </div>
 <script>
 (function() {
-  // Region Table Filter Logic
-  const regionButtons = document.querySelectorAll('.region-filter-btn');
-  const tableRows = document.querySelectorAll('#tableRegionalBody tr');
-
-  regionButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const region = btn.getAttribute('data-region');
-      
-      regionButtons.forEach(b => {
-        b.classList.remove('bg-primary', 'text-on-primary');
-        b.classList.add('text-on-surface-variant');
-      });
-      btn.classList.remove('text-on-surface-variant');
-      btn.classList.add('bg-primary', 'text-on-primary');
-
-      tableRows.forEach(row => {
-        const rowRegion = row.getAttribute('data-region');
-        if (region === 'semua' || rowRegion === region) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    });
-  });
-
   // Modal Toggle Interaction
   const modalBackdrop = document.getElementById('schoolModalBackdrop');
   const openModalBtn = document.getElementById('btnSchoolModal');
   const closeModalBtn = document.getElementById('btnCloseModal');
   const confirmModalBtn = document.getElementById('btnConfirmModal');
-  const searchInput = document.getElementById('schoolSearchInput');
 
   function openModal() {
     if (modalBackdrop) {
@@ -1009,17 +706,6 @@
     });
   }
 
-  // Quick chips search fill
-  const chips = document.querySelectorAll('.suggestion-chip');
-  chips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      const val = chip.getAttribute('data-value');
-      if (searchInput) {
-        searchInput.value = val;
-        searchInput.focus();
-      }
-    });
-  });
 })();
 </script>
 
@@ -1139,7 +825,7 @@
     navSearch.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         const q = encodeURIComponent(navSearch.value.trim());
-        if (q) window.location.href = 'menu-hari-ini.html?q=' + q;
+        if (q) window.location.href = 'fitur/menu-hari-ini.html?q=' + q;
       }
     });
   }
@@ -1150,53 +836,52 @@
   const btnSchoolModal = document.getElementById('btnSchoolModal');
   const modalBackdrop = document.getElementById('schoolModalBackdrop');
   const btnConfirmModal = document.getElementById('btnConfirmModal');
-  const modalResultContainer = modalBackdrop ? modalBackdrop.querySelector('.p-space-md.rounded-xl.bg-surface-container-low') : null;
+  const modalResultContainer = document.getElementById('menuLookupResult');
 
-  function fetchSchoolData(query) {
-    if (!query) query = 'SDN 01 Senayan';
-    const apiEndpoint = 'api/menu.php?q=' + encodeURIComponent(query);
-    fetch(apiEndpoint)
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(res => {
-        if (res.data && res.data.length > 0 && modalResultContainer) {
-          const item = res.data[0];
-          modalResultContainer.innerHTML = `
-            <div class="flex items-center justify-between">
-              <span class="font-label-sm text-label-sm text-status-success font-bold flex items-center gap-1">
-                <span class="material-symbols-outlined text-[16px]">check_circle</span> Terjadwal Salur Pukul ${item.time || '10.30 WIB'}
-              </span>
-              <span class="font-label-sm text-label-sm text-secondary">${item.sppg ? item.sppg.name : 'SPPG Kebayoran 02'}</span>
-            </div>
-            <span class="font-headline-sm text-headline-sm text-primary font-bold">${item.school || item.name} - ${item.menu || item.packageName || 'Menu MBG'}</span>
-            <p class="font-body-sm text-body-sm text-on-surface-variant">${item.description || item.desc || 'Porsi standar gizi seimbang BGN.'}</p>
-            <div class="flex flex-wrap gap-2 pt-1 border-t border-border-subtle mt-1 text-[11px] text-on-surface-variant">
-              <span>Kalori: <strong class="text-primary">${item.calories || '629 kkal'}</strong></span> •
-              <span>Suhu: <strong class="text-status-success">${item.temperature || '66.8°C'}</strong></span> •
-              <span>Dietisien: <strong class="text-secondary">${item.sppg ? item.sppg.dietitian : 'Terverifikasi'}</strong></span>
-            </div>
-          `;
-        }
-      })
-      .catch(() => {
-        // Fallback data jika offline / static hosting
-        if (modalResultContainer) {
-          modalResultContainer.innerHTML = `
-            <div class="flex items-center justify-between">
-              <span class="font-label-sm text-label-sm text-status-success font-bold flex items-center gap-1">
-                <span class="material-symbols-outlined text-[16px]">check_circle</span> Terjadwal Salur Pukul 10.30 WIB
-              </span>
-              <span class="font-label-sm text-label-sm text-secondary">SPPG Terverifikasi BGN</span>
-            </div>
-            <span class="font-headline-sm text-headline-sm text-primary font-bold">${query} - Paket Menu Bergizi</span>
-            <p class="font-body-sm text-body-sm text-on-surface-variant">Nasi putih, ayam bumbu rempah, tempe ongseng, tumis sayuran segar, dan buah lokal.</p>
-            <div class="flex flex-wrap gap-2 pt-1 border-t border-border-subtle mt-1 text-[11px] text-on-surface-variant">
-              <span>Kalori: <strong class="text-primary">629 kkal</strong></span> •
-              <span>Suhu: <strong class="text-status-success">66.8°C</strong></span> •
-              <span>Dietisien: <strong class="text-secondary">Nutrisionis Satgas</strong></span>
-            </div>
-          `;
-        }
+  function showMenuMessage(message) {
+    if (!modalResultContainer) return;
+    const paragraph = document.createElement('p');
+    paragraph.className = 'font-body-sm text-body-sm text-on-surface-variant';
+    paragraph.textContent = message;
+    modalResultContainer.replaceChildren(paragraph);
+  }
+
+  async function fetchSchoolData(query) {
+    const search = query.trim();
+    if (!search) {
+      showMenuMessage('Masukkan nama sekolah atau SPPG untuk mencari data.');
+      return;
+    }
+    showMenuMessage('Mencari data dari basis data…');
+    try {
+      const response = await fetch('api/home_menu.php?q=' + encodeURIComponent(search), {
+        headers: { Accept: 'application/json' }
       });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+      if (result.status !== 'success' || !Array.isArray(result.data)) {
+        throw new Error(result.message || 'Respons data menu tidak valid');
+      }
+      const item = result.data[0];
+      if (!item) {
+        showMenuMessage('Tidak ada menu yang tercatat untuk pencarian ini.');
+        return;
+      }
+
+      const heading = document.createElement('h5');
+      heading.className = 'font-headline-sm text-headline-sm text-primary font-bold';
+      heading.textContent = [item.school, item.menu].filter(Boolean).join(' — ');
+      const description = document.createElement('p');
+      description.className = 'font-body-sm text-body-sm text-on-surface-variant';
+      description.textContent = item.description || 'Tidak ada keterangan menu pada basis data.';
+      const details = document.createElement('p');
+      details.className = 'font-body-sm text-body-sm text-on-surface-variant';
+      details.textContent = [item.city, item.provinsi, item.sppg && item.sppg.name].filter(Boolean).join(' · ');
+      modalResultContainer.replaceChildren(heading, description, details);
+    } catch (error) {
+      console.error('[BGN] Gagal mencari menu sekolah:', error);
+      showMenuMessage('Data menu tidak dapat dimuat dari basis data.');
+    }
   }
 
   if (btnSchoolModal) {
@@ -1208,7 +893,7 @@
   }
 
   if (modalSchoolQuery) {
-    modalSchoolQuery.addEventListener('input', () => {
+    modalSchoolQuery.addEventListener('change', () => {
       fetchSchoolData(modalSchoolQuery.value.trim());
     });
   }
@@ -1216,42 +901,10 @@
   if (btnConfirmModal) {
     btnConfirmModal.addEventListener('click', () => {
       const q = modalSchoolQuery ? modalSchoolQuery.value.trim() : '';
-      window.location.href = 'menu-hari-ini.html?q=' + encodeURIComponent(q);
+      window.location.href = 'fitur/menu-hari-ini.html?q=' + encodeURIComponent(q);
     });
   }
 
-  // Region Telemetry Button Styling
-  const regionBtns = document.querySelectorAll('.region-telemetry-btn');
-  const telemetryTempBadge = document.getElementById('telemetryTempBadge');
-  const btnMapLink = document.getElementById('btnMapGoogleLink');
-  const mapLinkText = document.getElementById('mapLinkText');
-
-  const regionOsmLinks = {
-    dki:      'https://www.openstreetmap.org/#map=12/-6.2088/106.8456',
-    jabar:    'https://www.openstreetmap.org/#map=11/-6.9175/107.6191',
-    jateng:   'https://www.openstreetmap.org/#map=11/-6.9932/110.4203',
-    jatim:    'https://www.openstreetmap.org/#map=11/-7.2575/112.7521',
-    nasional: 'https://www.openstreetmap.org/#map=5/-2.5489/118.0149'
-  };
-
-  regionBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      regionBtns.forEach(b => {
-        b.className = 'region-telemetry-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface text-xs font-semibold transition-all';
-      });
-      btn.className = 'region-telemetry-btn px-2.5 py-1 rounded-lg bg-primary text-on-primary text-xs font-semibold shadow-sm transition-all';
-
-      const temp = btn.getAttribute('data-temp');
-      const region = btn.getAttribute('data-region');
-      const label = btn.getAttribute('data-label');
-
-      if (telemetryTempBadge && temp) telemetryTempBadge.textContent = 'Rata-rata ' + temp;
-      if (btnMapLink && regionOsmLinks[region]) {
-        btnMapLink.href = regionOsmLinks[region];
-        if (mapLinkText) mapLinkText.textContent = 'Buka ' + label + ' di OSM';
-      }
-    });
-  });
 })();
 </script>
 <script src="assets/js/security.js"></script>

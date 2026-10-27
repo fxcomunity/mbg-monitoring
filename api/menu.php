@@ -52,48 +52,31 @@ function mapInstansiRow(array $r): array {
     $komposisiRaw = $r['komposisi'] ?: $r['nama_menu'];
     $komposisiList = parseKomposisiList($komposisiRaw);
 
-    $calories = !empty($r['energi_kkal']) ? (int)round((float)$r['energi_kkal']) : 629;
-    $protein = !empty($r['protein_g']) ? (float)$r['protein_g'] : 26.15;
-    $lemak = !empty($r['lemak_g']) ? (float)$r['lemak_g'] : 24.65;
-    $karbohidrat = !empty($r['karbohidrat_g']) ? (float)$r['karbohidrat_g'] : 76.85;
-    $serat = !empty($r['serat_g']) ? (float)$r['serat_g'] : 3.15;
-
-    $ageGroup = ($jenjang === 'paud')
-        ? 'Dipersiapkan khusus untuk kelompok usia dini (PAUD/KB 3-6 tahun) dengan tekstur lembut & mikronutrien seimbang.'
-        : 'Dipersiapkan khusus untuk kelompok usia SD (7-12 tahun) dengan pemenuhan 32% Angka Kecukupan Gizi (AKG) Harian Nasional.';
-
-    $defaultPhoto = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCkLbSHziTgMS4wjfXnmGJaa87bd_N3KasCcc2H4qhnJv0-x1bXQDvleyxCuK58099ZoZfRbhBN8WpUfixGsZsefv_a7MSmNJ3smRd3oXRskR5Vg7Nxz16LFyr9C-wrk8QimhpK8Y0YYqWL4eT4Hl9kHVFimf3FAjdcJfglmxj3dWfqWiVQN0QL-uaA1bRCAWeW3sSvk0sUJAEDLbARjtbg1VzCHnlLwoPl9Ghqvw8_OF7pN35D3hpA';
-
     return [
         'key'          => $r['id_instansi'],
         'name'         => $r['nama_instansi'],
-        'provinsi'     => $r['kode_prov_dagri'] ?: '51',
-        'provinsiName' => $r['nama_provinsi'] ?: 'BALI',
-        'kota'         => $r['kode_kabko_dagri'] ?: '51.06',
-        'kotaName'     => $r['nama_kabko'] ?: 'BANGLI',
-        'kecamatan'    => $r['nama_kecamatan'] ?: 'Kintamani',
+        'provinsi'     => $r['kode_prov_dagri'],
+        'provinsiName' => $r['nama_provinsi'],
+        'kota'         => $r['kode_kabko_dagri'],
+        'kotaName'     => $r['nama_kabko'],
+        'kecamatan'    => $r['nama_kecamatan'],
         'jenjang'      => $jenjang,
-        'ageGroup'     => $ageGroup,
-        'arrival'      => 'Telah Tiba di Sekolah (Pukul 09:30 WITA)',
+        'ageGroup'     => null,
+        'arrival'      => null,
         'cycle'        => 'Siklus Menu: Tanggal ' . date('d F Y', strtotime($r['tanggal_menu'] ?? 'today')),
         'packageName'  => $r['nama_menu'],
         'desc'         => 'Komposisi resmi: ' . $komposisiRaw,
-        'calories'     => $calories,
-        'protein'      => $protein,
-        'lemak'        => $lemak,
-        'karbohidrat'   => $karbohidrat,
-        'serat'        => $serat,
-        'porsi'        => $r['porsi'] ?: 'large',
+        'calories'     => $r['energi_kkal'] !== null ? (int)round((float)$r['energi_kkal']) : null,
+        'protein'      => $r['protein_g'],
+        'lemak'        => $r['lemak_g'],
+        'karbohidrat'   => $r['karbohidrat_g'],
+        'serat'        => $r['serat_g'],
+        'porsi'        => $r['porsi'],
         'komposisiList'=> $komposisiList,
-        'photo'        => (!empty($r['gambar_url']) && filter_var($r['gambar_url'], FILTER_VALIDATE_URL)) ? $r['gambar_url'] : $defaultPhoto,
+        'photo'        => (!empty($r['gambar_url']) && filter_var($r['gambar_url'], FILTER_VALIDATE_URL)) ? $r['gambar_url'] : null,
         'sppg'         => [
-            'name'           => $r['nama_sppg'] ?: 'SPPG BANGLI BANGLI LANDIH',
-            'address'        => $r['alamat'] ?: 'JLN. RAYA PENAGA LANDIH',
-            'radius'         => 'Radius 2.8 km',
-            'dietitian'      => 'Nutrisionis Dapur SPPG Bangli',
-            'dietitianTitle' => 'Tenaga Gizi Terdaftar Satgas BGN',
-            'lab'            => 'BGN-BALI-2410-0812 (Negatif Formalin & E.coli)',
-            'temp'           => '66.8°C'
+            'name'           => $r['nama_sppg'],
+            'address'        => $r['alamat'],
         ]
     ];
 }
@@ -151,32 +134,32 @@ try {
                 'data'   => [
                     'key'          => $rowSppg['school_key'] ?: ('sch-' . $rowSppg['id']),
                     'name'         => $rowSppg['school_target'],
-                    'provinsi'     => $rowSppg['province_code'] ?: 'dki',
-                    'provinsiName' => $rowSppg['province_name'] ?: 'DKI Jakarta',
-                    'kota'         => $rowSppg['city_code'] ?: 'jaksel',
-                    'kotaName'     => $rowSppg['city'] ?: 'Jakarta',
-                    'kecamatan'    => $rowSppg['kecamatan'] ?: 'Pusat',
-                    'jenjang'      => $rowSppg['jenjang'] ?: 'sd',
-                    'ageGroup'     => $rowSppg['age_group'] ?: 'Dipersiapkan khusus dengan pemenuhan standar AKG Harian BGN.',
-                    'arrival'      => $rowSppg['arrival_status'] ?: 'Telah Tiba di Sekolah (Pukul 09:30 WIB)',
-                    'cycle'        => $rowSppg['menu_cycle'] ?: 'Siklus Menu: Pekan ke-4',
+                    'provinsi'     => $rowSppg['province_code'],
+                    'provinsiName' => $rowSppg['province_name'],
+                    'kota'         => $rowSppg['city_code'],
+                    'kotaName'     => $rowSppg['city'],
+                    'kecamatan'    => $rowSppg['kecamatan'],
+                    'jenjang'      => $rowSppg['jenjang'],
+                    'ageGroup'     => $rowSppg['age_group'],
+                    'arrival'      => $rowSppg['arrival_status'],
+                    'cycle'        => $rowSppg['menu_cycle'],
                     'packageName'  => $rowSppg['menu_title'],
-                    'desc'         => $rowSppg['description'] ?: 'Porsi standar gizi seimbang terkalibrasi BGN.',
-                    'calories'     => (int)$rowSppg['calories'],
-                    'protein'      => 24.5,
-                    'lemak'        => 16.0,
-                    'karbohidrat'   => 78.0,
-                    'serat'        => 4.5,
-                    'komposisiList'=> parseKomposisiList($rowSppg['menu_title'] . '; ' . $rowSppg['description']),
-                    'photo'        => $rowSppg['photo_url'] ?: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCkLbSHziTgMS4wjfXnmGJaa87bd_N3KasCcc2H4qhnJv0-x1bXQDvleyxCuK58099ZoZfRbhBN8WpUfixGsZsefv_a7MSmNJ3smRd3oXRskR5Vg7Nxz16LFyr9C-wrk8QimhpK8Y0YYqWL4eT4Hl9kHVFimf3FAjdcJfglmxj3dWfqWiVQN0QL-uaA1bRCAWeW3sSvk0sUJAEDLbARjtbg1VzCHnlLwoPl9Ghqvw8_OF7pN35D3hpA',
+                    'desc'         => $rowSppg['description'],
+                    'calories'     => $rowSppg['calories'] !== null ? (int)$rowSppg['calories'] : null,
+                    'protein'      => null,
+                    'lemak'        => null,
+                    'karbohidrat'   => null,
+                    'serat'        => null,
+                    'komposisiList'=> parseKomposisiList($rowSppg['menu_title'] . '; ' . ($rowSppg['description'] ?? '')),
+                    'photo'        => $rowSppg['photo_url'],
                     'sppg'         => [
                         'name'           => $rowSppg['sppg_name'],
-                        'address'        => $rowSppg['sppg_address'] ?: 'Dapur SPPG BGN',
-                        'radius'         => $rowSppg['sppg_radius'] ?: 'Radius 2.5 km',
-                        'dietitian'      => $rowSppg['dietitian'] ?: 'Dietisien BGN',
-                        'dietitianTitle' => $rowSppg['dietitian_title'] ?: 'Dietisien Verifikator BGN',
-                        'lab'            => $rowSppg['lab_test_cert'] ?: 'Lolos Uji Mutu & Sensoris BGN',
-                        'temp'           => ($rowSppg['temperature'] ?: 65.0) . '°C'
+                        'address'        => $rowSppg['sppg_address'],
+                        'radius'         => $rowSppg['sppg_radius'],
+                        'dietitian'      => $rowSppg['dietitian'],
+                        'dietitianTitle' => $rowSppg['dietitian_title'],
+                        'lab'            => $rowSppg['lab_test_cert'],
+                        'temp'           => $rowSppg['temperature'] !== null ? $rowSppg['temperature'] . '°C' : null
                     ]
                 ]
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
@@ -221,10 +204,10 @@ try {
             $key = $rh['id_instansi'];
             $schoolsMap[$key] = mapInstansiRow($rh);
 
-            $pCode = $rh['kode_prov_dagri'] ?: '51';
-            $pName = $rh['nama_provinsi'] ?: 'BALI';
-            $cCode = $rh['kode_kabko_dagri'] ?: '51.06';
-            $cName = $rh['nama_kabko'] ?: 'BANGLI';
+            $pCode = $rh['kode_prov_dagri'];
+            $pName = $rh['nama_provinsi'];
+            $cCode = $rh['kode_kabko_dagri'];
+            $cName = $rh['nama_kabko'];
 
             if (!isset($regionCascade[$pCode])) {
                 $regionCascade[$pCode] = [
@@ -256,10 +239,10 @@ try {
             $key = $r['school_key'] ?: ('sch-' . $r['id']);
             if (isset($schoolsMap[$key])) continue;
 
-            $pCode = $r['province_code'] ?: 'dki';
-            $pName = $r['province_name'] ?: 'DKI Jakarta';
-            $cCode = $r['city_code'] ?: 'jaksel';
-            $cName = $r['city'] ?: 'Jakarta';
+            $pCode = $r['province_code'];
+            $pName = $r['province_name'];
+            $cCode = $r['city_code'];
+            $cName = $r['city'];
 
             $schoolsMap[$key] = [
                 'key'          => $key,
@@ -268,28 +251,28 @@ try {
                 'provinsiName' => $pName,
                 'kota'         => $cCode,
                 'kotaName'     => $cName,
-                'kecamatan'    => $r['kecamatan'] ?: '',
-                'jenjang'      => $r['jenjang'] ?: 'sd',
-                'ageGroup'     => $r['age_group'] ?: 'Dipersiapkan dengan standar gizi AKG BGN.',
-                'arrival'      => $r['arrival_status'] ?: 'Telah Tiba di Sekolah (Pukul 09:30 WIB)',
-                'cycle'        => $r['menu_cycle'] ?: 'Siklus Menu Aktif',
+                'kecamatan'    => $r['kecamatan'],
+                'jenjang'      => $r['jenjang'],
+                'ageGroup'     => $r['age_group'],
+                'arrival'      => $r['arrival_status'],
+                'cycle'        => $r['menu_cycle'],
                 'packageName'  => $r['menu_title'],
-                'desc'         => $r['description'] ?: 'Menu higienis kaya mikronutrien standar BGN.',
-                'calories'     => (int)$r['calories'],
-                'protein'      => 24.5,
-                'lemak'        => 16.0,
-                'karbohidrat'   => 78.0,
-                'serat'        => 4.5,
-                'komposisiList'=> parseKomposisiList($r['menu_title'] . '; ' . $r['description']),
-                'photo'        => $r['photo_url'] ?: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCkLbSHziTgMS4wjfXnmGJaa87bd_N3KasCcc2H4qhnJv0-x1bXQDvleyxCuK58099ZoZfRbhBN8WpUfixGsZsefv_a7MSmNJ3smRd3oXRskR5Vg7Nxz16LFyr9C-wrk8QimhpK8Y0YYqWL4eT4Hl9kHVFimf3FAjdcJfglmxj3dWfqWiVQN0QL-uaA1bRCAWeW3sSvk0sUJAEDLbARjtbg1VzCHnlLwoPl9Ghqvw8_OF7pN35D3hpA',
+                'desc'         => $r['description'],
+                'calories'     => $r['calories'] !== null ? (int)$r['calories'] : null,
+                'protein'      => null,
+                'lemak'        => null,
+                'karbohidrat'   => null,
+                'serat'        => null,
+                'komposisiList'=> parseKomposisiList($r['menu_title'] . '; ' . ($r['description'] ?? '')),
+                'photo'        => $r['photo_url'],
                 'sppg'         => [
                     'name'           => $r['sppg_name'],
-                    'address'        => $r['sppg_address'] ?: 'Dapur SPPG BGN',
-                    'radius'         => $r['sppg_radius'] ?: 'Radius 2.5 km',
-                    'dietitian'      => $r['dietitian'] ?: 'Nutrisionis BGN',
-                    'dietitianTitle' => $r['dietitian_title'] ?: 'Dietisien Verifikator BGN',
-                    'lab'            => $r['lab_test_cert'] ?: 'Lolos Uji Sensoris & Kimia BGN',
-                    'temp'           => ($r['temperature'] ?: 65.0) . '°C'
+                    'address'        => $r['sppg_address'],
+                    'radius'         => $r['sppg_radius'],
+                    'dietitian'      => $r['dietitian'],
+                    'dietitianTitle' => $r['dietitian_title'],
+                    'lab'            => $r['lab_test_cert'],
+                    'temp'           => $r['temperature'] !== null ? $r['temperature'] . '°C' : null
                 ]
             ];
 
@@ -397,13 +380,10 @@ try {
             'date'        => $r['tanggal_menu'],
             'menu'        => $r['nama_menu'],
             'description' => $r['komposisi'],
-            'calories'    => ($r['energi_kkal'] ?: 629) . ' kkal',
-            'temperature' => '66.8°C',
+            'calories'    => $r['energi_kkal'] !== null ? $r['energi_kkal'] . ' kkal' : null,
             'sppg'        => [
-                'name'      => $r['nama_sppg'],
-                'dietitian' => 'Nutrisionis Dapur SPPG Bangli'
+                'name'      => $r['nama_sppg']
             ],
-            'status'      => 'terkirim'
         ];
     }
 
@@ -417,27 +397,10 @@ try {
     exit;
 
 } catch (Throwable $e) {
-    // SQLSTATE 42P01 = undefined_table, 42703 = undefined_column
-    // Both indicate DB not yet fully seeded; return empty payload (200)
-    $sqlState = ($e instanceof \PDOException) ? $e->getCode() : '';
-    $msg = $e->getMessage();
-    if ($sqlState === '42P01' || $sqlState === '42703' ||
-        strpos($msg, '42P01') !== false || strpos($msg, '42703') !== false ||
-        stripos($msg, 'undefined table') !== false || stripos($msg, 'undefined column') !== false ||
-        stripos($msg, 'does not exist') !== false) {
-        http_response_code(200);
-        echo json_encode([
-            'status'         => 'success',
-            'source'         => 'empty',
-            'schools'        => (object)[],
-            'region_cascade' => (object)[],
-            'total_schools'  => 0
-        ], JSON_UNESCAPED_UNICODE);
-    } else {
-        http_response_code(500);
-        echo json_encode([
-            'status'  => 'error',
-            'message' => 'Gagal mengambil data dari database: ' . $e->getMessage()
-        ], JSON_UNESCAPED_UNICODE);
-    }
+    error_log('[api/menu.php error] ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'status'  => 'error',
+        'message' => 'Gagal mengambil data menu dari basis data'
+    ], JSON_UNESCAPED_UNICODE);
 }

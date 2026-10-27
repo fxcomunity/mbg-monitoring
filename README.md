@@ -39,7 +39,7 @@
 | Fitur | Web | Android |
 |---|:---:|:---:|
 | Dashboard KPI Nasional (sekolah, porsi, AKG) | ✅ | ✅ |
-| Peta 30.231 SPPG dengan marker clustering | ✅ | ✅ |
+| Peta lokasi SPPG dengan koordinat di basis data | ✅ | ✅ |
 | Distribusi provinsi interaktif (klik → list SPPG) | ✅ | — |
 | Menu MBG hari ini per sekolah | ✅ | ✅ |
 | Laporan & aduan publik + sistem tiket | ✅ | ✅ |
@@ -90,10 +90,11 @@ mbg-monitoring/
 ├── map/                        # Peta realtime 30K SPPG
 ├── api/                        # PHP API endpoints
 │   ├── menu.php                # Menu harian
+│   ├── home_menu.php           # Menu beranda dari basis data
 │   ├── telemetri.php           # KPI nasional
 │   ├── distribusi.php          # Distribusi per provinsi
 │   ├── sppg_provinsi.php       # List SPPG per provinsi (modal interaktif)
-│   ├── sppg_map.php            # GeoJSON 30K marker peta
+│   ├── sppg_map.php            # GeoJSON lokasi SPPG dari basis data
 │   ├── sppg_status.php         # Status operasional SPPG
 │   ├── security_threats.php    # Log ancaman keamanan
 │   ├── maintenance.php         # Maintenance mode toggle
@@ -105,7 +106,7 @@ mbg-monitoring/
 │   ├── schema_all.sql          # Schema lengkap semua tabel
 │   ├── schema_sppg.sql         # Schema tabel SPPG
 │   ├── schema_menu.sql         # Schema tabel menu harian
-│   ├── setup_users.sql         # Seed akun default
+│   ├── setup_users.sql         # Penyesuaian kolom akun
 │   └── scripts/
 │       ├── cleanup.php         # Cleanup data DB
 │       └── geocode_sppg.py     # Geocoding koordinat SPPG
@@ -192,11 +193,11 @@ android/app/build/outputs/apk/debug/Radar-MBG-V2.apk
 
 ## 🗄️ Database
 
-**Neon PostgreSQL** — 30.546 data SPPG dari seluruh Indonesia
+**Neon PostgreSQL** — seluruh informasi ditampilkan berdasarkan data yang tersedia pada basis data yang dikonfigurasi.
 
 | Tabel | Isi |
 |---|---|
-| `sppg` | 30.231 SPPG MBGWatch + 315 historis |
+| `sppg` | Data lokasi SPPG |
 | `users` | Akun admin, mitra SPPG, wali murid |
 | `menu_sppg` | Menu harian per dapur SPPG |
 | `telemetri_nasional` | KPI nasional (porsi, sekolah, AKG) |
@@ -205,19 +206,13 @@ android/app/build/outputs/apk/debug/Radar-MBG-V2.apk
 | `live_chat_messages` | Riwayat chat AI |
 | `exploit_logs` | Log keamanan WAF |
 
-Schema SQL ada di `database/schema_all.sql`.
+Schema SQL ada di `database/schema_all.sql`. Skema tidak mengisi data contoh; aplikasi hanya menampilkan catatan yang tersedia pada basis data.
 
 ---
 
-## 🔐 Akun Default (Development)
+## 🔐 Akun
 
-| Username | Password | Role |
-|---|---|---|
-| `admin_bgn` | `admin1234` | Admin Satgas BGN |
-| `sppg_jakpus_01` | `sppg1234` | Mitra Dapur SPPG |
-| `wali_murid_01` | `user1234` | Wali Murid |
-
-> ⚠️ Ganti password sebelum deploy ke production.
+Skema tidak membuat akun demo atau menetapkan kata sandi bawaan. Gunakan proses provisioning akun yang sudah terhubung ke basis data aplikasi.
 
 ---
 

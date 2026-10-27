@@ -11,7 +11,9 @@ try {
     $pdo = getDB();
     $region = trim($_GET['region'] ?? '');
     
-    $sql = 'SELECT provinsi, target_porsi, ketepatan, status, region_code, updated_at FROM distribusi_provinsi';
+    $sql = 'SELECT provinsi, target_porsi, ketepatan, status, region_code, updated_at,
+                   MAX(updated_at) OVER () AS latest_updated_at
+            FROM distribusi_provinsi';
     $params = [];
     if ($region !== '' && $region !== 'semua') {
         $sql .= ' WHERE region_code = ?';
@@ -37,7 +39,7 @@ try {
     echo json_encode([
         'status'    => 'success',
         'count'     => count($data),
-        'timestamp' => date('Y-m-d H:i:s'),
+        'timestamp' => $rows[0]['latest_updated_at'] ?? null,
         'data'      => $data
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {

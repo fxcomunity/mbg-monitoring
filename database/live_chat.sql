@@ -54,23 +54,5 @@ CREATE TABLE IF NOT EXISTS live_chat_templates (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_template_label ON live_chat_templates (target_role, label);
 
-INSERT INTO live_chat_templates (target_role, category, label, question, auto_answer, sort_order) VALUES
-  ('sppg',  'menu',       '🍛 Menu Hari Ini',
-   'Min, menu makanan hari ini apa ya untuk sekolah kami?',
-   'Halo! Menu hari ini dirancang oleh Ahli Gizi BGN dengan standar porsi seimbang 620-680 kkal. Rincian lengkap bisa dicek di tab "Menu Hari Ini".', 1),
-  ('sppg',  'alergen',    '⚠️ Pengecekan Alergen',
-   'Apakah sajian hari ini mengandung bahan alergen seperti kacang, telur, atau makanan laut?',
-   'Seluruh dapur SPPG menerapkan pemisahan kontaminasi silang. Bila anak Anda punya kondisi khusus, infokan nama siswa dan sekolah ke tim verifikator kami.', 2),
-  ('sppg',  'distribusi', '⏱️ Jadwal Tiba Makanan',
-   'Kira-kira jam berapa distribusi makanan sampai di sekolah?',
-   'Berdasarkan standar BGN, armada hot chain berangkat 09.30 WIB dan tiba paling lambat 11.15 WIB. Suhu sajian dijaga di atas 60°C.', 3),
-  ('admin', 'aduan',      '📝 Cara Melaporkan Masalah',
-   'Bagaimana prosedur jika porsi makanan kurang, dingin, atau basi?',
-   'Isi formulir di menu "Laporan & Aduan Publik" atau kirim foto kondisinya ke chat ini. Tim Satgas BGN Pusat merespons dalam waktu kurang dari 120 menit.', 4),
-  ('admin', 'standar',    '🌡️ Standar Higienitas & AKG',
-   'Bagaimana standar mutu dan higienitas dapur SPPG yang terakreditasi?',
-   'Setiap dapur SPPG wajib punya Sertifikat Laik Higiene Sanitasi (SLHS), uji lab mikroba berkala, dan diawasi Tenaga Gizi Terdaftar bersertifikasi Satgas BGN.', 5)
-ON CONFLICT (target_role, label) DO NOTHING;
-
 -- 3. (Opsional) bersihin chat lama > 90 hari — jalankan manual / cron
 -- DELETE FROM live_chat_messages WHERE created_at < NOW() - INTERVAL '90 days';

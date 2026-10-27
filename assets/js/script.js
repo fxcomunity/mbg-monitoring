@@ -1,7 +1,22 @@
 ﻿/**
- * script.js "” Interaktivitas Utama Radar MBG Nasional
+ * script.js "â€ Interaktivitas Utama Radar MBG Nasional
  * Terintegrasi penuh dengan Database Riil & Validasi Anti-Exploit
  */
+
+/**
+ * Helper untuk mencegah XSS dengan meng-escape karakter HTML.
+ * Mengubah <, >, &, ", ' menjadi HTML entities agar tidak dieksekusi browser.
+ */
+function escapeHTML(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   'use strict';
 
@@ -20,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Inisialisasi Telemetri & Distribusi Riil dari Database
   initTelemetriAndDistribusi();
+  initHomepageMenuPreview();
 
   // Inisialisasi Filter & Real-Time Data (jika di halaman menu)
   initMenuPage();
@@ -30,6 +46,48 @@ document.addEventListener('DOMContentLoaded', function() {
   // Inisialisasi Province Modal Drill-Down
   initProvinsiModal();
 });
+
+async function initHomepageMenuPreview() {
+  const container = document.getElementById('homepageMenuPreview');
+  if (!container) return;
+  const showMessage = message => {
+    const paragraph = document.createElement('p');
+    paragraph.className = 'font-body-md text-body-md text-on-surface-variant';
+    paragraph.textContent = message;
+    container.replaceChildren(paragraph);
+  };
+
+  try {
+    const response = await fetch(`${getApiPrefix()}home_menu.php`, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    if (result.status !== 'success' || !Array.isArray(result.data)) {
+      throw new Error(result.message || 'Format data menu tidak valid');
+    }
+    const item = result.data[0];
+    if (!item) {
+      showMessage('Belum ada menu yang tercatat hari ini.');
+      return;
+    }
+
+    const eyebrow = document.createElement('span');
+    eyebrow.className = 'font-label-sm text-label-sm text-secondary uppercase font-bold tracking-wider';
+    eyebrow.textContent = [item.school, item.city, item.provinsi].filter(Boolean).join(' Â· ');
+    const title = document.createElement('h3');
+    title.className = 'font-headline-lg text-headline-lg text-primary font-bold';
+    title.textContent = item.menu || 'Menu tanpa nama';
+    const description = document.createElement('p');
+    description.className = 'font-body-md text-body-md text-on-surface-variant';
+    description.textContent = item.description || 'Tidak ada keterangan menu pada basis data.';
+    const date = document.createElement('span');
+    date.className = 'font-body-sm text-body-sm text-on-surface-variant';
+    date.textContent = item.date ? `Tanggal menu: ${new Date(item.date).toLocaleDateString('id-ID')}` : 'Tanggal menu tidak tersedia';
+    container.replaceChildren(eyebrow, title, description, date);
+  } catch (error) {
+    console.error('[BGN] Gagal memuat pratinjau menu:', error);
+    showMessage('Pratinjau menu tidak dapat dimuat dari basis data.');
+  }
+}
 
 /**
  * Mendeteksi prefix path API relatif terhadap lokasi halaman saat ini.
@@ -93,7 +151,10 @@ function initGlobalSearch() {
           window.BGNSecurity.showExploitAlert(query);
           return;
         }
-        window.location.href = 'menu-hari-ini.html?q=' + encodeURIComponent(query);
+        const menuPage = window.location.pathname.includes('/fitur/')
+          ? 'menu-hari-ini.html'
+          : 'fitur/menu-hari-ini.html';
+        window.location.href = menuPage + '?q=' + encodeURIComponent(query);
       }
     }
   });
@@ -105,95 +166,103 @@ function initGlobalSearch() {
 async function initTelemetriAndDistribusi() {
   const kpiPorsi = document.getElementById('kpiPorsiTersalurkan');
   const tableBody = document.getElementById('tableRegionalBody');
-
-  const baseApi = window.location.pathname.includes('/features/') ? '../../api.php' : 'api.php';
+  const apiPrefix = getApiPrefix();
+  const telemetryStatus = document.getElementById('telemetryUpdateText');
 
   // 1. Ambil 5 KPI Telemetri Utama dari SQL
   if (kpiPorsi) {
     try {
-      const res = await fetch(`${baseApi}?action=telemetri`);
+      const res = await fetch(`${apiPrefix}telemetri.php`, { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      if (json && json.status === 'success' && json.data) {
-        const d = json.data;
-        const elPorsi = document.getElementById('kpiPorsiTersalurkan');
-        const elTarget = document.getElementById('kpiPersenTarget');
-        const elSppg = document.getElementById('kpiSppgAktif');
-        const elSekolah = document.getElementById('kpiSekolahTerlayani');
-        const elAkg = document.getElementById('kpiKepatuhanAkg');
-        const elSuhu = document.getElementById('kpiSuhuMakanan');
-        const elUpdate = document.getElementById('telemetryUpdateText');
-        const elSla = document.getElementById('telemetrySlaDisplay');
-
-        if (elPorsi) elPorsi.textContent = Number(d.porsi_tersalurkan).toLocaleString('id-ID');
-        if (elTarget) elTarget.textContent = `${d.persen_target}% dari target harian`;
-        if (elSppg) elSppg.textContent = Number(d.sppg_aktif).toLocaleString('id-ID');
-        if (elSekolah) elSekolah.textContent = Number(d.sekolah_terlayani).toLocaleString('id-ID');
-        if (elAkg) elAkg.textContent = `${d.kepatuhan_akg}%`;
-        if (elSuhu) elSuhu.textContent = `${d.suhu_rata_rata}°C`;
-        if (elUpdate && d.pembaruan_teks) elUpdate.textContent = `Pembaruan: ${d.pembaruan_teks}`;
-        if (elSla && d.sla_distribusi) elSla.textContent = `${d.sla_distribusi}% Tepat Waktu`;
-      }
+      if (json.status !== 'success' || !json.data) throw new Error(json.message || 'Data telemetri tidak tersedia');
+      const d = json.data;
+      document.getElementById('kpiPorsiTersalurkan').textContent = Number(d.porsi_tersalurkan).toLocaleString('id-ID');
+      document.getElementById('kpiPersenTarget').textContent = `${d.persen_target}% dari target harian`;
+      document.getElementById('kpiSppgAktif').textContent = Number(d.sppg_aktif).toLocaleString('id-ID');
+      document.getElementById('kpiSekolahTerlayani').textContent = Number(d.sekolah_terlayani).toLocaleString('id-ID');
+      document.getElementById('kpiKepatuhanAkg').textContent = `${d.kepatuhan_akg}%`;
+      document.getElementById('kpiSuhuMakanan').textContent = `${d.suhu_rata_rata}Â°C`;
+      if (telemetryStatus) telemetryStatus.textContent = d.updated_at
+        ? `Pembaruan: ${new Date(d.updated_at).toLocaleString('id-ID')}`
+        : 'Data terbaru dari basis data';
+      const elSla = document.getElementById('telemetrySlaDisplay');
+      if (elSla) elSla.textContent = `${d.sla_distribusi}% Tepat Waktu`;
+      const tempBadge = document.getElementById('telemetryTempBadge');
+      if (tempBadge) tempBadge.textContent = `Rata-rata ${d.suhu_rata_rata}Â°C`;
     } catch (err) {
-      console.warn('[BGN] Menggunakan fallback data telemetri:', err);
+      console.error('[BGN] Gagal memuat data telemetri:', err);
+      if (telemetryStatus) telemetryStatus.textContent = 'Data telemetri tidak tersedia';
     }
   }
 
   // 2. Ambil Tabel Kepatuhan Distribusi Provinsi dari SQL
   if (tableBody) {
-    loadDistribusiTable(baseApi, 'semua');
-
-    // Filter Buttons (Jawa, Sumatera, dll)
-    const regionBtns = document.querySelectorAll('.region-telemetry-btn');
+    loadDistribusiTable(apiPrefix);
+    const regionBtns = document.querySelectorAll('.region-filter-btn');
     regionBtns.forEach(btn => {
       btn.addEventListener('click', function() {
-        regionBtns.forEach(b => b.classList.remove('bg-primary', 'text-white'));
-        this.classList.add('bg-primary', 'text-white');
-        const reg = this.getAttribute('data-region') || 'semua';
-        loadDistribusiTable(baseApi, reg);
+        regionBtns.forEach(b => {
+          b.classList.remove('bg-primary', 'text-on-primary');
+          b.classList.add('text-on-surface-variant');
+        });
+        this.classList.remove('text-on-surface-variant');
+        this.classList.add('bg-primary', 'text-on-primary');
+        renderDistribusiTable(this.getAttribute('data-region') || 'semua');
       });
     });
   }
 }
 
-async function loadDistribusiTable(baseApi, region = 'semua') {
+let distribusiRows = [];
+
+async function loadDistribusiTable(apiPrefix) {
   const tableBody = document.getElementById('tableRegionalBody');
   if (!tableBody) return;
 
   try {
-    const url = region && region !== 'semua' 
-      ? `${baseApi}?action=distribusi&region=${encodeURIComponent(region)}` 
-      : `${baseApi}?action=distribusi`;
-    
-    const res = await fetch(url);
+    const res = await fetch(`${apiPrefix}distribusi.php`, { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-
-    if (json && json.status === 'success' && Array.isArray(json.data) && json.data.length > 0) {
-      let html = '';
-      json.data.forEach(item => {
-        const prov = BGNSecurity ? BGNSecurity.escapeHTML(item.provinsi) : item.provinsi;
-        const target = Number(item.target_porsi).toLocaleString('id-ID');
-        const ketepatan = `${item.ketepatan}%`;
-        const status = BGNSecurity ? BGNSecurity.escapeHTML(item.status) : item.status;
-        const regCode = item.region_code || 'nasional';
-
-        html += `
-          <tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-region="${regCode}" data-provinsi="${prov}" title="Klik untuk lihat SPPG">
-            <td class="py-3 px-3 font-semibold text-primary">${prov}</td>
-            <td class="py-3 px-3">${target}</td>
-            <td class="py-3 px-3 text-status-success font-semibold">${ketepatan}</td>
-            <td class="py-3 px-3">
-              <span class="px-2 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">${status}</span>
-            </td>
-          </tr>
-        `;
-      });
-      tableBody.innerHTML = html;
-    }
+    if (json.status !== 'success' || !Array.isArray(json.data)) throw new Error(json.message || 'Data distribusi tidak tersedia');
+    distribusiRows = json.data;
+    const updateText = document.getElementById('distributionUpdateText');
+    if (updateText) updateText.textContent = json.timestamp
+      ? `Diperbarui ${new Date(json.timestamp).toLocaleString('id-ID')}`
+      : 'Dari basis data';
+    renderDistribusiTable('semua');
   } catch (err) {
     console.error('[BGN] Gagal memuat tabel distribusi:', err);
+    tableBody.innerHTML = '<tr><td class="px-3 py-8 text-center text-on-surface-variant" colspan="4">Data distribusi tidak dapat dimuat dari basis data.</td></tr>';
+    const updateText = document.getElementById('distributionUpdateText');
+    if (updateText) updateText.textContent = 'Data tidak tersedia';
   }
 }
 
+function renderDistribusiTable(region) {
+  const tableBody = document.getElementById('tableRegionalBody');
+  if (!tableBody) return;
+  const filteredRows = distribusiRows.filter(item => {
+    const code = String(item.region_code || '').toLowerCase();
+    if (region === 'semua') return true;
+    if (region === 'timur') return /bali|nusa|maluku|papua|timur/.test(code);
+    return code === region;
+  });
+  if (!filteredRows.length) {
+    tableBody.innerHTML = '<tr><td class="px-3 py-8 text-center text-on-surface-variant" colspan="4">Tidak ada data untuk wilayah ini.</td></tr>';
+    return;
+  }
+  tableBody.innerHTML = filteredRows.map(item => {
+    const prov = BGNSecurity ? BGNSecurity.escapeHTML(item.provinsi) : String(item.provinsi || '');
+    const status = BGNSecurity ? BGNSecurity.escapeHTML(item.status) : String(item.status || '');
+    return `<tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-provinsi="${prov}" title="Klik untuk lihat SPPG">
+      <td class="py-3 px-3 font-semibold text-primary">${prov}</td>
+      <td class="py-3 px-3">${Number(item.target_porsi).toLocaleString('id-ID')}</td>
+      <td class="py-3 px-3 text-status-success font-semibold">${Number(item.ketepatan)}%</td>
+      <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">${status}</span></td>
+    </tr>`;
+  }).join('');
+}
 function initMenuPage() {
   const menuContainer = document.getElementById('menu-list-container');
   if (!menuContainer) return;
@@ -260,7 +329,7 @@ function renderEmptyState(container, searchKeyword = '') {
         <span class="material-symbols-outlined text-[32px]">dinner_dining</span>
       </div>
       <h3 class="text-lg font-bold text-gray-900 mb-1">Belum Ada Menu Terverifikasi</h3>
-      <p class="text-sm text-gray-500 max-w-md mb-6">${msg}</p>
+      <p class="text-sm text-gray-500 max-w-md mb-6">${escapeHTML(msg)}</p>
       <div class="flex flex-wrap gap-3">
         <a href="menu-hari-ini.html" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition-colors">
           Reset Filter
@@ -378,28 +447,28 @@ async function initUserAuthStatus() {
 
       wrapper.innerHTML = `
         <button id="btnHeaderProfile" type="button" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-border-subtle shadow-sm transition-all focus:outline-none">
-          <img src="${u.avatar}" alt="${BGNSecurity.escapeHTML(u.full_name)}" class="w-7 h-7 rounded-full border border-primary/20 object-cover bg-white">
+          <img src="${escapeHTML(u.avatar)}" alt="${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}" class="w-7 h-7 rounded-full border border-primary/20 object-cover bg-white">
           <div class="flex flex-col text-left hidden lg:flex">
-            <span class="text-xs font-bold text-on-surface leading-tight max-w-[110px] truncate">${BGNSecurity.escapeHTML(u.full_name)}</span>
-            <span class="text-[10px] text-secondary font-medium leading-none">${BGNSecurity.escapeHTML(u.role_label)}</span>
+            <span class="text-xs font-bold text-on-surface leading-tight max-w-[110px] truncate">${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}</span>
+            <span class="text-[10px] text-secondary font-medium leading-none">${escapeHTML(BGNSecurity.escapeHTML(u.role_label))}</span>
           </div>
           <span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
         </button>
         
         <div id="headerProfileMenu" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50">
           <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3 bg-slate-50/70">
-            <img src="${u.avatar}" alt="${BGNSecurity.escapeHTML(u.full_name)}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white">
+            <img src="${escapeHTML(u.avatar)}" alt="${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white">
             <div class="flex flex-col overflow-hidden">
-              <span class="text-xs font-bold text-slate-900 truncate">${BGNSecurity.escapeHTML(u.full_name)}</span>
-              <span class="text-[11px] text-slate-500 font-mono truncate">@${BGNSecurity.escapeHTML(u.username)}</span>
-              <span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 w-fit">${BGNSecurity.escapeHTML(u.role_label)}</span>
+              <span class="text-xs font-bold text-slate-900 truncate">${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}</span>
+              <span class="text-[11px] text-slate-500 font-mono truncate">@${escapeHTML(BGNSecurity.escapeHTML(u.username))}</span>
+              <span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 w-fit">${escapeHTML(BGNSecurity.escapeHTML(u.role_label))}</span>
             </div>
           </div>
 
           <div class="py-1">
-            <a href="dashboard/${u.role}/" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="dashboard/${escapeHTML(u.role)}/" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-blue-600">dashboard</span>
-              <span>Dashboard ${u.role.toUpperCase()}</span>
+              <span>Dashboard ${escapeHTML(u.role.toUpperCase())}</span>
             </a>
             ${u.role === 'admin' ? `
             <a href="dashboard/admin/#telemetry-manager" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
@@ -471,14 +540,14 @@ async function initUserAuthStatus() {
       mobWrapper.className = 'p-3 bg-surface-container rounded-xl flex flex-col gap-2 border border-border-subtle';
       mobWrapper.innerHTML = `
         <div class="flex items-center gap-3">
-          <img src="${u.avatar}" alt="${BGNSecurity.escapeHTML(u.full_name)}" class="w-9 h-9 rounded-full border border-primary/20 bg-white">
+          <img src="${escapeHTML(u.avatar)}" alt="${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}" class="w-9 h-9 rounded-full border border-primary/20 bg-white">
           <div class="flex flex-col">
-            <span class="text-xs font-bold text-on-surface">${BGNSecurity.escapeHTML(u.full_name)}</span>
-            <span class="text-[11px] text-secondary font-medium">${BGNSecurity.escapeHTML(u.role_label)}</span>
+            <span class="text-xs font-bold text-on-surface">${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}</span>
+            <span class="text-[11px] text-secondary font-medium">${escapeHTML(BGNSecurity.escapeHTML(u.role_label))}</span>
           </div>
         </div>
         <div class="flex flex-col gap-1 pt-2 border-t border-border-subtle">
-          <a href="dashboard/${u.role}/" class="px-3 py-1.5 text-xs font-bold text-primary rounded-lg bg-surface-container-high flex items-center gap-2">
+          <a href="dashboard/${escapeHTML(u.role)}/" class="px-3 py-1.5 text-xs font-bold text-primary rounded-lg bg-surface-container-high flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px]">dashboard</span>
             <span>Buka Dashboard</span>
           </a>
@@ -545,11 +614,12 @@ function initNotificationBell() {
 
   async function fetchNotifications() {
     try {
-      const res = await fetch(getApiPrefix() + 'notifications.php');
+      const res = await fetch(getApiPrefix() + 'notifications.php', { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      if (!json || json.status !== 'success') return;
+      if (!json || json.status !== 'success') throw new Error(json.message || 'Data notifikasi tidak tersedia');
 
-      const data = json.data;
+      const data = json;
       const count = data.badge_count || 0;
 
       if (badge) {
@@ -594,7 +664,7 @@ function initNotificationBell() {
                       <span class="text-[10px] text-slate-400">${timeAgo}</span>
                     </div>
                     <p class="text-xs font-semibold text-slate-800 truncate">${BGNSecurity.escapeHTML(r.issue_category)}: ${BGNSecurity.escapeHTML(r.school_target || '-')}</p>
-                    <p class="text-[11px] text-slate-500 truncate">${BGNSecurity.escapeHTML(r.description)}</p>
+                    <p class="text-[11px] text-slate-500 truncate">Status: ${BGNSecurity.escapeHTML(r.status)}</p>
                   </div>
                 </div>
               </a>
@@ -606,15 +676,24 @@ function initNotificationBell() {
           itemsHtml = `
             <div class="p-4 text-center text-xs text-slate-400">
               <span class="material-symbols-outlined text-[28px] text-slate-300 block mb-1">done_all</span>
-              Tidak ada laporan baru. Sistem telemetri dan logistik berjalan normal.
+              Belum ada laporan baru yang tercatat.
             </div>
           `;
         }
 
         listContainer.innerHTML = itemsHtml;
       }
+      const ticker = document.getElementById('liveTicker');
+      if (ticker) {
+        const latest = Array.isArray(data.latest_reports) ? data.latest_reports[0] : null;
+        ticker.textContent = latest
+          ? `${latest.ticket_code} Â· ${latest.issue_category} Â· ${latest.school_target || 'Lokasi tidak dicantumkan'}`
+          : 'Belum ada laporan terbaru yang tercatat.';
+      }
     } catch (err) {
-      console.warn('Gagal memuat notifikasi:', err);
+      console.error('[BGN] Gagal memuat notifikasi:', err);
+      const ticker = document.getElementById('liveTicker');
+      if (ticker) ticker.textContent = 'Laporan terbaru tidak dapat dimuat dari basis data.';
     }
   }
 
@@ -625,179 +704,66 @@ function initNotificationBell() {
 
 /**
  * ============================================================
- * Peta Telemetri Wilayah Logistik MBG (Leaflet Realtime)
- * Realtime Zoom In / Zoom Out + Titik Armada Van Termal IoT
+ * Peta lokasi SPPG berdasarkan koordinat yang tersimpan di basis data.
  * ============================================================
  */
 let mbgLeafletMap = null;
-let mbgMarkers = [];
-let mbgDeliveryVans = [];
 
-function initInteractiveTelemetryMap() {
+async function initInteractiveTelemetryMap() {
   const mapElement = document.getElementById('mbgInteractiveMap');
   if (!mapElement || typeof L === 'undefined') return;
 
-  // Hancurkan instance lama jika ada (hindari double init)
-  if (mbgLeafletMap) {
-    mbgLeafletMap.remove();
-    mbgLeafletMap = null;
-    mbgMarkers = [];
-    mbgDeliveryVans = [];
-  }
-
-  mbgLeafletMap = L.map('mbgInteractiveMap', {
-    center: [-6.2088, 106.8456],
-    zoom: 11,
-    zoomControl: true,
-    scrollWheelZoom: true,
-    attributionControl: true
-  });
-
-  // ── OpenStreetMap tile — 100% gratis, zero API key ──────────────────────
-  // Pakai URL tanpa subdomains variabel untuk hindari cache mix lama
+  mbgLeafletMap = L.map(mapElement, { center: [-2.5, 118], zoom: 5 });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(mbgLeafletMap);
+  const markerLayer = L.featureGroup().addTo(mbgLeafletMap);
+  const mapCount = document.getElementById('mapLocationCount');
 
-  // Force Leaflet hitung ulang ukuran container (kritis jika parent div baru visible)
-  setTimeout(() => { if (mbgLeafletMap) mbgLeafletMap.invalidateSize(); }, 200);
+  try {
+    const response = await fetch(`${getApiPrefix()}sppg_map.php`, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const geoJson = await response.json();
+    if (!geoJson || !Array.isArray(geoJson.features)) throw new Error('Format data peta tidak valid');
 
-  // ── Data Stasiun SPPG — tersebar berbeda per wilayah ────────────────────
-  const sppgStations = [
-    { name: 'SPPG Jakarta Pusat',         lat: -6.1824, lng: 106.8290, radius: 4500, porsi: '34.200', temp: '65.4°C', wilayah: 'DKI Jakarta' },
-    { name: 'SPPG Jakarta Selatan',        lat: -6.2615, lng: 106.8106, radius: 3800, porsi: '28.500', temp: '64.8°C', wilayah: 'DKI Jakarta' },
-    { name: 'SPPG Jakarta Timur',          lat: -6.2251, lng: 106.9004, radius: 4200, porsi: '31.000', temp: '65.1°C', wilayah: 'DKI Jakarta' },
-    { name: 'SPPG Bandung Kota',           lat: -6.9175, lng: 107.6191, radius: 5000, porsi: '41.100', temp: '66.2°C', wilayah: 'Jawa Barat' },
-    { name: 'SPPG Bekasi Raya',            lat: -6.2349, lng: 106.9896, radius: 4600, porsi: '37.400', temp: '65.7°C', wilayah: 'Jawa Barat' },
-    { name: 'SPPG Depok',                  lat: -6.4025, lng: 106.7942, radius: 4000, porsi: '29.800', temp: '64.5°C', wilayah: 'Jawa Barat' },
-    { name: 'SPPG Semarang Tengah',        lat: -6.9932, lng: 110.4203, radius: 4200, porsi: '31.800', temp: '65.1°C', wilayah: 'Jawa Tengah' },
-    { name: 'SPPG Solo Raya',              lat: -7.5661, lng: 110.8314, radius: 3900, porsi: '27.600', temp: '63.9°C', wilayah: 'Jawa Tengah' },
-    { name: 'SPPG Surabaya Pusat',         lat: -7.2575, lng: 112.7521, radius: 4800, porsi: '39.000', temp: '65.9°C', wilayah: 'Jawa Timur' },
-    { name: 'SPPG Malang Kota',            lat: -7.9797, lng: 112.6304, radius: 4300, porsi: '32.500', temp: '64.3°C', wilayah: 'Jawa Timur' },
-    { name: 'SPPG Medan Kota',             lat:  3.5952, lng:  98.6722, radius: 5200, porsi: '43.000', temp: '66.8°C', wilayah: 'Sumatera Utara' },
-    { name: 'SPPG Makassar Pusat',         lat: -5.1477, lng: 119.4327, radius: 4700, porsi: '38.200', temp: '65.6°C', wilayah: 'Sulawesi Selatan' },
-    { name: 'SPPG Denpasar',               lat: -8.6705, lng: 115.2126, radius: 3600, porsi: '26.100', temp: '64.0°C', wilayah: 'Bali' },
-  ];
-
-  // ── Render SPPG markers + radius ────────────────────────────────────────
-  sppgStations.forEach(sppg => {
-    L.circle([sppg.lat, sppg.lng], {
-      color: '#059669', fillColor: '#10B981', fillOpacity: 0.12,
-      radius: sppg.radius, weight: 1.5, dashArray: '4 4'
-    }).addTo(mbgLeafletMap);
-
-    const iconSppg = L.divIcon({
-      className: '',
-      html: `<div style="
-        background:linear-gradient(135deg,#059669,#047857);
-        color:#fff; width:32px; height:32px; border-radius:50%;
-        display:flex; align-items:center; justify-content:center;
-        box-shadow:0 2px 8px rgba(5,150,105,0.5); border:2.5px solid #fff;
-        font-size:15px; line-height:1;">🏭</div>`,
-      iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18]
-    });
-
-    const m = L.marker([sppg.lat, sppg.lng], { icon: iconSppg }).addTo(mbgLeafletMap);
-    m.bindPopup(`
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;min-width:190px;padding:2px 0">
-        <div style="font-size:9px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Dapur SPPG Terakreditasi BGN</div>
-        <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px;">${sppg.name}</div>
-        <div style="font-size:11px;color:#475569;line-height:1.7;">
-          <div>📍 <strong>${sppg.wilayah}</strong></div>
-          <div>🍱 Kapasitas: <strong>${sppg.porsi} porsi/hari</strong></div>
-          <div>🌡️ Suhu Termal: <strong style="color:#059669;">${sppg.temp}</strong></div>
-          <div>📐 Radius Layanan: <strong>${sppg.radius/1000} km</strong></div>
-        </div>
-      </div>`, { maxWidth: 240 });
-    mbgMarkers.push(m);
-  });
-
-  // ── Data Van — tersebar berbeda per kota ─────────────────────────────────
-  const initialVans = [
-    { id: 'VAN-JKT-01', lat: -6.1950, lng: 106.8315, temp: 65.8, dest: 'SDN Menteng 01',       status: 'Mengantar', region: 'dki' },
-    { id: 'VAN-JKT-02', lat: -6.2080, lng: 106.8520, temp: 66.2, dest: 'SMPN 1 Jakarta',       status: 'Mengantar', region: 'dki' },
-    { id: 'VAN-JKT-03', lat: -6.2410, lng: 106.7980, temp: 64.9, dest: 'SDN Cilandak Barat',   status: 'Menuju Sekolah', region: 'dki' },
-    { id: 'VAN-JKT-04', lat: -6.1720, lng: 106.8650, temp: 65.3, dest: 'SDN Rawamangun 02',    status: 'Mengantar', region: 'dki' },
-    { id: 'VAN-BDG-01', lat: -6.9050, lng: 107.6350, temp: 65.4, dest: 'SDN Merdeka Bandung',  status: 'Selesai 99%', region: 'jabar' },
-    { id: 'VAN-BDG-02', lat: -6.9380, lng: 107.6010, temp: 63.8, dest: 'SMPN 5 Bandung',       status: 'Kembali', region: 'jabar' },
-    { id: 'VAN-BKS-01', lat: -6.2180, lng: 107.0120, temp: 66.1, dest: 'SDN Bekasi Jaya 01',   status: 'Mengantar', region: 'jabar' },
-    { id: 'VAN-SMG-01', lat: -7.0050, lng: 110.4380, temp: 65.1, dest: 'SDN Semarang Tengah',  status: 'Mengantar', region: 'jateng' },
-    { id: 'VAN-SMG-02', lat: -6.9810, lng: 110.4020, temp: 64.7, dest: 'SMPN 3 Semarang',      status: 'Menuju Sekolah', region: 'jateng' },
-    { id: 'VAN-SBY-01', lat: -7.2480, lng: 112.7380, temp: 66.0, dest: 'SDN Ketabang Surabaya',status: 'Selesai', region: 'jatim' },
-    { id: 'VAN-SBY-02', lat: -7.2720, lng: 112.7650, temp: 65.5, dest: 'SMPN 7 Surabaya',      status: 'Mengantar', region: 'jatim' },
-    { id: 'VAN-MLG-01', lat: -7.9680, lng: 112.6450, temp: 64.2, dest: 'SDN Malang 01',         status: 'Menuju Sekolah', region: 'jatim' },
-  ];
-
-  initialVans.forEach(v => {
-    const tempColor = v.temp >= 65 ? '#059669' : v.temp >= 62 ? '#d97706' : '#dc2626';
-    const iconVan = L.divIcon({
-      className: '',
-      html: `<div style="
-        background:linear-gradient(135deg,#1d4ed8,#2563eb);
-        color:#fff; width:30px; height:30px; border-radius:8px;
-        display:flex; align-items:center; justify-content:center;
-        box-shadow:0 2px 8px rgba(37,99,235,0.45); border:2px solid #fff;
-        font-size:14px; line-height:1;">🚚</div>`,
-      iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -17]
-    });
-
-    const vm = L.marker([v.lat, v.lng], { icon: iconVan }).addTo(mbgLeafletMap);
-    vm.bindPopup(`
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;min-width:180px;padding:2px 0">
-        <div style="font-size:9px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Sensor IoT Rantai Hangat</div>
-        <div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:5px;">${v.id}</div>
-        <div style="font-size:11px;color:#475569;line-height:1.7;">
-          <div>🏫 Tujuan: <strong>${v.dest}</strong></div>
-          <div>🌡️ Suhu: <strong style="color:${tempColor};">${v.temp}°C</strong> <span style="color:#94a3b8;">(min 60°C)</span></div>
-          <div>📡 Status: <strong style="color:#059669;">${v.status}</strong></div>
-        </div>
-      </div>`, { maxWidth: 220 });
-
-    mbgDeliveryVans.push({ marker: vm, data: { ...v } });
-  });
-
-  // ── Simulasi GPS bergerak + suhu berfluktuasi setiap 3 detik ─────────────
-  setInterval(() => {
-    mbgDeliveryVans.forEach(item => {
-      const d = item.data;
-      d.lat += (Math.random() - 0.5) * 0.0008;
-      d.lng += (Math.random() - 0.5) * 0.0008;
-      item.marker.setLatLng([d.lat, d.lng]);
-
-      d.temp = Math.round((d.temp + (Math.random() - 0.5) * 0.4) * 10) / 10;
-      if (d.temp < 61.5) d.temp = 64.0;
-      if (d.temp > 68.5) d.temp = 66.0;
-    });
-  }, 3000);
-
-  // ── Fly to region on button click ────────────────────────────────────────
-  const regionCoords = {
-    dki:      { center: [-6.2088, 106.8456], zoom: 12 },
-    jabar:    { center: [-6.9175, 107.6191], zoom: 11 },
-    jateng:   { center: [-6.9932, 110.4203], zoom: 11 },
-    jatim:    { center: [-7.2575, 112.7521], zoom: 11 },
-    nasional: { center: [-2.5489, 118.0149], zoom: 5  }
-  };
-
-  const regionBtns = document.querySelectorAll('.region-telemetry-btn');
-  regionBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
-      const regKey = this.getAttribute('data-region');
-      if (regKey && regionCoords[regKey]) {
-        const target = regionCoords[regKey];
-        mbgLeafletMap.flyTo(target.center, target.zoom, {
-          duration: 1.5
-        });
+    geoJson.features.forEach(feature => {
+      const coordinates = feature.geometry && feature.geometry.coordinates;
+      if (!Array.isArray(coordinates) || coordinates.length < 2) return;
+      const properties = feature.properties || {};
+      const marker = L.marker([coordinates[1], coordinates[0]]).addTo(markerLayer);
+      const popup = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = properties.nama || 'SPPG';
+      popup.appendChild(name);
+      if (properties.kabupaten_kota || properties.provinsi) {
+        const location = document.createElement('div');
+        location.textContent = [properties.kabupaten_kota, properties.provinsi].filter(Boolean).join(', ');
+        popup.appendChild(location);
       }
+      if (properties.status) {
+        const status = document.createElement('div');
+        status.textContent = `Status: ${properties.status}`;
+        popup.appendChild(status);
+      }
+      marker.bindPopup(popup);
     });
-  });
-}
 
+    if (markerLayer.getLayers().length) mbgLeafletMap.fitBounds(markerLayer.getBounds(), { padding: [24, 24] });
+    if (mapCount) mapCount.textContent = geoJson.count
+      ? `${Number(geoJson.count).toLocaleString('id-ID')} lokasi SPPG`
+      : 'Belum ada lokasi SPPG di basis data';
+  } catch (error) {
+    console.error('[BGN] Gagal memuat lokasi SPPG:', error);
+    if (mapCount) mapCount.textContent = 'Lokasi SPPG tidak dapat dimuat';
+  }
+
+  setTimeout(() => mbgLeafletMap && mbgLeafletMap.invalidateSize(), 200);
+}
 
 /**
  * ============================================================
- * Province Modal: klik baris tabel distribusi → tampil SPPG
+ * Province Modal: klik baris tabel distribusi â†’ tampil SPPG
  * ============================================================
  */
 function initProvinsiModal() {
@@ -864,8 +830,8 @@ function initProvinsiModal() {
             '<div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#001026,#395f95);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
             '<span class="material-symbols-outlined" style="font-size:18px;color:#6ffbbe;">soup_kitchen</span></div>' +
             '<div style="flex:1;min-width:0;">' +
-            '<div style="font-weight:800;font-size:13px;color:#001026;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _escM(s.nama || s.name || '—') + '</div>' +
-            '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">' + _escM(s.kabupaten_kota || s.city || '—') + '</div>' +
+            '<div style="font-weight:800;font-size:13px;color:#001026;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _escM(s.nama || s.name || 'â€”') + '</div>' +
+            '<div style="font-size:11px;color:#64748b;margin-bottom:6px;">' + _escM(s.kabupaten_kota || s.city || 'â€”') + '</div>' +
             '<span style="' + badgeStyle + 'font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;">' + _escM(s.status || 'Operasional') + '</span>' +
             '</div></div>';
         }).join('');
