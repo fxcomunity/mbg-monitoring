@@ -416,7 +416,7 @@
                 <th class="py-2.5 px-3 rounded-l-lg">Waktu</th>
                 <th class="py-2.5 px-3">Jenis Ancaman</th>
                 <th class="py-2.5 px-3">IP</th>
-                <th class="py-2.5 px-3">Negara</th>
+                <th class="py-2.5 px-3">Lokasi (perkiraan)</th>
                 <th class="py-2.5 px-3">URL Asal</th>
                 <th class="py-2.5 px-3 rounded-r-lg">Status</th>
               </tr>
@@ -517,15 +517,34 @@
 
   var _allUsers = [];
   function renderUserTable(users) {
-    _allUsers = users;
+    _allUsers = Array.isArray(users) ? users : [];
     filterUsers('');
+  }
+
+  function createTextCell(value, className) {
+    var cell = document.createElement('td');
+    if (className) cell.className = className;
+    cell.textContent = value == null || value === '' ? '—' : String(value);
+    return cell;
+  }
+
+  function createBadge(text, className) {
+    var badge = document.createElement('span');
+    badge.className = className;
+    badge.textContent = text == null || text === '' ? '—' : String(text);
+    return badge;
   }
 
   function filterUsers(q) {
     var role = document.getElementById('filterRole').value;
     var tbody = document.getElementById('userTableBody');
+    var query = String(q || '').toLowerCase();
     var filtered = _allUsers.filter(function(u) {
-      var matchQ = !q || (u.username+u.full_name+u.email).toLowerCase().includes(q.toLowerCase());
+      u = u || {};
+      var searchable = [u.username, u.full_name, u.email].map(function(value) {
+        return value == null ? '' : String(value);
+      }).join('').toLowerCase();
+      var matchQ = !query || searchable.includes(query);
       var matchR = !role || u.role === role;
       return matchQ && matchR;
     });
@@ -534,16 +553,39 @@
       return;
     }
     var roleBg = { admin: 'bg-red-100 text-red-700', sppg: 'bg-blue-100 text-blue-700', user: 'bg-emerald-100 text-emerald-700' };
-    tbody.innerHTML = filtered.map(function(u) {
-      return '<tr class="hover:bg-slate-50">' +
-        '<td class="py-2.5 px-3 font-bold text-primary">' + u.username + '</td>' +
-        '<td class="py-2.5 px-3">' + (u.full_name||'—') + '</td>' +
-        '<td class="py-2.5 px-3 text-slate-500">' + (u.email||'—') + '</td>' +
-        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (roleBg[u.role]||'bg-slate-100 text-slate-600') + '">' + u.role + '</span></td>' +
-        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (u.active!==false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700') + '">' + (u.active!==false ? 'Aktif' : 'Nonaktif') + '</span></td>' +
-        '<td class="py-2.5 px-3"><button onclick="suspendUser(\'' + u.username + '\')" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-[10px] font-semibold transition-all">Suspend</button></td>' +
-      '</tr>';
-    }).join('');
+    tbody.textContent = '';
+    filtered.forEach(function(u) {
+      u = u || {};
+      var row = document.createElement('tr');
+      row.className = 'hover:bg-slate-50';
+      row.appendChild(createTextCell(u.username, 'py-2.5 px-3 font-bold text-primary'));
+      row.appendChild(createTextCell(u.full_name, 'py-2.5 px-3'));
+      row.appendChild(createTextCell(u.email, 'py-2.5 px-3 text-slate-500'));
+
+      var role = u.role == null ? '' : String(u.role);
+      var roleClass = Object.prototype.hasOwnProperty.call(roleBg, role) ? roleBg[role] : 'bg-slate-100 text-slate-600';
+      var roleCell = document.createElement('td');
+      roleCell.className = 'py-2.5 px-3';
+      roleCell.appendChild(createBadge(role, 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + roleClass));
+      row.appendChild(roleCell);
+
+      var isActive = u.active !== false;
+      var activeCell = document.createElement('td');
+      activeCell.className = 'py-2.5 px-3';
+      activeCell.appendChild(createBadge(isActive ? 'Aktif' : 'Nonaktif', 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')));
+      row.appendChild(activeCell);
+
+      var actionCell = document.createElement('td');
+      actionCell.className = 'py-2.5 px-3';
+      var suspendButton = document.createElement('button');
+      suspendButton.type = 'button';
+      suspendButton.className = 'px-2 py-1 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-[10px] font-semibold transition-all';
+      suspendButton.textContent = 'Suspend';
+      suspendButton.addEventListener('click', function() { suspendUser(u.username == null ? '' : String(u.username)); });
+      actionCell.appendChild(suspendButton);
+      row.appendChild(actionCell);
+      tbody.appendChild(row);
+    });
   }
 
   // ── Load SPPG status ──────────────────────────────────────────────────────
@@ -575,54 +617,86 @@
     var tbody = document.getElementById('sppgTableBody');
     if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-slate-400">Tidak ada data SPPG.</td></tr>'; return; }
     var statusBg = { aktif: 'bg-emerald-100 text-emerald-700', sertifikasi_habis: 'bg-amber-100 text-amber-700', suspend: 'bg-red-100 text-red-700' };
-    tbody.innerHTML = data.map(function(s) {
-      return '<tr class="hover:bg-slate-50">' +
-        '<td class="py-2.5 px-3 font-bold text-primary">' + (s.name||'—') + '</td>' +
-        '<td class="py-2.5 px-3">' + (s.city||'—') + '</td>' +
-        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (statusBg[s.status]||'bg-slate-100') + '">' + (s.status||'—') + '</span></td>' +
-        '<td class="py-2.5 px-3">' + (s.cert_expiry||'—') + '</td>' +
-        '<td class="py-2.5 px-3">' + (s.capacity||'—') + '</td>' +
-        '<td class="py-2.5 px-3">' + (s.last_menu||'—') + '</td>' +
-        '<td class="py-2.5 px-3 flex gap-1">' +
-          '<button class="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-semibold">Detail</button>' +
-          '<button class="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-semibold">Suspend</button>' +
-        '</td>' +
-      '</tr>';
-    }).join('');
+    tbody.textContent = '';
+    data.forEach(function(s) {
+      s = s || {};
+      var row = document.createElement('tr');
+      row.className = 'hover:bg-slate-50';
+      row.appendChild(createTextCell(s.name, 'py-2.5 px-3 font-bold text-primary'));
+      row.appendChild(createTextCell(s.city, 'py-2.5 px-3'));
+
+      var status = s.status == null ? '' : String(s.status);
+      var statusClass = Object.prototype.hasOwnProperty.call(statusBg, status) ? statusBg[status] : 'bg-slate-100';
+      var statusCell = document.createElement('td');
+      statusCell.className = 'py-2.5 px-3';
+      statusCell.appendChild(createBadge(status, 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + statusClass));
+      row.appendChild(statusCell);
+
+      row.appendChild(createTextCell(s.cert_expiry, 'py-2.5 px-3'));
+      row.appendChild(createTextCell(s.capacity, 'py-2.5 px-3'));
+      row.appendChild(createTextCell(s.last_menu, 'py-2.5 px-3'));
+      var actionCell = document.createElement('td');
+      actionCell.className = 'py-2.5 px-3 flex gap-1';
+      var detailButton = document.createElement('button');
+      detailButton.type = 'button';
+      detailButton.className = 'px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-semibold';
+      detailButton.textContent = 'Detail';
+      var suspendButton = document.createElement('button');
+      suspendButton.type = 'button';
+      suspendButton.className = 'px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-semibold';
+      suspendButton.textContent = 'Suspend';
+      actionCell.appendChild(detailButton);
+      actionCell.appendChild(suspendButton);
+      row.appendChild(actionCell);
+      tbody.appendChild(row);
+    });
   }
 
   // ── Security logs ─────────────────────────────────────────────────────────
   function loadSecurityLogs() {
     var tbody = document.getElementById('securityLogBody');
     tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-400">Memuat...</td></tr>';
-    // Ambil dari localStorage (client-side logs)
-    var logs = [];
-    try { logs = JSON.parse(localStorage.getItem('mbg_security_log') || '[]'); } catch(e) {}
-    // Fetch dari Worker juga
-    fetch('../../api/security_threats.php', { headers: {'X-Requested-By':'mbg-radar'}, credentials:'include' })
+    fetch('/api/security_threats', { headers: {'X-Requested-By':'mbg-radar'}, credentials:'include' })
     .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
     .then(function(res){
-      var all = (res.data || []).concat(logs.map(function(l){ return { type: l.type, ip: 'Client', country: '—', url: l.url, ts: l.ts }; }));
-      renderSecurityTable(all);
+      renderSecurityTable(Array.isArray(res.data) ? res.data : []);
     })
-    .catch(function(){ renderSecurityTable(logs.map(function(l){ return { type: l.type, ip: 'Client', country: '—', url: l.url, ts: l.ts }; })); });
+    .catch(function(){
+      tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-red-600">Gagal memuat log dari Neon. Periksa deployment dan konfigurasi database.</td></tr>';
+    });
   }
 
   function renderSecurityTable(data) {
     var tbody = document.getElementById('securityLogBody');
     if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Tidak ada log ancaman tercatat.</td></tr>'; return; }
     var typeBg = { xss:'bg-red-100 text-red-700', scrape:'bg-orange-100 text-orange-700', bot:'bg-purple-100 text-purple-700', brute_force:'bg-rose-100 text-rose-700' };
-    tbody.innerHTML = data.slice(0,50).map(function(l) {
-      var d = l.ts ? new Date(l.ts).toLocaleString('id-ID') : '—';
-      return '<tr class="hover:bg-slate-50">' +
-        '<td class="py-2.5 px-3 text-slate-500 font-mono text-[10px]">' + d + '</td>' +
-        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (typeBg[l.type]||'bg-slate-100 text-slate-600') + '">' + (l.type||'unknown') + '</span></td>' +
-        '<td class="py-2.5 px-3 font-mono text-[10px]">' + (l.ip||'—') + '</td>' +
-        '<td class="py-2.5 px-3">' + (l.country||'—') + '</td>' +
-        '<td class="py-2.5 px-3 text-[10px] text-slate-500 max-w-[180px] truncate">' + (l.url||'—') + '</td>' +
-        '<td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold">Diblokir</span></td>' +
-      '</tr>';
-    }).join('');
+    tbody.textContent = '';
+    data.slice(0,50).forEach(function(l) {
+      l = l || {};
+      var row = document.createElement('tr');
+      row.className = 'hover:bg-slate-50';
+      var date = l.ts ? new Date(l.ts).toLocaleString('id-ID') : '—';
+      row.appendChild(createTextCell(date, 'py-2.5 px-3 text-slate-500 font-mono text-[10px]'));
+
+      var type = l.type == null ? 'unknown' : String(l.type);
+      var typeClass = Object.prototype.hasOwnProperty.call(typeBg, type) ? typeBg[type] : 'bg-slate-100 text-slate-600';
+      var typeCell = document.createElement('td');
+      typeCell.className = 'py-2.5 px-3';
+      typeCell.appendChild(createBadge(type, 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + typeClass));
+      row.appendChild(typeCell);
+
+      row.appendChild(createTextCell(l.ip, 'py-2.5 px-3 font-mono text-[10px]'));
+      var location = [l.city, l.region, l.country].filter(function(value) {
+        return typeof value === 'string' && value.trim();
+      }).join(', ');
+      row.appendChild(createTextCell(location, 'py-2.5 px-3'));
+      row.appendChild(createTextCell(l.url, 'py-2.5 px-3 text-[10px] text-slate-500 max-w-[180px] truncate'));
+      var statusCell = document.createElement('td');
+      statusCell.className = 'py-2.5 px-3';
+      statusCell.appendChild(createBadge(l.blocked === true ? 'Diblokir' : 'Tercatat', 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (l.blocked === true ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600')));
+      row.appendChild(statusCell);
+      tbody.appendChild(row);
+    });
   }
 
   // ── Maintenance actions ───────────────────────────────────────────────────

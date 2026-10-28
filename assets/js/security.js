@@ -54,15 +54,14 @@ const BGNSecurity = (function () {
           userAgent: navigator.userAgent.substring(0, 120)
         }),
         keepalive: true
-      }).catch(() => {});
-    } catch (e) {}
-    // also store locally
-    try {
-      const logs = JSON.parse(localStorage.getItem('mbg_security_log') || '[]');
-      logs.push({ type, indicator: indicator.substring(0, 80), url: url || location.href, ts: Date.now() });
-      if (logs.length > 50) logs.splice(0, logs.length - 50);
-      localStorage.setItem('mbg_security_log', JSON.stringify(logs));
-    } catch (e) {}
+      }).then(function (response) {
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+      }).catch(function (error) {
+        console.error('Gagal mengirim log ancaman ke Neon:', error);
+      });
+    } catch (error) {
+      console.error('Gagal mengirim log ancaman ke Neon:', error);
+    }
   }
 
   // ─── Redirect to caught page with 3s delay ───────────────────────────────

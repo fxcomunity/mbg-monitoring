@@ -25,14 +25,6 @@ binding = "RATE"
 id = "b899bc3c00dd46e1bdfc0cb1803e485a"
 
 [[kv_namespaces]]
-binding = "THREATS"
-id = "4c3477648cc84d7897f3182f3df3f282"
-
-[[kv_namespaces]]
-binding = "BLOCKED_IPS"
-id = "ce7d7844b5a749b5a1eac646d7614ece"
-
-[[kv_namespaces]]
 binding = "MENU_CACHE"
 id = "446e89c787a64c2c868e3a54c2025de8"
 

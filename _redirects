@@ -31,6 +31,7 @@
 /api/telemetri.php        /api/telemetri        301
 /api/tiket.php            /api/tiket            301
 /api/upload_avatar.php    /api/upload_avatar    301
+/api/security_threats.php /api/security_threats     301
 
 # PHP files yang tidak berfungsi di Cloudflare Pages
 /aduan.php                /fitur/laporan-aduan.html       301
