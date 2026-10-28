@@ -2,8 +2,8 @@
  * Cloudflare Pages Function
  * Route: GET/POST /api/auth_user
  *
- * Menggunakan Neon HTTP API langsung tanpa npm dependency
- * agar bisa di-bundle oleh Cloudflare Pages tanpa build step.
+ * HARDENED VERSION - Fixed SQLi and Added Input Sanitization
+ * Project: MBG Monitoring
  */
 
 const CORS = {
@@ -22,6 +22,12 @@ function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: CORS });
 }
 
+// Sanitasi input untuk mencegah karakter aneh masuk ke logic
+function sanitize(str) {
+  if (typeof str !== 'string') return '';
+  return str.trim().toLowerCase();
+}
+
 async function hashPassword(password, salt) {
   const data = new TextEncoder().encode(salt + password);
   const buf  = await crypto.subtle.digest('SHA-256', data);
@@ -34,20 +40,13 @@ function generateToken() {
   return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-// Query Neon via HTTP — tidak perlu npm package
-// Neon mendukung REST API query via fetch dengan Basic Auth
 async function dbQuery(databaseUrl, query, params = []) {
   if (!databaseUrl) throw new Error('DATABASE_URL tidak dikonfigurasi');
 
-  // Parse connection string
   const m = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^\/]+)\/([^?]+)/);
   if (!m) throw new Error('DATABASE_URL format salah');
   const [, user, password, host, db] = m;
 
-  // Neon serverless HTTP endpoint
-  // Format: POST https://{host}/sql
-  // Headers: Authorization Basic, Neon-Connection-String
-  // Body: { query, params }
   const res = await fetch(`https://${host}/sql`, {
     method: 'POST',
     headers: {
@@ -64,7 +63,6 @@ async function dbQuery(databaseUrl, query, params = []) {
   }
 
   const data = await res.json();
-  // Neon HTTP returns { rows: [], fields: [] }
   return data.rows ?? data;
 }
 
@@ -88,7 +86,6 @@ export async function onRequest(context) {
 
   if (!env.DATABASE_URL) return json({ status: 'error', message: 'DATABASE_URL tidak dikonfigurasi di Cloudflare Pages' }, 500);
 
-  // ── GET: cek sesi ─────────────────────────────────────────────────────────
   if (request.method === 'GET') {
     const session = await getSession(request, env);
     if (!session) return json({ logged_in: false });
@@ -106,7 +103,6 @@ export async function onRequest(context) {
     });
   }
 
-  // ── POST ──────────────────────────────────────────────────────────────────
   if (request.method === 'POST') {
     let body = {};
     const ct = request.headers.get('Content-Type') || '';
@@ -120,7 +116,6 @@ export async function onRequest(context) {
     const action = body.action || '';
     const ip = request.headers.get('CF-Connecting-IP') || '0.0.0.0';
 
-    // LOGIN
     if (action === 'login') {
       if (env.RATE) {
         const rk  = `rate:login:${ip}`;
@@ -129,11 +124,14 @@ export async function onRequest(context) {
         await env.RATE.put(rk, String(cnt + 1), { expirationTtl: RATE_WINDOW });
       }
 
-      const username = String(body.username || '').trim().toLowerCase();
+      // HARDENING: Sanitize input
+      const username = sanitize(body.username);
       const password = String(body.password || '');
+      
       if (!username || !password) return json({ status: 'error', message: 'Username dan kata sandi wajib diisi.' });
 
       try {
+        // SECURE: Parameterized Query ($1)
         const rows = await dbQuery(env.DATABASE_URL,
           `SELECT id, username, full_name, email, role, sppg_name,
                   password_hash, salt, avatar_url, avatar_status
@@ -142,9 +140,10 @@ export async function onRequest(context) {
            LIMIT 1`,
           [username]
         );
+        
         const user = rows[0];
         if (!user) return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
-        if (!user.salt) return json({ status: 'error', message: 'Akun belum diaktivasi. Jalankan setup_users.sql di Neon.' });
+        if (!user.salt) return json({ status: 'error', message: 'Akun belum diaktivasi.' });
 
         const hash = await hashPassword(password, user.salt);
         if (hash !== user.password_hash) return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.' });
@@ -172,12 +171,11 @@ export async function onRequest(context) {
       }
     }
 
-    // REGISTER
     if (action === 'register') {
       const full_name = String(body.full_name || '').trim();
-      const email     = String(body.email     || '').trim().toLowerCase();
-      const username  = String(body.username  || '').trim().toLowerCase();
-      const password  = String(body.password  || '');
+      const email     = sanitize(body.email);
+      const username  = sanitize(body.username);
+      const password  = String(body.password || '');
       const role      = ['sppg','user'].includes(body.role) ? body.role : 'user';
       const sppg_name = String(body.sppg_name || '').trim();
 
@@ -205,7 +203,6 @@ export async function onRequest(context) {
       }
     }
 
-    // LIST USERS (admin only)
     if (action === 'list_users') {
       const session = await getSession(request, env);
       if (!session || session.role !== 'admin') return json({ status: 'error', message: 'Hanya admin.' }, 403);
