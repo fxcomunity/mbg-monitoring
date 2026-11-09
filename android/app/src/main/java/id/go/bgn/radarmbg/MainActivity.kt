@@ -159,14 +159,16 @@ fun MainScaffold(
 
     Scaffold(
         topBar = {
-            AppTopBar(
-                title = stringResource(R.string.app_name),
-                badgeCount = 0,
-                onNotificationClick = { outerNavController.navigate("notifikasi") },
-                onProfileClick = { outerNavController.navigate("profile") },
-                userInitial = userInitial,
-                userRole = userRole
-            )
+            if (currentRoute == "home") {
+                AppTopBar(
+                    title = stringResource(R.string.app_name),
+                    badgeCount = 0,
+                    onNotificationClick = { outerNavController.navigate("notifikasi") },
+                    onProfileClick = { outerNavController.navigate("profile") },
+                    userInitial = userInitial,
+                    userRole = userRole
+                )
+            }
         },
         bottomBar = {
             RadarNavBar(

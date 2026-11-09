@@ -16,6 +16,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -44,13 +45,11 @@ import id.go.bgn.radarmbg.data.api.models.SppgData
 import id.go.bgn.radarmbg.ui.theme.BgnPrimary
 import id.go.bgn.radarmbg.viewmodel.HomeUiState
 import id.go.bgn.radarmbg.viewmodel.HomeViewModel
-import kotlinx.coroutines.delay
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
-import kotlin.random.Random
 
 private data class WilayahItem(
     val label: String,
@@ -82,27 +81,22 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
         }
     }
 
-    // Simulated moving van positions
-    val vanOffsets = remember { mutableStateOf(List(3) { Pair(Random.nextDouble(-0.5, 0.5), Random.nextDouble(-0.5, 0.5)) }) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(3000L)
-            vanOffsets.value = List(3) { Pair(Random.nextDouble(-0.5, 0.5), Random.nextDouble(-0.5, 0.5)) }
-        }
-    }
-
     var sppgList by remember { mutableStateOf<List<SppgData>>(emptyList()) }
+    var sppgLoadFailed by remember { mutableStateOf(false) }
     var sppgBannerVisible by remember { mutableStateOf(true) }
+    var sppgReloadKey by remember { mutableStateOf(0) }
 
-    // Load SPPG data
-    LaunchedEffect(Unit) {
+    LaunchedEffect(sppgReloadKey) {
+        sppgLoadFailed = false
         try {
             val response = ApiClient.dataInstance.getSppg()
             if (response.status == "success") {
                 sppgList = response.data.filter { it.latitude != null && it.longitude != null }
+            } else {
+                sppgLoadFailed = true
             }
-        } catch (e: Exception) {
-            // Silent fail — SPPG data tidak kritikal
+        } catch (_: Exception) {
+            sppgLoadFailed = true
         }
     }
 
@@ -136,16 +130,30 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "⚠️ Data SPPG per Maret 2025. Koordinat sebagian lokasi dalam proses verifikasi.",
+                        text = if (sppgLoadFailed) {
+                            "Lokasi SPPG belum dapat dimuat. Periksa koneksi lalu coba lagi."
+                        } else {
+                            "${sppgList.size} lokasi SPPG ditampilkan. Sebagian koordinat mungkin masih dalam proses verifikasi."
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = Color(0xFF92400E),
                         modifier = Modifier.weight(1f)
                     )
                     TextButton(
-                        onClick = { sppgBannerVisible = false },
+                        onClick = {
+                            if (sppgLoadFailed) {
+                                sppgReloadKey += 1
+                            } else {
+                                sppgBannerVisible = false
+                            }
+                        },
                         contentPadding = PaddingValues(0.dp)
                     ) {
-                        Text("✕", color = Color(0xFF92400E), style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            text = if (sppgLoadFailed) "Coba lagi" else "Tutup",
+                            color = Color(0xFF92400E),
+                            style = MaterialTheme.typography.labelSmall
+                        )
                     }
                 }
             }
@@ -166,7 +174,7 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 )
                 ExposedDropdownMenu(
                     expanded = expanded,
@@ -186,12 +194,7 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
 
             // OSMDroid map
             Box(modifier = Modifier.weight(1f)) {
-                val distribusiList = when (val s = uiState) {
-                    is HomeUiState.Success -> s.distribusi
-                    else -> emptyList()
-                }
                 val currentWilayah = selectedWilayah
-                val currentVanOffsets = vanOffsets.value
                 val currentSppgList = sppgList
 
                 AndroidView(
@@ -223,36 +226,6 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
                             }
                             if (sppgIconDrawable != null) sppgMarker.icon = sppgIconDrawable
                             mapView.overlays.add(sppgMarker)
-                        }
-
-                        // Province markers (green)
-                        val greenDrawable: Drawable? = AppCompatResources.getDrawable(mapView.context, R.drawable.ic_location)
-                        distribusiList.forEachIndexed { idx, provinsi ->
-                            val approxLat = -2.5 + (idx * 1.5)
-                            val approxLng = 108.0 + (idx * 3.0)
-                            val marker = Marker(mapView)
-                            marker.position = GeoPoint(approxLat, approxLng)
-                            marker.title = provinsi.provinsi
-                            marker.snippet = "Ketepatan: ${provinsi.ketepatan}%"
-                            if (greenDrawable != null) {
-                                marker.icon = greenDrawable
-                            }
-                            mapView.overlays.add(marker)
-                        }
-
-                        // Moving van markers (blue — use ic_verified as van icon)
-                        val vanDrawable: Drawable? = AppCompatResources.getDrawable(mapView.context, R.drawable.ic_verified)
-                        currentVanOffsets.forEachIndexed { idx, offset ->
-                            val vanMarker = Marker(mapView)
-                            vanMarker.position = GeoPoint(
-                                currentWilayah.lat + offset.first,
-                                currentWilayah.lng + offset.second
-                            )
-                            vanMarker.title = "Van ${idx + 1}"
-                            if (vanDrawable != null) {
-                                vanMarker.icon = vanDrawable
-                            }
-                            mapView.overlays.add(vanMarker)
                         }
 
                         mapView.invalidate()

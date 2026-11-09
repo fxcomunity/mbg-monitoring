@@ -1,11 +1,5 @@
 package id.go.bgn.radarmbg.ui.screens
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -84,20 +78,7 @@ fun LoginScreen(
         }
     }
 
-    // Animated gradient background
-    val infiniteTransition = rememberInfiniteTransition(label = "bg_anim")
-    val gradientAlpha by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "gradient_alpha"
-    )
-
     Box(modifier = Modifier.fillMaxSize()) {
-        // Base gradient layer
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -107,21 +88,6 @@ fun LoginScreen(
                     )
                 )
         )
-        // Animated overlay gradient layer
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            DarkNavyLight.copy(alpha = gradientAlpha * 0.5f),
-                            DarkNavyMid.copy(alpha = gradientAlpha * 0.3f),
-                            DarkNavy.copy(alpha = gradientAlpha * 0.1f)
-                        )
-                    )
-                )
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -129,7 +95,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Logo + title section
-            Spacer(modifier = Modifier.height(64.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             Image(
                 painter = painterResource(id = R.mipmap.ic_launcher),
@@ -152,7 +118,7 @@ fun LoginScreen(
                 fontSize = 14.sp
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             // Glass card form
             Box(
@@ -275,7 +241,7 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(28.dp))
         }
     }
 }

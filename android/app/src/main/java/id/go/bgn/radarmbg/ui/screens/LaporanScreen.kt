@@ -94,6 +94,7 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
     var tiketInput by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
     var kategoriExpanded by remember { mutableStateOf(false) }
+    var cameraError by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -104,6 +105,7 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
     ) { success ->
         if (success) {
             laporanViewModel.photoUri.value = photoUri
+            cameraError = false
         }
     }
 
@@ -179,13 +181,15 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
 
             // Role selection
             Text(text = "Pelapor sebagai:", fontSize = 13.sp, color = BgnOnSurfaceVariant)
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Column {
                 listOf("user" to "Wali Murid", "sppg" to "SPPG", "ortu" to "Orang Tua").forEach { (value, label) ->
-                    RadioButton(
-                        selected = role == value,
-                        onClick = { laporanViewModel.role.value = value }
-                    )
-                    Text(text = label, modifier = Modifier.padding(end = 8.dp), fontSize = 13.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(
+                            selected = role == value,
+                            onClick = { laporanViewModel.role.value = value }
+                        )
+                        Text(text = label, modifier = Modifier.padding(end = 8.dp), fontSize = 13.sp)
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
@@ -262,6 +266,7 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
             OutlinedButton(
                 onClick = {
                     try {
+                        cameraError = false
                         val photoFile = File.createTempFile("aduan_", ".jpg", context.cacheDir)
                         val uri = FileProvider.getUriForFile(
                             context,
@@ -271,12 +276,21 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
                         photoUri = uri
                         cameraLauncher.launch(uri)
                     } catch (e: Exception) {
-                        // Camera not available in emulator
+                        cameraError = true
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.btn_foto))
+            }
+
+            if (cameraError) {
+                Text(
+                    text = "Kamera tidak dapat dibuka. Periksa izin kamera atau coba lagi.",
+                    color = StatusError,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
 
             if (laporanViewModel.photoUri.collectAsState().value != null) {

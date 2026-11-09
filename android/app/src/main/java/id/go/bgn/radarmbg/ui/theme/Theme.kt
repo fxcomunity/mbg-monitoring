@@ -8,10 +8,13 @@ private val LightColorScheme = lightColorScheme(
     primary = BgnPrimary,
     primaryContainer = BgnPrimaryContainer,
     secondary = BgnSecondary,
+    tertiary = StatusSuccess,
     background = BgnBackground,
     surface = BgnSurface,
+    surfaceVariant = BgnSurfaceVariant,
     onSurface = BgnOnSurface,
     onSurfaceVariant = BgnOnSurfaceVariant,
+    outline = BgnOutline,
     error = StatusError
 )
 

@@ -9,10 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -36,6 +39,8 @@ import id.go.bgn.radarmbg.R
 import id.go.bgn.radarmbg.ui.components.MenuCard
 import id.go.bgn.radarmbg.ui.components.SkeletonBox
 import id.go.bgn.radarmbg.ui.theme.BgnPrimary
+import id.go.bgn.radarmbg.ui.theme.BgnOnSurfaceVariant
+import id.go.bgn.radarmbg.ui.theme.BgnBackground
 import id.go.bgn.radarmbg.viewmodel.MenuUiState
 import id.go.bgn.radarmbg.viewmodel.MenuViewModel
 
@@ -67,6 +72,7 @@ fun MenuScreen(menuViewModel: MenuViewModel = viewModel()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .background(BgnBackground)
                         .padding(innerPadding)
                         .padding(16.dp)
                 ) {
@@ -80,10 +86,29 @@ fun MenuScreen(menuViewModel: MenuViewModel = viewModel()) {
 
             is MenuUiState.Error -> {
                 Box(
-                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(BgnBackground)
+                        .padding(innerPadding)
+                        .padding(24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = state.message, color = BgnPrimary)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = state.message,
+                            color = BgnOnSurfaceVariant,
+                            fontSize = 14.sp
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { menuViewModel.loadMenu() },
+                            colors = ButtonDefaults.buttonColors(containerColor = BgnPrimary)
+                        ) {
+                            Text(stringResource(R.string.action_retry))
+                        }
+                    }
                 }
             }
 
@@ -91,8 +116,22 @@ fun MenuScreen(menuViewModel: MenuViewModel = viewModel()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .background(BgnBackground)
                         .padding(innerPadding)
                 ) {
+                    Text(
+                        text = "Menu yang tersedia hari ini",
+                        color = BgnPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                    )
+                    Text(
+                        text = "Pilih kota untuk melihat menu dari SPPG setempat.",
+                        color = BgnOnSurfaceVariant,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp)
+                    )
                     // Filter chips
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -124,7 +163,9 @@ fun MenuScreen(menuViewModel: MenuViewModel = viewModel()) {
 
                     if (state.filtered.isEmpty()) {
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(24.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(

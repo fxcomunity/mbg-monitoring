@@ -186,6 +186,22 @@ fun HomeScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        item {
+                            Column(modifier = Modifier.padding(bottom = 2.dp)) {
+                                Text(
+                                    text = "Pantauan nasional",
+                                    fontSize = 21.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BgnOnSurface
+                                )
+                                Text(
+                                    text = "Ringkasan pelaksanaan Program Makan Bergizi Gratis",
+                                    fontSize = 13.sp,
+                                    color = BgnOnSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
                         // KPI row 1
                         item {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -230,7 +246,17 @@ fun HomeScreen(
                                 modifier = Modifier.padding(top = 4.dp)
                             )
                         }
-                        items(distribusi) { ProvinsiRow(it) }
+                        if (distribusi.isEmpty()) {
+                            item {
+                                Text(
+                                    text = "Data distribusi provinsi belum tersedia.",
+                                    fontSize = 13.sp,
+                                    color = BgnOnSurfaceVariant
+                                )
+                            }
+                        } else {
+                            items(distribusi) { ProvinsiRow(it) }
+                        }
                     }
                 }
             }

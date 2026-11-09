@@ -1,5 +1,6 @@
 package id.go.bgn.radarmbg.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,10 +14,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.NotificationsNone
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -101,22 +108,48 @@ fun NotifikasiScreen(notifikasiViewModel: NotifikasiViewModel = viewModel()) {
                 }
 
                 is NotifikasiUiState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = state.message, color = StatusError, fontSize = 14.sp)
+                    Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(text = state.message, color = StatusError, fontSize = 14.sp)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { notifikasiViewModel.loadNotifikasi() },
+                                colors = ButtonDefaults.buttonColors(containerColor = BgnPrimary)
+                            ) {
+                                Text(stringResource(R.string.action_retry))
+                            }
+                        }
                     }
                 }
 
                 is NotifikasiUiState.Success -> {
                     val data = state.data
                     if (data.latest_reports.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize().padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("🔔", fontSize = 40.sp)
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Icon(
+                                    imageVector = Icons.Default.NotificationsNone,
+                                    contentDescription = null,
+                                    tint = BgnPrimary.copy(alpha = 0.6f),
+                                    modifier = Modifier
+                                        .background(BgnPrimary.copy(alpha = 0.08f), RoundedCornerShape(20.dp))
+                                        .padding(18.dp)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
                                 Text(
                                     text = stringResource(R.string.notif_empty),
+                                    color = BgnPrimary,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Laporan terbaru akan muncul di sini.",
                                     color = BgnOnSurfaceVariant,
-                                    fontSize = 14.sp
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.padding(top = 4.dp)
                                 )
                             }
                         }
@@ -136,18 +169,25 @@ fun NotifikasiScreen(notifikasiViewModel: NotifikasiViewModel = viewModel()) {
                                         modifier = Modifier.padding(16.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text("📊 ", fontSize = 20.sp)
+                                        Icon(
+                                            imageVector = Icons.Default.Assessment,
+                                            contentDescription = null,
+                                            tint = BgnPrimary,
+                                            modifier = Modifier.padding(end = 12.dp)
+                                        )
                                         Column {
                                             Text(
                                                 text = "${data.laporan_masuk_count} laporan masuk",
                                                 fontWeight = FontWeight.Bold,
                                                 color = BgnPrimary
                                             )
-                                            Text(
-                                                text = "Badge: ${data.badge_count}",
-                                                fontSize = 12.sp,
-                                                color = BgnOnSurfaceVariant
-                                            )
+                                            if (data.badge_count > 0) {
+                                                Text(
+                                                    text = "${data.badge_count} belum dibaca",
+                                                    fontSize = 12.sp,
+                                                    color = BgnOnSurfaceVariant
+                                                )
+                                            }
                                         }
                                     }
                                 }

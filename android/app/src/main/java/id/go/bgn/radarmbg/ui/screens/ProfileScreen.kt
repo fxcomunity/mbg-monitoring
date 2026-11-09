@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.ChevronRight
@@ -55,6 +57,7 @@ import id.go.bgn.radarmbg.ui.theme.BgnOnSurface
 import id.go.bgn.radarmbg.ui.theme.BgnOnSurfaceVariant
 import id.go.bgn.radarmbg.ui.theme.BgnPrimary
 import id.go.bgn.radarmbg.ui.theme.BgnPrimaryContainer
+import id.go.bgn.radarmbg.ui.theme.BgnBackground
 import id.go.bgn.radarmbg.ui.theme.BgnTertiaryFixed
 import id.go.bgn.radarmbg.viewmodel.AuthUiState
 import id.go.bgn.radarmbg.viewmodel.AuthViewModel
@@ -167,7 +170,9 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp),
+                .background(BgnBackground)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(24.dp))

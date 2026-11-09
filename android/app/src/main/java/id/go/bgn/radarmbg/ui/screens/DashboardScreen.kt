@@ -64,16 +64,16 @@ fun DashboardScreen(
 ) {
     val tiles: List<DashboardTile> = when (userRole) {
         "admin" -> listOf(
-            DashboardTile(R.string.tile_kpi_nasional, Icons.Default.ShowChart, {}, true),
-            DashboardTile(R.string.tile_manajemen_akun, Icons.Default.People, {}, true),
-            DashboardTile(R.string.tile_status_sppg, Icons.Default.CheckCircle, {}, true),
-            DashboardTile(R.string.tile_backup_menu, Icons.Default.Archive, {}, true),
+            DashboardTile(R.string.tile_kpi_nasional, Icons.Default.ShowChart, {}, false),
+            DashboardTile(R.string.tile_manajemen_akun, Icons.Default.People, {}, false),
+            DashboardTile(R.string.tile_status_sppg, Icons.Default.CheckCircle, {}, false),
+            DashboardTile(R.string.tile_backup_menu, Icons.Default.Archive, {}, false),
             DashboardTile(R.string.tile_log_keamanan, Icons.Default.Security, onNavigateToAdminPanel, true)
         )
         "sppg" -> listOf(
-            DashboardTile(R.string.tile_input_menu, Icons.Default.Edit, {}, true),
-            DashboardTile(R.string.tile_profil_dapur, Icons.Default.Restaurant, {}, true),
-            DashboardTile(R.string.tile_laporan_distribusi, Icons.Default.BarChart, {}, true)
+            DashboardTile(R.string.tile_input_menu, Icons.Default.Edit, {}, false),
+            DashboardTile(R.string.tile_profil_dapur, Icons.Default.Restaurant, {}, false),
+            DashboardTile(R.string.tile_laporan_distribusi, Icons.Default.BarChart, {}, false)
         )
         else -> listOf(
             DashboardTile(R.string.tile_status_laporan, Icons.Default.Assignment, onNavigateToLaporan, true),
@@ -100,9 +100,25 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item {
+                Column(modifier = Modifier.padding(bottom = 4.dp)) {
+                    Text(
+                        text = "Akses cepat",
+                        color = BgnPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
+                    )
+                    Text(
+                        text = "Pilih fitur yang tersedia untuk akun Anda.",
+                        color = BgnOnSurfaceVariant,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
             val rows = tiles.chunked(2)
             items(rows) { row ->
                 Row(
@@ -130,13 +146,17 @@ private fun DashboardTileCard(
     tile: DashboardTile,
     modifier: Modifier = Modifier
 ) {
-    val containerColor = if (tile.isEnabled) BgnPrimaryContainer else BgnBackground
+    val containerColor = if (tile.isEnabled) Color.White else BgnBackground
     val contentColor = if (tile.isEnabled) Color.White else BgnOnSurfaceVariant
 
     ElevatedCard(
         onClick = tile.onClick,
-        modifier = modifier.height(120.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = containerColor),
+        modifier = modifier.height(136.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = containerColor,
+            contentColor = if (tile.isEnabled) BgnPrimaryContainer else BgnOnSurfaceVariant
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (tile.isEnabled) 2.dp else 0.dp),
         enabled = tile.isEnabled
     ) {
         Box(
@@ -152,13 +172,13 @@ private fun DashboardTileCard(
                 Icon(
                     imageVector = tile.icon,
                     contentDescription = null,
-                    tint = contentColor,
+                    tint = if (tile.isEnabled) BgnPrimaryContainer else contentColor,
                     modifier = Modifier.size(32.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(tile.labelRes),
-                    color = contentColor,
+                    color = if (tile.isEnabled) BgnPrimary else contentColor,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center

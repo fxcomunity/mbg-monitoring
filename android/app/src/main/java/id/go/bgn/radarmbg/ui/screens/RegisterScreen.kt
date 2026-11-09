@@ -1,6 +1,8 @@
 package id.go.bgn.radarmbg.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,9 +17,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.go.bgn.radarmbg.R
 import id.go.bgn.radarmbg.ui.theme.BgnPrimary
+import id.go.bgn.radarmbg.ui.theme.BgnBackground
 import id.go.bgn.radarmbg.ui.theme.StatusError
 import id.go.bgn.radarmbg.viewmodel.AuthUiState
 import id.go.bgn.radarmbg.viewmodel.AuthViewModel
@@ -96,8 +100,23 @@ fun RegisterScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
-                .padding(24.dp)
+                .background(BgnBackground)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
+            Text(
+                text = "Daftar untuk memantau program MBG",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = BgnPrimary
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Lengkapi data di bawah untuk membuat akun.",
+                fontSize = 14.sp,
+                color = Color(0xFF596579)
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+
             OutlinedTextField(
                 value = namaLengkap,
                 onValueChange = { namaLengkap = it },
@@ -163,20 +182,30 @@ fun RegisterScreen(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(
                     selected = selectedRole == "user",
-                    onClick = { selectedRole = "user" }
+                    onClick = { selectedRole = "user" },
+                    label = { Text(stringResource(R.string.role_user)) },
+                    modifier = Modifier.weight(1f),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = BgnPrimary,
+                        selectedLabelColor = Color.White
+                    )
                 )
-                Text(
-                    text = stringResource(R.string.role_user),
-                    modifier = Modifier.padding(end = 16.dp)
-                )
-                RadioButton(
+                FilterChip(
                     selected = selectedRole == "sppg",
-                    onClick = { selectedRole = "sppg" }
+                    onClick = { selectedRole = "sppg" },
+                    label = { Text(stringResource(R.string.role_sppg)) },
+                    modifier = Modifier.weight(1f),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = BgnPrimary,
+                        selectedLabelColor = Color.White
+                    )
                 )
-                Text(text = stringResource(R.string.role_sppg))
             }
 
             if (selectedRole == "sppg") {

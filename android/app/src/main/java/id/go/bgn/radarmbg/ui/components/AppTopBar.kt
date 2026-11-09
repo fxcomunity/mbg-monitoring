@@ -2,6 +2,7 @@ package id.go.bgn.radarmbg.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,10 +27,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import id.go.bgn.radarmbg.R
+import id.go.bgn.radarmbg.ui.theme.BgnTertiaryFixed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +54,8 @@ fun AppTopBar(
         colors = listOf(
             Color(0xFF001026),
             Color(0xFF0B2545),
-            Color(0xFF134074)
+            Color(0xFF134074),
+            Color(0xFF0B2545)
         )
     )
 
@@ -60,7 +64,7 @@ fun AppTopBar(
             .fillMaxWidth()
             .background(gradient)
             .statusBarsPadding()
-            .height(56.dp)
+            .height(64.dp)
     ) {
         Row(
             modifier = Modifier
@@ -78,14 +82,22 @@ fun AppTopBar(
                     .clip(CircleShape)
             )
             Spacer(modifier = Modifier.width(10.dp))
-            // App title
-            Text(
-                text = title,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    lineHeight = 20.sp
+                )
+                Text(
+                    text = stringResource(R.string.bgn_institution_name),
+                    color = Color.White.copy(alpha = 0.78f),
+                    fontSize = 10.sp,
+                    lineHeight = 14.sp,
+                    maxLines = 1
+                )
+            }
             // Bell icon with badge
             IconButton(onClick = onNotificationClick) {
                 BadgedBox(
@@ -98,7 +110,7 @@ fun AppTopBar(
                     Icon(
                         imageVector = Icons.Default.Notifications,
                         contentDescription = "Notifikasi",
-                        tint = Color.White
+                        tint = BgnTertiaryFixed
                     )
                 }
             }

@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import id.go.bgn.radarmbg.R
+import id.go.bgn.radarmbg.ui.theme.BgnOnSurfaceVariant
 import id.go.bgn.radarmbg.ui.theme.BgnPrimary
 import androidx.compose.material3.Icon
 
@@ -20,7 +21,7 @@ fun RadarNavBar(
     val items = listOf(
         NavItem("home", R.drawable.ic_beranda, R.string.nav_beranda),
         NavItem("menu", R.drawable.ic_menu_hari_ini, R.string.nav_menu),
-        NavItem("peta", R.drawable.ic_distribusi, R.string.nav_peta),
+        NavItem("peta", R.drawable.ic_location, R.string.nav_peta),
         NavItem("laporan", R.drawable.ic_laporan, R.string.nav_laporan)
     )
 
@@ -36,21 +37,21 @@ fun RadarNavBar(
                     Icon(
                         painter = painterResource(id = item.iconRes),
                         contentDescription = stringResource(item.labelRes),
-                        tint = if (selected) BgnPrimary else Color.Gray
+                        tint = if (selected) BgnPrimary else BgnOnSurfaceVariant
                     )
                 },
                 label = {
                     Text(
                         text = stringResource(item.labelRes),
-                        color = if (selected) BgnPrimary else Color.Gray
+                        color = if (selected) BgnPrimary else BgnOnSurfaceVariant
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = BgnPrimary,
                     selectedTextColor = BgnPrimary,
-                    indicatorColor = BgnPrimary.copy(alpha = 0.1f),
-                    unselectedIconColor = Color.Gray,
-                    unselectedTextColor = Color.Gray
+                    indicatorColor = BgnPrimary.copy(alpha = 0.08f),
+                    unselectedIconColor = BgnOnSurfaceVariant,
+                    unselectedTextColor = BgnOnSurfaceVariant
                 )
             )
         }
