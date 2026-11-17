@@ -1,11 +1,11 @@
 <?php
 // api/sppg_map.php — GeoJSON FeatureCollection for SPPG map
-if (!function_exists('getDB')) { require_once __DIR__ . '/../database/db.php'; }
+require_once __DIR__ . '/../database/api_bootstrap.php';
 if (!class_exists('Security')) { require_once __DIR__ . '/../database/security.php'; }
 
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
-header('Cache-Control: public, max-age=60');
+header('Cache-Control: no-store');
 
 try {
     $pdo = getDB();
@@ -13,10 +13,10 @@ try {
     // Parameters
     $provinsi = trim($_GET['provinsi'] ?? '');
     $bbox     = trim($_GET['bbox']     ?? '');  // minlat,minlng,maxlat,maxlng
-    $limit    = min((int)($_GET['limit'] ?? 5000), 30000);
+    $limit    = min((int)($_GET['limit'] ?? 5000), 50000);
     if ($limit <= 0) { $limit = 5000; }
 
-    $where  = ['latitude IS NOT NULL', 'longitude IS NOT NULL'];
+    $where  = [];
     $params = [];
 
     if ($provinsi !== '') {
@@ -24,22 +24,16 @@ try {
         $params[] = $provinsi;
     }
 
-    if ($bbox !== '') {
-        $parts = array_map('trim', explode(',', $bbox));
-        if (count($parts) === 4) {
-            [$minlat, $minlng, $maxlat, $maxlng] = $parts;
-            $where[]  = 'latitude  BETWEEN ? AND ?';
-            $params[] = (float)$minlat;
-            $params[] = (float)$maxlat;
-            $where[]  = 'longitude BETWEEN ? AND ?';
-            $params[] = (float)$minlng;
-            $params[] = (float)$maxlng;
-        }
+    $bboxParts = $bbox !== '' ? array_map('trim', explode(',', $bbox)) : [];
+    $bounds = count($bboxParts) === 4 ? array_map('floatval', $bboxParts) : null;
+    if ($bounds !== null && ($bounds[0] > $bounds[2] || $bounds[1] > $bounds[3])) {
+        $bounds = null;
     }
 
-    $whereClause = 'WHERE ' . implode(' AND ', $where);
+    $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
-    $sql = "SELECT id, nama, provinsi, kabupaten_kota, status, latitude, longitude
+    $sql = "SELECT id, nama, provinsi, kabupaten_kota, alamat, nama_yayasan,
+                   status, data_bulan, latitude, longitude
             FROM sppg
             {$whereClause}
             ORDER BY id
@@ -49,32 +43,153 @@ try {
     $stmt->execute($params);
     $rows = $stmt->fetchAll();
 
+    $centroidFile = __DIR__ . '/../database/data/indonesia-city-centroids.json';
+    $centroidJson = file_get_contents($centroidFile);
+    if ($centroidJson === false) {
+        throw new RuntimeException('Data centroid kabupaten/kota tidak dapat dibaca');
+    }
+    $centroidData = json_decode($centroidJson, true, 512, JSON_THROW_ON_ERROR);
+    $normalizeName = static function (?string $value): string {
+        $value = strtoupper(trim((string)$value));
+        $value = preg_replace('/^(KABUPATEN|KAB\\.|KOTA ADMINISTRASI|KOTA)\\s+/u', '', $value);
+        $value = preg_replace('/\\s+/u', ' ', $value);
+        return trim($value);
+    };
+    $provinceAliases = [
+        'DAERAH ISTIMEWA YOGYAKARTA' => 'DI YOGYAKARTA',
+    ];
+    $centroidsByProvinceCity = [];
+    $centroidsByCity = [];
+    $centroidsByProvince = [];
+    foreach ($centroidData['provinces'] as $centroid) {
+        $provinceKey = $normalizeName($centroid['province'] ?? '');
+        if ($provinceKey !== '') {
+            $centroidsByProvince[$provinceKey] = $centroid;
+        }
+    }
+    foreach ($centroidData['cities'] as $centroid) {
+        $cityKey = $normalizeName($centroid['city'] ?? '');
+        $provinceKey = $normalizeName($centroid['province'] ?? '');
+        if ($cityKey === '' || $provinceKey === '') {
+            continue;
+        }
+        $centroidsByProvinceCity[$provinceKey . '|' . $cityKey] = $centroid;
+        $centroidsByCity[$cityKey][] = $centroid;
+    }
+
     $features = [];
+    $approximateFeatureIndexes = [];
+    $mappedCount = 0;
+    $approximateCount = 0;
+    $gpsCount = 0;
+    $unmapped = 0;
     foreach ($rows as $r) {
+        $latitude = $r['latitude'] !== null ? (float)$r['latitude'] : null;
+        $longitude = $r['longitude'] !== null ? (float)$r['longitude'] : null;
+        $estimated = false;
+        $locationLabel = 'Koordinat GPS terdaftar';
+
+        if ($latitude === null || $longitude === null) {
+            $cityKey = $normalizeName($r['kabupaten_kota'] ?? '');
+            $provinceName = $normalizeName($r['provinsi'] ?? '');
+            $provinceKey = $provinceAliases[$provinceName] ?? $provinceName;
+            $centroid = $centroidsByProvinceCity[$provinceKey . '|' . $cityKey] ?? null;
+
+            if ($centroid === null && count($centroidsByCity[$cityKey] ?? []) === 1) {
+                $centroid = $centroidsByCity[$cityKey][0];
+            }
+            if ($centroid !== null) {
+                $latitude = (float)$centroid['latitude'];
+                $longitude = (float)$centroid['longitude'];
+                $locationLabel = 'Perkiraan pusat kabupaten/kota';
+            } else {
+                $centroid = $centroidsByProvince[$provinceKey] ?? null;
+                if ($centroid === null) {
+                    $unmapped++;
+                    continue;
+                }
+                $latitude = (float)$centroid['latitude'];
+                $longitude = (float)$centroid['longitude'];
+                $locationLabel = 'Perkiraan pusat provinsi';
+            }
+            $estimated = true;
+        }
+
+        if ($bounds !== null && (
+            $latitude < $bounds[0] || $latitude > $bounds[2] ||
+            $longitude < $bounds[1] || $longitude > $bounds[3]
+        )) {
+            continue;
+        }
+
+        $mappedCount++;
+        $properties = [
+            'id'             => (int)$r['id'],
+            'nama'           => $estimated
+                ? ($r['kabupaten_kota'] ?: 'Wilayah ' . ($r['provinsi'] ?: 'SPPG'))
+                : $r['nama'],
+            'provinsi'       => $r['provinsi'],
+            'kabupaten_kota' => $r['kabupaten_kota'],
+            'alamat'         => $r['alamat'],
+            'nama_yayasan'   => $r['nama_yayasan'],
+            'status'         => $r['status'],
+            'data_bulan'     => $r['data_bulan'],
+            'location_accuracy' => $estimated ? 'approximate' : 'gps',
+            'location_label' => $locationLabel,
+            'sppg_count'     => 1,
+        ];
+
+        if ($estimated) {
+            $approximateCount++;
+            $featureKey = implode('|', [
+                $provinceKey,
+                $cityKey,
+                number_format($latitude, 6, '.', ''),
+                number_format($longitude, 6, '.', ''),
+            ]);
+            if (!isset($approximateFeatureIndexes[$featureKey])) {
+                $approximateFeatureIndexes[$featureKey] = count($features);
+                $properties['sppg_count'] = 0;
+                $features[] = [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Point',
+                        'coordinates' => [$longitude, $latitude],
+                    ],
+                    'properties' => $properties + ['sample_names' => []],
+                ];
+            }
+
+            $featureIndex = $approximateFeatureIndexes[$featureKey];
+            $features[$featureIndex]['properties']['sppg_count']++;
+            if (count($features[$featureIndex]['properties']['sample_names']) < 3) {
+                $features[$featureIndex]['properties']['sample_names'][] = $r['nama'];
+            }
+            continue;
+        }
+
+        $gpsCount++;
         $features[] = [
-            'type'       => 'Feature',
-            'geometry'   => [
-                'type'        => 'Point',
-                'coordinates' => [(float)$r['longitude'], (float)$r['latitude']],
+            'type' => 'Feature',
+            'geometry' => [
+                'type' => 'Point',
+                'coordinates' => [$longitude, $latitude],
             ],
-            'properties' => [
-                'id'             => (int)$r['id'],
-                'nama'           => $r['nama'],
-                'provinsi'       => $r['provinsi'],
-                'kabupaten_kota' => $r['kabupaten_kota'],
-                'status'         => $r['status'],
-            ],
+            'properties' => $properties,
         ];
     }
 
     echo json_encode([
         'type'     => 'FeatureCollection',
-        'count'    => count($features),
+        'count'    => $mappedCount,
+        'approximate_count' => $approximateCount,
+        'gps_count' => $gpsCount,
+        'unmapped' => $unmapped,
         'features' => $features,
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $e) {
-    error_log('[api/sppg_map.php error] ' . $e->getMessage());
+    Security::logFailure('sppg_map.php', $e);
     http_response_code(500);
     echo json_encode([
         'status'  => 'error',
