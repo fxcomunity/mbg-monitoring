@@ -25,7 +25,24 @@
   </script>
   <link rel="stylesheet" href="../../assets/css/style.css"/>
   <link rel="stylesheet" href="../../assets/css/dashboard.css"/>
-  <style>html{visibility:hidden}</style>
+  <style>
+    html{visibility:hidden}
+    #security-log{scroll-margin-top:9rem}
+    #security-log .security-stat{transition:transform .2s ease,box-shadow .2s ease}
+    #security-log .security-stat:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(11,37,69,.06)}
+    #security-log tbody tr{transition:background-color .15s ease}
+    #security-log button:focus-visible,#security-log input:focus-visible,#security-log select:focus-visible{outline:2px solid #395f95;outline-offset:3px}
+    #security-log .security-enter{animation:security-enter .25s ease-out}
+    #securityRefreshBtn[disabled]{opacity:.65;cursor:wait}
+    #securityRefreshBtn[disabled] .material-symbols-outlined{animation:security-spin 1s linear infinite}
+    @keyframes security-enter{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes security-spin{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){
+      #security-log .security-stat,#security-log tbody tr{transition:none}
+      #security-log .security-stat:hover{transform:none}
+      #security-log .security-enter,#securityRefreshBtn[disabled] .material-symbols-outlined{animation:none}
+    }
+  </style>
   <script>
   // Auth guard — admin only
   (function(){
@@ -400,29 +417,65 @@
             <span class="material-symbols-outlined text-2xl">security</span>
           </div>
           <div>
-            <h2 class="text-base font-bold text-primary">Log Ancaman & Keamanan Sistem</h2>
-            <p class="text-xs text-slate-500">XSS, scraping, brute force, honeypot — dicatat dari semua halaman.</p>
+            <h2 class="text-base font-bold text-primary">Log Insiden & Sinyal Keamanan</h2>
+            <p class="text-xs text-slate-500">Tinjau indikasi aktivitas mencurigakan beserta metadata permintaan.</p>
           </div>
         </div>
-        <button onclick="loadSecurityLogs()" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all shrink-0">
-          <span class="material-symbols-outlined text-sm">refresh</span> Muat Ulang Log
+        <button id="securityRefreshBtn" type="button" onclick="loadSecurityLogs()" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all shrink-0" aria-controls="securityLogBody">
+          <span class="material-symbols-outlined text-sm" aria-hidden="true">refresh</span> <span id="securityRefreshLabel">Muat Ulang Log</span>
         </button>
       </div>
-      <div class="p-6">
-        <div class="overflow-x-auto">
+      <div class="p-4 sm:p-6 space-y-4">
+        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 leading-relaxed">
+          <strong>Indikasi</strong>, bukan bukti serangan.</strong> Deteksi heuristik dapat menghasilkan positif palsu. Lokasi IP bersifat perkiraan, bukan identitas pelaku. Status blok mengikuti laporan API dan bukan bukti permintaan ini diblokir. Payload tidak ditampilkan.
+        </div>
+        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+          <p></p>Ringkasan snapshot terbaru · maksimal 100 log, bukan total global · tidak mengikuti filter.</p>
+          <p id="securityUpdated">Belum ada snapshot.</p>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="security-stat p-4 rounded-2xl border border-slate-200 bg-slate-50"><p class="text-[11px] font-bold text-slate-500">Log dimuat</p><p id="securityCountTotal" class="text-2xl font-extrabold mt-1">—</p></div>
+          <div class="security-stat p-4 rounded-2xl border border-red-100 bg-red-50/60"><p class="text-[11px] font-bold text-red-700">Status blok: ya</p><p id="securityCountBlocked" class="text-2xl font-extrabold text-red-700 mt-1">—</p></div>
+          <div class="security-stat p-4 rounded-2xl border border-blue-100 bg-blue-50/60"><p class="text-[11px] font-bold text-blue-700">IP unik tersedia</p><p id="securityCountIps" class="text-2xl font-extrabold text-blue-700 mt-1">—</p></div>
+          <div class="security-stat p-4 rounded-2xl border border-slate-200 bg-slate-50"><p class="text-[11px] font-bold text-slate-500">Status blok tidak diketahui</p><p id="securityCountUnknown" class="text-2xl font-extrabold mt-1">—</p></div>
+        </div>
+        <p id="securityLoadStatus" role="status" aria-live="polite" class="rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-600">Belum dimuat. Status keamanan belum dapat disimpulkan.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="lg:col-span-2">
+            <label for="securitySearch" class="block text-[11px] font-bold text-slate-600 mb-1">Cari metadata</label>
+            <input id="securitySearch" type="search" placeholder="Jenis, IP, negara, wilayah, kota, URL, field, rule…" oninput="filterSecurityLogs()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"/>
+          </div>
+          <div>
+            <label for="securi</div>tyTypeFilter" class="block text-[11px] font-bold text-slate-600 mb-1">Jenis indikasi</label>
+            <select id="securityTypeFilter" onchange="filterSecurityLogs()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"><option value="">Semua jenis</option></select>
+          </div>
+          <div>
+            <label for="securityBlockedFilter" class="block text-[11px] font-bold text-slate-600 mb-1">Status blok</div> (API)</label>
+            <select id="securityBlockedFilter" onchange="filterSecurityLogs()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"><option value="">Semua status</option><option value="yes">Ya</option><option value="no">Tidak</option><option value="unknown">Tidak diketahui</option></select>
+          </div>
+        </div>
+        <div class="flex items-center justify-between gap-3 text-[11px] text-slate-500">
+          <p id="securityResultCount" role="status" aria-live="polite">Belum ada data untuk difilter.</p>
+          <button type="button" onclick="resetSecurityFilters()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-semibold transition-all">Reset filter</button>
+        </div>
+        <div id="securityTableRegion" class="overflow-x-auto rounded-xl border border-slate-100" role="region" aria-label="Daftar log keamanan" tabindex="0" aria-busy="false">
           <table class="w-full text-xs text-left">
+            <caption class="sr-only">Metadata maksimal 100 log terbaru. Waktu menggunakan zona waktu browser. Nilai yang tidak tersedia ditandai garis.</caption>
             <thead>
               <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[11px]">
-                <th class="py-2.5 px-3 rounded-l-lg">Waktu</th>
-                <th class="py-2.5 px-3">Jenis Ancaman</th>
-                <th class="py-2.5 px-3">IP</th>
-                <th class="py-2.5 px-3">Lokasi (perkiraan)</th>
-                <th class="py-2.5 px-3">URL Asal</th>
-                <th class="py-2.5 px-3 rounded-r-lg">Status</th>
+                <</thead>th scope="col" class="py-3 px-3">Waktu (lokal)</th>
+                <th scope="col" class="py-3 px-3">Jenis indikasi</th>
+                <th scope="col" class="py-3 px-3">IP</th>
+                <th scope="col" class="py-3 px-3">Negara</th>
+                <th scope="col" class="py-3 px-3">Wilayah / Kota</th>
+                <th scope="col" class="py-3 px-3">URL (tanpa query)</th>
+                <th scope="col" class="py-3 px-3">Field / Rule</th>
+                <th scope="col" class="py-3 px-3">Sumber</th>
+                <th scope="col" class="py-3 px-3">Blok (API)</th>
               </tr>
             </thead>
             <tbody id="securityLogBody" class="divide-y divide-slate-100">
-              <tr><td colspan="6" class="py-6 text-center text-slate-400">Klik "Muat Ulang Log" untuk menampilkan data.</td></tr>
+              <tr><td colspan="9" class="py-8 px-3 text-center text-slate-500">Muat log untuk meninjau metadata keamanan.</td></tr>
             </tbody>
           </table>
         </div>
@@ -653,50 +706,182 @@
   }
 
   // ── Security logs ─────────────────────────────────────────────────────────
-  function loadSecurityLogs() {
+  var _securityLogs = [];
+  var _securityLoaded = false;
+  var _securityLoading = false;
+
+  function securityText(value) {
+    return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+  }
+
+  function securityTableMessage(message) {
     var tbody = document.getElementById('securityLogBody');
-    tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-400">Memuat...</td></tr>';
-    fetch('/api/security_threats', { headers: {'X-Requested-By':'mbg-radar'}, credentials:'include' })
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-    .then(function(res){
-      renderSecurityTable(Array.isArray(res.data) ? res.data : []);
+    var row = document.createElement('tr');
+    var cell = createTextCell(message, 'py-8 px-3 text-center text-slate-500');
+    cell.colSpan = 9;
+    row.appendChild(cell);
+    tbody.replaceChildren(row);
+  }
+
+  function loadSecurityLogs() {
+    if (_securityLoading) return;
+    _securityLoading = true;
+    var button = document.getElementById('securityRefreshBtn');
+    var status = document.getElementById('securityLoadStatus');
+    button.disabled = true;
+    document.getElementById('securityRefreshLabel').textContent = 'Memuat…';
+    document.getElementById('securityTableRegion').setAttribute('aria-busy', 'true');
+    status.className = 'rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-600';
+    status.textContent = _securityLoaded ? 'Memperbarui… snapshot sebelumnya tetap ditampilkan hingga selesai.' : 'Memuat log… status keamanan belum dapat disimpulkan.';
+    if (!_securityLoaded) securityTableMessage('Memuat metadata keamanan…');
+
+    var controller = new AbortController();
+    var timeout = setTimeout(function() { controller.abort(); }, 15000);
+    var options = { headers: {'X-Requested-By':'mbg-radar', 'Accept':'application/json'}, credentials:'include', cache:'no-store', signal:controller.signal };
+    fetch('/api/security_threats', options)
+    .then(function(r) {
+      // Only fall back for an unavailable route, never to bypass an auth failure.
+      if (r.status === 404 || r.status === 405) return fetch('../../api/security_threats.php', options);
+      return r;
     })
-    .catch(function(){
-      tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-red-600">Gagal memuat log dari Neon. Periksa deployment dan konfigurasi database.</td></tr>';
+    .then(function(r) {
+      if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'auth' : 'http');
+      return r.json();
+    })
+    .then(function(res) {
+      if (!res || res.status !== 'success' || !Array.isArray(res.data) || res.data.some(function(l) { return !l || typeof l !== 'object' || Array.isArray(l); })) {
+        throw new Error('format');
+      }
+      renderSecurityTable(res.data);
+      document.getElementById('securityUpdated').textContent = 'Snapshot: ' + new Date().toLocaleString('id-ID');
+      status.className = 'rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-800';
+      status.textContent = _securityLogs.length ? 'Snapshot dimuat. Tinjau indikasi secara manual; ringkasan hanya mencakup log yang diterima.' : 'API tidak mengembalikan log pada snapshot ini. Ini bukan jaminan sistem aman atau seluruh aktivitas tercatat.';
+    })
+    .catch(function(error) {
+      status.className = 'rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700';
+      var reason = error.message === 'auth' ? 'Akses ditolak atau sesi berakhir. Periksa sesi admin.' : error.name === 'AbortError' ? 'Permintaan melewati batas waktu 15 detik.' : 'API gagal dihubungi atau respons tidak valid. Periksa koneksi dan deployment.';
+      status.textContent = 'Gagal memuat log. ' + reason + (_securityLoaded ? ' Data dan ringkasan di bawah adalah snapshot lama, bukan kondisi terkini.' : ' Status keamanan tidak diketahui; coba muat ulang.');
+      if (!_securityLoaded) securityTableMessage('Log tidak tersedia. Kegagalan memuat bukan berarti tidak ada insiden.');
+    })
+    .finally(function() {
+      clearTimeout(timeout);
+      _securityLoading = false;
+      button.disabled = false;
+      document.getElementById('securityRefreshLabel').textContent = 'Muat Ulang Log';
+      document.getElementById('securityTableRegion').setAttribute('aria-busy', 'false');
     });
   }
 
   function renderSecurityTable(data) {
-    var tbody = document.getElementById('securityLogBody');
-    if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Tidak ada log ancaman tercatat.</td></tr>'; return; }
-    var typeBg = { xss:'bg-red-100 text-red-700', scrape:'bg-orange-100 text-orange-700', bot:'bg-purple-100 text-purple-700', brute_force:'bg-rose-100 text-rose-700' };
-    tbody.textContent = '';
-    data.slice(0,50).forEach(function(l) {
-      l = l || {};
-      var row = document.createElement('tr');
-      row.className = 'hover:bg-slate-50';
-      var date = l.ts ? new Date(l.ts).toLocaleString('id-ID') : '—';
-      row.appendChild(createTextCell(date, 'py-2.5 px-3 text-slate-500 font-mono text-[10px]'));
-
-      var type = l.type == null ? 'unknown' : String(l.type);
-      var typeClass = Object.prototype.hasOwnProperty.call(typeBg, type) ? typeBg[type] : 'bg-slate-100 text-slate-600';
-      var typeCell = document.createElement('td');
-      typeCell.className = 'py-2.5 px-3';
-      typeCell.appendChild(createBadge(type, 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + typeClass));
-      row.appendChild(typeCell);
-
-      row.appendChild(createTextCell(l.ip, 'py-2.5 px-3 font-mono text-[10px]'));
-      var location = [l.city, l.region, l.country].filter(function(value) {
-        return typeof value === 'string' && value.trim();
-      }).join(', ');
-      row.appendChild(createTextCell(location, 'py-2.5 px-3'));
-      row.appendChild(createTextCell(l.url, 'py-2.5 px-3 text-[10px] text-slate-500 max-w-[180px] truncate'));
-      var statusCell = document.createElement('td');
-      statusCell.className = 'py-2.5 px-3';
-      statusCell.appendChild(createBadge(l.blocked === true ? 'Diblokir' : 'Tercatat', 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + (l.blocked === true ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600')));
-      row.appendChild(statusCell);
-      tbody.appendChild(row);
+    // Whitelist metadata: payloads and user agents never enter the rendered snapshot.
+    _securityLogs = data.slice(0, 100).map(function(l) {
+      var ip = securityText(l.ip || l.ip_address);
+      if (/^(unknown|—|-)$/i.test(ip)) ip = '';
+      return {
+        ts: securityText(l.ts || l.created_at),
+        type: securityText(l.type || l.exploit_type) || 'unknown',
+        ip: ip,
+        country: securityText(l.country),
+        region: securityText(l.region),
+        city: securityText(l.city),
+        url: securityText(l.url || l.requested_url).split(/[?#]/)[0],
+        field: securityText(l.field || l.input_field),
+        rule: securityText(l.rule || l.rule_id),
+        source: securityText(l.source),
+        blocked: l.blocked === true ? 'yes' : l.blocked === false ? 'no' : 'unknown'
+      };
     });
+    _securityLoaded = true;
+    document.getElementById('securityCountTotal').textContent = _securityLogs.length;
+    document.getElementById('securityCountBlocked').textContent = _securityLogs.filter(function(l) { return l.blocked === 'yes'; }).length;
+    document.getElementById('securityCountUnknown').textContent = _securityLogs.filter(function(l) { return l.blocked === 'unknown'; }).length;
+    document.getElementById('securityCountIps').textContent = new Set(_securityLogs.map(function(l) { return l.ip; }).filter(Boolean)).size;
+
+    var select = document.getElementById('securityTypeFilter');
+    var selected = select.value;
+    var types = Array.from(new Set(_securityLogs.map(function(l) { return l.type; }))).sort();
+    // Keep an active filter even when its type disappears from the new snapshot.
+    if (selected && !types.includes(selected)) types.push(selected);
+    select.textContent = '';
+    var all = document.createElement('option');
+    all.value = '';
+    all.textContent = 'Semua jenis';
+    select.appendChild(all);
+    types.forEach(function(type) {
+      var option = document.createElement('option');
+      option.value = type;
+      option.textContent = type;
+      select.appendChild(option);
+    });
+    select.value = selected;
+    filterSecurityLogs();
+  }
+
+  function resetSecurityFilters() {
+    document.getElementById('securitySearch').value = '';
+    document.getElementById('securityTypeFilter').value = '';
+    document.getElementById('securityBlockedFilter').value = '';
+    filterSecurityLogs();
+  }
+
+  function filterSecurityLogs() {
+    if (!_securityLoaded) return;
+    var query = document.getElementById('securitySearch').value.trim().toLowerCase();
+    var type = document.getElementById('securityTypeFilter').value;
+    var blocked = document.getElementById('securityBlockedFilter').value;
+    var filtered = _securityLogs.filter(function(l) {
+      var metadata = [l.type, l.ip, l.country, l.region, l.city, l.url, l.field, l.rule, l.source].join(' ').toLowerCase();
+      return (!query || metadata.includes(query)) && (!type || l.type === type) && (!blocked || l.blocked === blocked);
+    });
+    document.getElementById('securityResultCount').textContent = filtered.length + ' dari ' + _securityLogs.length + ' log snapshot · ringkasan tetap tidak difilter';
+    if (!filtered.length) {
+      securityTableMessage(_securityLogs.length ? 'Tidak ada log yang cocok. Ubah pencarian atau reset filter.' : 'Tidak ada log pada snapshot ini; bukan bukti tidak ada serangan.');
+      return;
+    }
+    var tbody = document.getElementById('securityLogBody');
+    tbody.textContent = '';
+    var typeBg = { xss:'bg-red-100 text-red-700', scrape:'bg-orange-100 text-orange-700', bot:'bg-purple-100 text-purple-700', brute_force:'bg-rose-100 text-rose-700' };
+    var fragment = document.createDocumentFragment();
+    filtered.forEach(function(l) {
+      var row = document.createElement('tr');
+      row.className = 'security-enter hover:bg-slate-50 align-top';
+      var parsed = l.ts ? new Date(l.ts) : null;
+      var date = parsed && !isNaN(parsed.getTime()) ? parsed.toLocaleString('id-ID') : '—';
+      row.appendChild(createTextCell(date, 'py-3 px-3 text-slate-500 text-[10px] whitespace-nowrap'));
+      var typeKey = l.type.toLowerCase();
+      var typeClass = Object.prototype.hasOwnProperty.call(typeBg, typeKey) ? typeBg[typeKey] : 'bg-slate-100 text-slate-600';
+      var typeCell = document.createElement('td');
+      typeCell.className = 'py-3 px-3 break-words';
+      typeCell.appendChild(createBadge(l.type, 'px-2 py-1 rounded-lg text-[10px] font-bold ' + typeClass));
+      row.appendChild(typeCell);
+      row.appendChild(createTextCell(l.ip, 'py-3 px-3 font-mono text-[10px] break-all'));
+      row.appendChild(createTextCell(l.country, 'py-3 px-3 break-words'));
+      var locationCell = document.createElement('td');
+      locationCell.className = 'py-3 px-3 min-w-[150px] break-words';
+      ['Wilayah: ' + (l.region || '—'), 'Kota: ' + (l.city || '—')].forEach(function(text) {
+        var line = document.createElement('p');
+        line.textContent = text;
+        locationCell.appendChild(line);
+      });
+      row.appendChild(locationCell);
+      row.appendChild(createTextCell(l.url, 'py-3 px-3 text-[10px] text-slate-500 min-w-[180px] max-w-xs break-all'));
+      var ruleCell = document.createElement('td');
+      ruleCell.className = 'py-3 px-3 min-w-[140px] break-all text-[10px]';
+      ['Field: ' + (l.field || '—'), 'Rule: ' + (l.rule || '—')].forEach(function(text) {
+        var line = document.createElement('p');
+        line.textContent = text;
+        ruleCell.appendChild(line);
+      });
+      row.appendChild(ruleCell);
+      row.appendChild(createTextCell(l.source, 'py-3 px-3 text-[10px] break-words'));
+      var statusCell = document.createElement('td');
+      statusCell.className = 'py-3 px-3';
+      var statusLabel = l.blocked === 'yes' ? 'Ya' : l.blocked === 'no' ? 'Tidak' : 'Tidak diketahui';
+      statusCell.appendChild(createBadge(statusLabel, 'inline-block px-2 py-1 rounded-lg text-[10px] font-bold ' + (l.blocked === 'yes' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600')));
+      row.appendChild(statusCell);
+      fragment.appendChild(row);
+    });
+    tbody.appendChild(fragment);
   }
 
   // ── Maintenance actions ───────────────────────────────────────────────────
@@ -795,6 +980,7 @@
     loadUsers();
     loadSppgStatus();
     loadMaintenanceStatus();
+    loadSecurityLogs();
 
     // Cek hash fragment untuk scroll
     if (location.hash) {

@@ -4,16 +4,15 @@
  * Radar MBG - Badan Gizi Nasional
  */
 
-if (!function_exists('getDB')) { require_once __DIR__ . '/../database/db.php'; }
+require_once __DIR__ . '/../database/api_bootstrap.php';
 if (!class_exists('Security')) { require_once __DIR__ . '/../database/security.php'; }
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Cache-Control: public, max-age=3600');
 
-$pdo = getDB();
-
 try {
+    $pdo = getDB();
     $rows = $pdo->query("
         SELECT id, judul, deskripsi, pdf_url, sumber, kategori, tanggal_terbit, created_at
         FROM dokumen_juknis
@@ -30,6 +29,6 @@ try {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
-        'message' => $e->getMessage()
+        'message' => 'Gagal mengambil dokumen juknis.'
     ], JSON_UNESCAPED_UNICODE);
 }

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../database/db.php';
+require_once __DIR__ . '/../database/api_bootstrap.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
@@ -46,7 +46,7 @@ try {
         'data' => $data
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
-    error_log('[api/home_menu.php error] ' . $e->getMessage());
+    Security::logFailure('home_menu.php', $e);
     http_response_code(500);
     echo json_encode([
         'status' => 'error',

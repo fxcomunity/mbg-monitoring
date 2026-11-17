@@ -433,16 +433,12 @@
             }
           }
         } catch (err) {
-          // Fallback if running on static host
-          const randId = Math.floor(1000 + Math.random() * 9000);
-          const now = new Date();
-          const dateStr = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
-          const ticketCode = 'TKT-BGN-' + dateStr + '-' + randId;
-          ticketDisplay.innerText = ticketCode;
-          modal.classList.remove('hidden');
-          modal.classList.add('flex');
-          form.reset();
-          if (fileLabel) fileLabel.classList.add('hidden');
+          if (alertBox) {
+            alertBox.className = 'p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2';
+            alertBox.innerHTML = '<span class="material-symbols-outlined text-base text-red-600 mt-0.5">error</span><div><strong>Pengiriman Gagal:</strong><br>Server tidak dapat dijangkau. Periksa koneksi lalu coba lagi.</div>';
+          } else {
+            alert('Server tidak dapat dijangkau. Periksa koneksi lalu coba lagi.');
+          }
         } finally {
           btnSubmit.disabled = false;
           btnText.innerText = 'Kirimkan Aduan Resmi ke Satgas BGN';

@@ -64,10 +64,47 @@ export function generateToken() {
   return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-export async function hashPassword(password, salt) {
-  const data = new TextEncoder().encode(salt + password);
-  const buf  = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+export async function hashPassword(password, salt = generateToken().slice(0, 32)) {
+  const iterations = 310000;
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({
+    name: 'PBKDF2',
+    salt: new TextEncoder().encode(salt),
+    iterations,
+    hash: 'SHA-256'
+  }, key, 512);
+  const digest = Array.from(new Uint8Array(bits), byte => byte.toString(16).padStart(2, '0')).join('');
+  return `pbkdf2_sha256$${iterations}$${salt}$${digest}`;
+}
+
+function constantTimeEqual(left, right) {
+  if (typeof left !== 'string' || typeof right !== 'string' || left.length !== right.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < left.length; i++) mismatch |= left.charCodeAt(i) ^ right.charCodeAt(i);
+  return mismatch === 0;
+}
+
+export async function verifyPassword(password, storedHash, legacySalt = '') {
+  if (typeof storedHash !== 'string') return false;
+  const match = /^pbkdf2_sha256\$(\d{6})\$([a-f0-9]{32})\$([a-f0-9]{128})$/i.exec(storedHash);
+  if (match) {
+    const iterations = Number(match[1]);
+    if (iterations < 100000 || iterations > 600000) return false;
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits({
+      name: 'PBKDF2',
+      salt: new TextEncoder().encode(match[2]),
+      iterations,
+      hash: 'SHA-256'
+    }, key, 512);
+    const candidate = Array.from(new Uint8Array(bits), byte => byte.toString(16).padStart(2, '0')).join('');
+    return constantTimeEqual(candidate, match[3].toLowerCase());
+  }
+  if (!legacySalt || !/^[a-f0-9]{64}$/i.test(storedHash)) return false;
+  const legacy = new TextEncoder().encode(legacySalt + password);
+  const digest = await crypto.subtle.digest('SHA-256', legacy);
+  const candidate = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+  return constantTimeEqual(candidate, storedHash.toLowerCase());
 }
 
 export async function getSession(request, env) {
@@ -76,5 +113,14 @@ export async function getSession(request, env) {
   if (!match) return null;
   if (!env?.SESSIONS) return null;
   const data = await env.SESSIONS.get(match[1]);
-  return data ? JSON.parse(data) : null;
+  if (!data) return null;
+  const session = JSON.parse(data);
+  if (!session.username || !env.DATABASE_URL) return null;
+  const rows = await dbQuery(env.DATABASE_URL, `
+    SELECT session_version FROM users
+    WHERE username = $1 AND active = TRUE
+    LIMIT 1
+  `, [session.username]);
+  if (!rows[0] || Number(rows[0].session_version || 0) !== Number(session.session_version || 0)) return null;
+  return session;
 }

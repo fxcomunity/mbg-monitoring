@@ -35,6 +35,59 @@ html, body {
   background: var(--bgn-outline);
 }
 
+/* Shared keyboard access and anchor positioning. */
+html {
+  scroll-padding-top: 6.5rem;
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid #395f95 !important;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px #ffffff !important;
+}
+
+:where(button, a, input, select, textarea) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, a) {
+  touch-action: manipulation;
+}
+
+:where(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 1rem;
+  z-index: 10000;
+  padding: 0.85rem 1.25rem;
+  border-radius: 0.75rem;
+  background: #001026;
+  color: #ffffff;
+  font-weight: 700;
+  transform: translateY(-180%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Header & Navigation */
 .header-glass {
   background: rgba(248, 249, 255, 0.88);
@@ -45,7 +98,7 @@ html, body {
 
 /* Interactive Cards */
 .card-hover {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .card-hover:hover {
   transform: translateY(-2px);
@@ -256,7 +309,233 @@ html, body {
   }
 }
 
+/* Public shell: keep dense desktop navigation out of tablet widths. */
+body.font-body-md > header {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+body.font-body-md > header > div:first-child {
+  max-width: 100rem;
+  margin-inline: auto;
+}
+
+body.font-body-md > header nav a,
+#mobileNavMenu a,
+#btnMobileNavToggle,
+#btnHeaderNotif,
+#navBtnLogin {
+  min-height: 2.75rem;
+}
+
+body.font-body-md > header nav a {
+  display: inline-flex;
+  align-items: center;
+}
+
+#mobileNavMenu {
+  max-height: calc(100dvh - 5rem);
+  overscroll-behavior: contain;
+}
+
+#headerNotifDropdown,
+#navUserDropdown,
+#headerProfileMenu {
+  max-height: calc(100dvh - 6rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.homepage-hero {
+  padding-block: clamp(2rem, 4vw, 4rem);
+}
+
+.homepage-hero h1 {
+  max-width: 25ch;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  line-height: 1.22;
+  text-wrap: balance;
+}
+
+.hero-search {
+  border: 1px solid #e2e8f0;
+  margin-top: 0.5rem;
+}
+
+.hero-search-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+.hero-search-layout > *,
+.hero-actions > * {
+  min-width: 0;
+}
+
+.hero-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.hero-actions > :is(a, button) {
+  min-height: 3rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.hero-actions .material-symbols-outlined {
+  flex-shrink: 0;
+}
+
+.portal-cards > div {
+  border: 1px solid #e2e8f0;
+  box-shadow: var(--bgn-shadow-sm);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.portal-cards > div:focus-within {
+  border-color: #395f95;
+  box-shadow: var(--bgn-shadow-md);
+}
+
+.portal-cards a {
+  min-height: 2.75rem;
+}
+
+#schoolModalBackdrop > div {
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#btnCloseModal,
+#closeProvinsiModal {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  flex-shrink: 0;
+}
+
+/* Reveal starts only after intersection; no CSS ever hides waiting content. */
+@keyframes mbgReveal {
+  from { opacity: 0.55; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+  .mbg-reveal { animation: mbgReveal 420ms ease-out; }
+  #mobileNavMenu:not(.hidden),
+  #dashMobileMenu:not(.hidden),
+  #headerNotifDropdown:not(.hidden),
+  #schoolModalBackdrop:not(.hidden) > div,
+  #provinsiModal:not(.hidden) > div {
+    animation: mbgReveal 180ms ease-out;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .portal-cards > div:hover {
+    border-color: #9dc3ff;
+    box-shadow: var(--bgn-shadow-md);
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1599px) {
+  body.font-body-md > header > div:first-child {
+    height: 4rem;
+    gap: 0.75rem;
+    padding-inline: 1.25rem;
+  }
+
+  body.font-body-md > header nav {
+    display: flex;
+    flex-shrink: 1;
+    gap: 0;
+    padding: 0.2rem;
+    border-radius: 999px;
+  }
+
+  body.font-body-md > header nav a {
+    min-height: 2rem;
+    padding-inline: 0.55rem;
+    font-size: 0.68rem;
+    border-radius: 999px;
+  }
+
+  body.font-body-md > header > div:first-child > a img {
+    height: 2.5rem;
+  }
+
+  #headerNotifContainer,
+  body.font-body-md > header > div:first-child > div > a[href="fitur/menu-hari-ini.html"] {
+    display: none;
+  }
+
+  #navBtnLogin {
+    width: 2.5rem;
+    height: 2.5rem;
+    justify-content: center;
+    padding: 0;
+  }
+
+  #navBtnLogin > span:last-child {
+    display: none;
+  }
+
+  #btnMobileNavToggle,
+  #mobileNavMenu {
+    display: none !important;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1050px) {
+  body.font-body-md > header nav a {
+    padding-inline: 0.38rem;
+    font-size: 0.62rem;
+  }
+
+  body.font-body-md > header > div:first-child > a {
+    gap: 0.5rem;
+  }
+
+  body.font-body-md > header > div:first-child > a img {
+    height: 2.25rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .hero-actions { grid-template-columns: 1fr; }
+  .hero-actions > :is(a, button) { justify-content: flex-start; }
+  .homepage h2 { font-size: 1.5rem; line-height: 1.35; }
+  body.font-body-md > header > div:first-child { gap: 0.5rem; }
+  body.font-body-md > header > div:first-child > a { gap: 0.5rem; }
+  #headerNotifDropdown,
+  #navUserDropdown,
+  #headerProfileMenu {
+    position: fixed;
+    top: 5.5rem;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    margin-top: 0;
+  }
+  #schoolModalBackdrop input { font-size: 1rem; }
+}
+
+@media (max-width: 379px) {
+  body.font-body-md > header > div:first-child > a .uppercase { display: none; }
+  body.font-body-md > header > div:first-child > a img { height: 2rem; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
   .card-hover,
   .btn-primary-bgn,
   .btn-secondary-bgn {

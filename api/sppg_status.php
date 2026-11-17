@@ -1,11 +1,13 @@
 <?php
 // api/sppg_status.php — Admin SPPG KPIs and status table
-if (!function_exists('getDB')) { require_once __DIR__ . '/../database/db.php'; }
+require_once __DIR__ . '/../database/api_bootstrap.php';
+require_once __DIR__ . '/../database/auth.php';
+Auth::requireApiRole('admin');
 if (!class_exists('Security')) { require_once __DIR__ . '/../database/security.php'; }
 
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
-header('Cache-Control: public, max-age=300');
+header('Cache-Control: no-store');
 
 try {
     $pdo = getDB();
@@ -56,7 +58,7 @@ try {
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $e) {
-    error_log('[api/sppg_status.php error] ' . $e->getMessage());
+    Security::logFailure('sppg_status.php', $e);
     http_response_code(500);
     echo json_encode([
         'status'  => 'error',

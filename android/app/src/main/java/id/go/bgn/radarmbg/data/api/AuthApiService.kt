@@ -1,6 +1,7 @@
 package id.go.bgn.radarmbg.data.api
 
 import id.go.bgn.radarmbg.data.api.models.AuthResponse
+import id.go.bgn.radarmbg.data.api.models.ActionResponse
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -35,4 +36,13 @@ interface AuthApiService {
         @Field("role") role: String,
         @Field("sppg_name") sppgName: String = ""
     ): AuthResponse
+
+    @FormUrlEncoded
+    @POST("/")
+    suspend fun changePassword(
+        @Field("action") action: String = "change_password",
+        @Field("current_password") currentPassword: String,
+        @Field("new_password") newPassword: String,
+        @Field("confirm_password") confirmPassword: String
+    ): ActionResponse
 }

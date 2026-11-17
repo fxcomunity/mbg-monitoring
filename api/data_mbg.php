@@ -10,14 +10,12 @@
  * GET (no params)            → Returns province-level summary per level
  */
 
-require_once __DIR__ . '/../database/db.php';
+require_once __DIR__ . '/../database/api_bootstrap.php';
 require_once __DIR__ . '/../database/security.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Cache-Control: public, max-age=300');
-
-$pdo = getDB();
 
 $level    = Security::cleanInput($_GET['level'] ?? '', 10);
 $province = Security::cleanInput($_GET['province'] ?? '', 10);
@@ -25,6 +23,7 @@ $regency  = Security::cleanInput($_GET['regency'] ?? '', 10);
 $summary  = (int)($_GET['summary'] ?? 0);
 
 try {
+    $pdo = getDB();
     // Summary mode: aggregate per level
     if ($summary) {
         $rows = $pdo->query("
@@ -94,6 +93,6 @@ try {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
-        'message' => 'Database query failed: ' . $e->getMessage()
+        'message' => 'Gagal mengambil data MBG.'
     ], JSON_UNESCAPED_UNICODE);
 }

@@ -1,13 +1,6 @@
 <?php
 // api/index.php – Router & Central Controller API Radar MBG
-require_once __DIR__ . '/../database/security.php';
-require_once __DIR__ . '/../database/db.php';
-
-// WAF Inspection for API
-Security::inspectRequest(true);
-
-header('Content-Type: application/json; charset=UTF-8');
-header('Access-Control-Allow-Origin: *');
+require_once __DIR__ . '/../database/api_bootstrap.php';
 
 $action = trim($_GET['action'] ?? 'menu');
 

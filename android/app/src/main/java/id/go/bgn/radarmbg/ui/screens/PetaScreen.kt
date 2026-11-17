@@ -10,17 +10,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -37,11 +46,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import id.go.bgn.radarmbg.R
 import id.go.bgn.radarmbg.data.api.ApiClient
 import id.go.bgn.radarmbg.data.api.models.SppgData
+import id.go.bgn.radarmbg.ui.theme.BgnOnSurfaceVariant
 import id.go.bgn.radarmbg.ui.theme.BgnPrimary
 import id.go.bgn.radarmbg.viewmodel.HomeUiState
 import id.go.bgn.radarmbg.viewmodel.HomeViewModel
@@ -58,20 +69,14 @@ private data class WilayahItem(
     val zoom: Double
 )
 
-private val wilayahList = listOf(
-    WilayahItem("Seluruh Indonesia", -2.5, 118.0, 5.0),
-    WilayahItem("DKI Jakarta", -6.2, 106.816667, 11.0),
-    WilayahItem("Jawa Barat", -6.9, 107.6, 9.0),
-    WilayahItem("Jawa Tengah", -7.15, 110.1, 9.0),
-    WilayahItem("Jawa Timur", -7.75, 112.5, 9.0)
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
     val uiState by homeViewModel.uiState.collectAsState()
     var expanded by remember { mutableStateOf(false) }
-    var selectedWilayah by remember { mutableStateOf(wilayahList[0]) }
+    var selectedWilayah by remember { mutableStateOf(WilayahItem("Seluruh Indonesia", -2.5, 118.0, 5.0)) }
+    var showSppgList by remember { mutableStateOf(false) }
+    var selectedMapPoint by remember { mutableStateOf<GeoPoint?>(null) }
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -97,6 +102,81 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
             }
         } catch (_: Exception) {
             sppgLoadFailed = true
+        }
+    }
+
+    val wilayahList = remember(sppgList) {
+        listOf(WilayahItem("Seluruh Indonesia", -2.5, 118.0, 5.0)) +
+            sppgList.groupBy { it.provinsi.trim() }
+                .filterKeys { it.isNotBlank() }
+                .map { (province, items) ->
+                    WilayahItem(
+                        label = province,
+                        lat = items.mapNotNull { it.latitude }.average(),
+                        lng = items.mapNotNull { it.longitude }.average(),
+                        zoom = 8.5
+                    )
+                }
+                .sortedBy { it.label }
+    }
+
+    val selectedSppg = remember(sppgList, selectedWilayah) {
+        if (selectedWilayah.label == "Seluruh Indonesia") sppgList
+        else sppgList.filter { it.provinsi.trim().equals(selectedWilayah.label, ignoreCase = true) }
+    }
+
+    if (showSppgList) {
+        ModalBottomSheet(onDismissRequest = { showSppgList = false }) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Text(
+                    text = "SPPG di ${selectedWilayah.label}",
+                    color = BgnPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${selectedSppg.size} lokasi dengan koordinat tersedia",
+                    color = BgnOnSurfaceVariant,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                )
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().height(420.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 20.dp)
+                ) {
+                    items(selectedSppg) { sppg ->
+                        Card(
+                            onClick = {
+                                val lat = sppg.latitude
+                                val lng = sppg.longitude
+                                if (lat != null && lng != null) {
+                                    selectedMapPoint = GeoPoint(lat, lng)
+                                }
+                                showSppgList = false
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Text(sppg.nama, color = BgnPrimary, fontWeight = FontWeight.SemiBold)
+                                val location = listOfNotNull(sppg.kabupaten_kota, sppg.kecamatan)
+                                    .filter { it.isNotBlank() }
+                                    .joinToString(" • ")
+                                if (location.isNotBlank()) {
+                                    Text(
+                                        location,
+                                        color = BgnOnSurfaceVariant,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(top = 3.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -185,6 +265,7 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
                             text = { Text(item.label) },
                             onClick = {
                                 selectedWilayah = item
+                                selectedMapPoint = null
                                 expanded = false
                             }
                         )
@@ -192,10 +273,20 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
                 }
             }
 
+            Button(
+                onClick = { showSppgList = true },
+                enabled = selectedSppg.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = BgnPrimary)
+            ) {
+                Text("Lihat ${selectedSppg.size} lokasi SPPG")
+            }
+
             // OSMDroid map
             Box(modifier = Modifier.weight(1f)) {
                 val currentWilayah = selectedWilayah
-                val currentSppgList = sppgList
+                val currentMapPoint = selectedMapPoint
+                val currentSppgList = selectedSppg
 
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),
@@ -204,7 +295,7 @@ fun PetaScreen(homeViewModel: HomeViewModel = viewModel()) {
                     },
                     update = { mapView ->
                         val mapController = mapView.controller
-                        val center = GeoPoint(currentWilayah.lat, currentWilayah.lng)
+                        val center = currentMapPoint ?: GeoPoint(currentWilayah.lat, currentWilayah.lng)
                         mapController.animateTo(center, currentWilayah.zoom, 1000L)
 
                         // Clear existing overlays and re-add

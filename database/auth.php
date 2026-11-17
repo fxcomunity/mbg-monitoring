@@ -11,37 +11,151 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/security.php';
 
+Security::sendHeaders();
+
 class Auth {
-    
+    public static function hashNewPassword(string $password): string {
+        $salt = bin2hex(random_bytes(16));
+        $iterations = 310000;
+        $hash = hash_pbkdf2('sha256', $password, $salt, $iterations, 64);
+        return 'pbkdf2_sha256$' . $iterations . '$' . $salt . '$' . $hash;
+    }
+
+    public static function verifyPassword(string $password, string $storedHash, ?string $legacySalt = null): bool {
+        if (preg_match('/^pbkdf2_sha256\$([0-9]{6})\$([a-f0-9]{32})\$([a-f0-9]{128})$/D', $storedHash, $parts)) {
+            $iterations = (int)$parts[1];
+            if ($iterations < 100000 || $iterations > 600000) return false;
+            $candidate = hash_pbkdf2('sha256', $password, $parts[2], $iterations, 64);
+            return hash_equals($parts[3], $candidate);
+        }
+        if (password_verify($password, $storedHash)) return true;
+        if ($legacySalt !== null && preg_match('/^[a-f0-9]{64}$/i', $storedHash)) {
+            return hash_equals(strtolower($storedHash), hash('sha256', $legacySalt . $password));
+        }
+        return false;
+    }
+
+    public static function lockoutStatus(?string $ip = null): array {
+        $ip ??= Security::clientIp();
+        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+            throw new RuntimeException('Client IP tidak tersedia untuk pemeriksaan lockout.');
+        }
+        $stmt = getDB()->prepare(
+            'SELECT failed_attempts, locked_until, is_permanent,
+                    (is_permanent OR locked_until > NOW()) AS blocked
+             FROM auth_ip_lockouts WHERE ip_address = ?'
+        );
+        $stmt->execute([$ip]);
+        $row = $stmt->fetch() ?: [];
+        return [
+            'ip' => $ip,
+            'blocked' => in_array($row['blocked'] ?? false, [true, 1, '1', 't', 'true'], true),
+            'failed_attempts' => (int)($row['failed_attempts'] ?? 0),
+            'blocked_until' => $row['locked_until'] ?? null,
+            'permanent' => in_array($row['is_permanent'] ?? false, [true, 1, '1', 't', 'true'], true),
+        ];
+    }
+
+    private static function recordLoginEvent(string $ip, string $event, int $attempts, ?string $until, bool $permanent): void {
+        $stmt = getDB()->prepare(
+            'INSERT INTO auth_security_events (ip_address, event_type, failed_attempts, blocked_until, is_permanent)
+             VALUES (?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([$ip, $event, $attempts, $until, $permanent]);
+    }
+
+    private static function recordLoginFailure(string $ip): array {
+        $pdo = getDB();
+        $stmt = $pdo->prepare(
+            "INSERT INTO auth_ip_lockouts (ip_address, failed_attempts)
+             VALUES (?, 1)
+             ON CONFLICT (ip_address) DO UPDATE SET
+               failed_attempts = CASE WHEN auth_ip_lockouts.is_permanent THEN auth_ip_lockouts.failed_attempts ELSE auth_ip_lockouts.failed_attempts + 1 END,
+               is_permanent = auth_ip_lockouts.is_permanent OR auth_ip_lockouts.failed_attempts + 1 >= 15,
+               locked_until = CASE
+                 WHEN auth_ip_lockouts.is_permanent OR auth_ip_lockouts.failed_attempts + 1 >= 15 THEN NULL
+                 WHEN auth_ip_lockouts.failed_attempts + 1 >= 10 THEN NOW() + INTERVAL '1 hour'
+                 WHEN auth_ip_lockouts.failed_attempts + 1 >= 5 THEN NOW() + INTERVAL '10 minutes'
+                 ELSE NULL
+               END,
+               updated_at = NOW()
+             RETURNING failed_attempts, locked_until, is_permanent"
+        );
+        $stmt->execute([$ip]);
+        $row = $stmt->fetch();
+        $attempts = (int)$row['failed_attempts'];
+        $permanent = in_array($row['is_permanent'], [true, 1, '1', 't', 'true'], true);
+        $until = $row['locked_until'] ?? null;
+        $event = $permanent || in_array($attempts, [5, 10], true) ? 'login_locked' : 'login_failed';
+        self::recordLoginEvent($ip, $event, $attempts, $until, $permanent);
+        return [
+            'ip' => $ip,
+            'blocked' => $permanent || $until !== null,
+            'failed_attempts' => $attempts,
+            'blocked_until' => $until,
+            'permanent' => $permanent,
+        ];
+    }
+
+    private static function recordLoginSuccess(string $ip): void {
+        $pdo = getDB();
+        $pdo->beginTransaction();
+        try {
+            $stmt = $pdo->prepare(
+                'UPDATE auth_ip_lockouts
+                 SET failed_attempts = 0, locked_until = NULL, updated_at = NOW()
+                 WHERE ip_address = ? AND is_permanent = FALSE'
+            );
+            $stmt->execute([$ip]);
+            self::recordLoginEvent($ip, 'login_success', 0, null, false);
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
     /**
      * Login autentikasi dengan sanitasi input & perlindungan brute force
      */
     public static function login(string $username, string $password): array {
-        // Cek exploit attempt pada input username/password
-        if ($threat = Security::detectExploit($username)) {
-            Security::logExploit($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1', $_SERVER['HTTP_USER_AGENT'] ?? '', $threat, 'login_username', $username, '/auth.php');
-            return ['status' => false, 'message' => 'Input terdeteksi mengandung payload tidak aman!'];
-        }
-
         $username = trim($username);
-        
+
         try {
+            $ip = Security::clientIp();
+            $lockout = self::lockoutStatus($ip);
+            if ($lockout['blocked']) {
+                return ['status' => false, 'blocked' => true, 'lockout' => $lockout, 'message' => 'Akses login dari alamat IP ini sedang dibatasi.'];
+            }
+
+            if ($threat = Security::detectExploit($username)) {
+                Security::logExploit($ip, '', $threat, 'login_username', $username, '/auth/login.php');
+                $lockout = self::recordLoginFailure($ip);
+                return ['status' => false, 'blocked' => $lockout['blocked'], 'lockout' => $lockout, 'message' => 'Input tidak valid.'];
+            }
+            if ($username === '' || strlen($username) > 120 || strlen($password) > 1024) {
+                $lockout = self::recordLoginFailure($ip);
+                return ['status' => false, 'blocked' => $lockout['blocked'], 'lockout' => $lockout, 'message' => 'Username atau kata sandi tidak cocok.'];
+            }
+
             $pdo = getDB();
-            $stmt = $pdo->prepare('SELECT id, username, email, password_hash, full_name, role, sppg_name, sppg_code, is_active FROM users WHERE username = ? OR email = ? LIMIT 1');
+            $stmt = $pdo->prepare('SELECT id, username, email, password_hash, salt, full_name, role, sppg_name, sppg_code, is_active, session_version FROM users WHERE username = ? OR email = ? LIMIT 1');
             $stmt->execute([$username, $username]);
             $user = $stmt->fetch();
 
-            if (!$user) {
-                return ['status' => false, 'message' => 'Username atau password tidak ditemukan.'];
+            if (!$user || !in_array($user['is_active'], [true, 1, '1', 't', 'true'], true) || !self::verifyPassword($password, $user['password_hash'], $user['salt'] ?? null)) {
+                $lockout = self::recordLoginFailure($ip);
+                return ['status' => false, 'blocked' => $lockout['blocked'], 'lockout' => $lockout, 'message' => 'Username atau kata sandi tidak cocok.'];
             }
 
-            if (!$user['is_active']) {
-                return ['status' => false, 'message' => 'Akun dinonaktifkan oleh administrator.'];
+            $sessionVersion = (int)($user['session_version'] ?? 0);
+            if (strpos($user['password_hash'], 'pbkdf2_sha256$') !== 0) {
+                $newHash = self::hashNewPassword($password);
+                $update = $pdo->prepare('UPDATE users SET password_hash = ?, session_version = session_version + 1, updated_at = NOW() WHERE id = ? RETURNING session_version');
+                $update->execute([$newHash, $user['id']]);
+                $sessionVersion = (int)$update->fetchColumn();
             }
-
-            if (!password_verify($password, $user['password_hash'])) {
-                return ['status' => false, 'message' => 'Username atau password tidak valid.'];
-            }
+            self::recordLoginSuccess($ip);
 
             if (!headers_sent()) {
                 @session_regenerate_id(true);
@@ -53,6 +167,7 @@ class Auth {
             $_SESSION['role']      = $user['role'];
             $_SESSION['sppg_name'] = $user['sppg_name'];
             $_SESSION['sppg_code'] = $user['sppg_code'];
+            $_SESSION['session_version'] = $sessionVersion;
             $_SESSION['logged_at'] = time();
 
             return [
@@ -66,7 +181,7 @@ class Auth {
                 ]
             ];
         } catch (Throwable $e) {
-            error_log('[Auth Error] ' . $e->getMessage());
+            error_log('[Auth Error] Authentication failed internally');
             return ['status' => false, 'message' => 'Terjadi kesalahan sistem saat autentikasi.'];
         }
     }
@@ -132,7 +247,7 @@ class Auth {
                 return ['status' => false, 'message' => 'Username atau email tersebut telah terdaftar sebelumnya.'];
             }
 
-            $hash = password_hash($password, PASSWORD_BCRYPT);
+            $hash = self::hashNewPassword($password);
             $stmt = $pdo->prepare('
                 INSERT INTO users (
                     username, email, password_hash, full_name, role, sppg_name,
@@ -166,8 +281,8 @@ class Auth {
                 'message' => $successMsg
             ];
         } catch (Throwable $e) {
-            error_log('[Auth Register Error] ' . $e->getMessage());
-            return ['status' => false, 'message' => 'Gagal mendaftarkan akun: ' . $e->getMessage()];
+            error_log('[Auth Register Error] Registration failed internally');
+            return ['status' => false, 'message' => 'Gagal mendaftarkan akun. Silakan coba kembali.'];
         }
     }
 
@@ -175,7 +290,22 @@ class Auth {
      * Cek apakah user sedang login
      */
     public static function check(): bool {
-        return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
+        if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) return false;
+        try {
+            $stmt = getDB()->prepare('SELECT session_version, is_active FROM users WHERE id = ?');
+            $stmt->execute([(int)$_SESSION['user_id']]);
+            $row = $stmt->fetch();
+            if (!$row
+                || !in_array($row['is_active'], [true, 1, '1', 't', 'true'], true)
+                || (int)$row['session_version'] !== (int)($_SESSION['session_version'] ?? 0)) {
+                $_SESSION = [];
+                return false;
+            }
+            return true;
+        } catch (Throwable $e) {
+            error_log('[Auth Error] Session verification unavailable');
+            return false;
+        }
     }
 
     /**
@@ -191,6 +321,33 @@ class Auth {
             'sppg_name' => $_SESSION['sppg_name'] ?? null,
             'sppg_code' => $_SESSION['sppg_code'] ?? null,
         ];
+    }
+
+    /** API: respons JSON, role dan status aktif dibaca ulang dari DB. */
+    public static function requireApiRole(string|array|null $roles = null): void {
+        if (!self::check()) {
+            Security::rejectRequest(401, 'Silakan masuk terlebih dahulu.');
+        }
+        try {
+            $stmt = getDB()->prepare('SELECT id, username, full_name, role, sppg_name, sppg_code, is_active, session_version FROM users WHERE id = ?');
+            $stmt->execute([(int)$_SESSION['user_id']]);
+            $user = $stmt->fetch();
+        } catch (Throwable $e) {
+            error_log('[API Auth] User verification unavailable');
+            Security::rejectRequest(503, 'Verifikasi akun sementara tidak tersedia.');
+        }
+        if (!$user || !in_array($user['is_active'], [true, 1, '1', 't', 'true'], true)
+            || (int)$user['session_version'] !== (int)($_SESSION['session_version'] ?? 0)) {
+            $_SESSION = [];
+            Security::rejectRequest(401, 'Sesi tidak valid atau akun dinonaktifkan.');
+        }
+        foreach (['username', 'full_name', 'role', 'sppg_name', 'sppg_code'] as $key) {
+            $_SESSION[$key] = $user[$key];
+        }
+        $allowed = is_array($roles) ? $roles : ($roles === null ? null : [$roles]);
+        if ($allowed !== null && !in_array($user['role'], $allowed, true)) {
+            Security::rejectRequest(403, 'Anda tidak memiliki izin mengakses API ini.');
+        }
     }
 
     /**

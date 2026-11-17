@@ -31,6 +31,18 @@ object AuthRepository {
         )
     }
 
+    suspend fun changePassword(
+        currentPassword: String,
+        newPassword: String,
+        confirmPassword: String
+    ) = runCatching {
+        ApiClient.authInstance.changePassword(
+            currentPassword = currentPassword,
+            newPassword = newPassword,
+            confirmPassword = confirmPassword
+        )
+    }
+
     suspend fun logout(): Result<Unit> = runCatching {
         ApiClient.clearCookies()
     }

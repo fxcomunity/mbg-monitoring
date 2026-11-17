@@ -6,6 +6,7 @@ import json
 import time
 import urllib.request
 import urllib.parse
+import urllib.error
 from datetime import datetime
 
 # Load DATABASE_URL from environment
@@ -49,8 +50,20 @@ def geocode_address(address, provinsi):
             data = json.loads(resp.read().decode())
             if data:
                 return float(data[0]['lat']), float(data[0]['lon'])
-    except Exception as e:
-        print(f'  Geocode error: {e}')
+    except urllib.error.HTTPError as error:
+        raise RuntimeError(
+            f'Nominatim menolak permintaan (HTTP {error.code}). '
+            'Hentikan proses; periksa batas layanan atau gunakan penyedia geocoding '
+            'yang mengizinkan pemrosesan data sebanyak ini.'
+        ) from error
+    except urllib.error.URLError as error:
+        raise RuntimeError(
+            f'Tidak dapat terhubung ke Nominatim: {error.reason}'
+        ) from error
+    except (TimeoutError, json.JSONDecodeError, UnicodeDecodeError) as error:
+        raise RuntimeError(
+            f'Respons Nominatim gagal diproses: {error}'
+        ) from error
     return None, None
 
 
@@ -77,8 +90,10 @@ def main():
                 skipped += 1
                 continue
 
-            print(f'[{sid}] Geocoding: {nama} — {alamat}')
-            lat, lon = geocode_address(alamat or nama, provinsi or '')
+            query_address = alamat or nama
+            query_provinsi = provinsi or ''
+            print(f'[{sid}] Geocoding: {nama} — {query_address}, {query_provinsi}, Indonesia')
+            lat, lon = geocode_address(query_address, query_provinsi)
 
             if lat is not None:
                 conn.execute(
@@ -92,7 +107,7 @@ def main():
             else:
                 progress['failed'].append(source_key)
                 failed += 1
-                print('  → Failed to geocode')
+                print('  → Tidak ditemukan oleh Nominatim untuk alamat tersebut; koordinat tidak diubah.')
 
             save_progress(progress)
             time.sleep(RATE_LIMIT_SEC)

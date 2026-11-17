@@ -1,8 +1,7 @@
 /**
  * security.js — BGN Client-Side Security Guard
- * - XSS / injection detection (3s delay before redirect)
- * - Anti-scraping fetch intercept
- * - DevTools detection (blur sensitive data, non-aggressive)
+ * - Advisory input checks; enforcement and audit logging happen on the server
+ * - Same-origin request marker (not an authentication mechanism)
  * - Honeypot bot detection
  * - Rate limiting UI (login form)
  */
@@ -23,7 +22,9 @@ const BGNSecurity = (function () {
     /<iframe[\s\S]*?>/gi,
     /<object[\s\S]*?>/gi,
     /<embed[\s\S]*?>/gi,
-    /\bunion\s+select\b/gi,
+    /\bunion\s+(?:all\s+)?select\b/gi,
+    /['"\d)]\s*(?:or|and)\s+(\d+)\s*=\s*\1\b/gi,
+    /\b(?:pg_sleep|sleep|benchmark)\s*\(/gi,
     /\bexec(\s|\()+/gi,
     /eval\s*\(/gi,
     /document\.cookie/gi,
@@ -49,9 +50,8 @@ const BGNSecurity = (function () {
         headers: { 'Content-Type': 'application/json', 'X-Requested-By': 'mbg-radar' },
         body: JSON.stringify({
           type,
-          indicator: indicator.substring(0, 80),
-          url: url || location.href,
-          userAgent: navigator.userAgent.substring(0, 120)
+          // Do not send input values, URLs, credentials, or user agents in telemetry.
+          indicator: 'client_input_check'
         }),
         keepalive: true
       }).then(function (response) {
@@ -93,12 +93,22 @@ const BGNSecurity = (function () {
         <span class="material-symbols-outlined" style="color:#dc2626;font-size:28px;">security</span>
       </div>
       <h3 style="font-size:16px;font-weight:800;color:#1e293b;margin-bottom:8px;">BGN Shield — Input Berbahaya Terdeteksi</h3>
-      <p style="font-size:12px;color:#64748b;margin-bottom:16px;">Sistem mendeteksi upaya injeksi kode. Tindakan ini dicatat dan diteruskan ke tim keamanan BGN.</p>
-      <code style="display:block;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px;font-size:11px;color:#991b1b;margin-bottom:16px;word-break:break-all;">${escapeHTML(detectedCode).substring(0, 80)}...</code>
+      <p style="font-size:12px;color:#64748b;margin-bottom:16px;">Input menyerupai pola kode yang tidak didukung. Periksa kembali isian Anda. Pemeriksaan browser ini bersifat indikatif, bukan bukti serangan.</p>
       <button id="btnCloseWafAlert" style="width:100%;padding:10px;background:#dc2626;color:#fff;font-weight:700;border:none;border-radius:12px;cursor:pointer;font-size:13px;">Mengerti & Bersihkan Input</button>
     </div>`;
+    overlay.setAttribute('role', 'alertdialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Periksa input');
+    const previousFocus = document.activeElement;
     document.body.appendChild(overlay);
-    document.getElementById('btnCloseWafAlert')?.addEventListener('click', () => overlay.remove());
+    const closeButton = document.getElementById('btnCloseWafAlert');
+    const close = () => { overlay.remove(); previousFocus?.focus(); };
+    closeButton?.addEventListener('click', close);
+    overlay.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { event.preventDefault(); close(); }
+      if (event.key === 'Tab') { event.preventDefault(); closeButton?.focus(); }
+    });
+    closeButton?.focus();
   }
 
   // ─── Form Guards (XSS detection + honeypot) ──────────────────────────────
@@ -120,13 +130,12 @@ const BGNSecurity = (function () {
       // XSS check
       const inputs = form.querySelectorAll('input, textarea, select');
       for (const input of inputs) {
+        if (input.type === 'password' || /password|passwd|token|secret|api[_-]?key/i.test(input.name || '')) continue;
         if (checkExploit(input.value)) {
           e.preventDefault(); e.stopImmediatePropagation();
-          logThreat('xss', input.value, location.href);
-          showExploitAlert(input.value);
-          input.value = '';
+          logThreat(/union\s|\b(?:or|and)\b|\b(?:pg_sleep|sleep|benchmark)\s*\(/i.test(input.value) ? 'inject' : 'xss', 'client_input_check');
           input.focus();
-          setTimeout(() => redirectCaught('xss', location.href), 3000);
+          showExploitAlert();
           return false;
         }
       }
@@ -151,10 +160,12 @@ const BGNSecurity = (function () {
     const _origFetch = window.fetch;
     window.fetch = function (input, init) {
       const url = typeof input === 'string' ? input : (input?.url || '');
-      const isSameOrigin = url.startsWith('/') || url.startsWith(location.origin) || url.startsWith('http://localhost');
+      let isSameOrigin = false;
+      try { isSameOrigin = new URL(url, location.href).origin === location.origin; } catch {}
       if (isSameOrigin) {
-        init = init || {};
-        init.headers = Object.assign({}, init.headers || {}, { 'X-Requested-By': 'mbg-radar' });
+        const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
+        headers.set('X-Requested-By', 'mbg-radar');
+        init = Object.assign({}, init, { headers });
       }
       return _origFetch.call(this, input, init);
     };
@@ -167,7 +178,8 @@ const BGNSecurity = (function () {
     };
     XMLHttpRequest.prototype.send = function () {
       const url = this._mbgUrl || '';
-      const isSameOrigin = url.startsWith('/') || url.startsWith(location.origin);
+      let isSameOrigin = false;
+      try { isSameOrigin = new URL(url, location.href).origin === location.origin; } catch {}
       if (isSameOrigin) this.setRequestHeader('X-Requested-By', 'mbg-radar');
       return _origXHRSend.apply(this, arguments);
     };
@@ -296,7 +308,13 @@ const BGNSecurity = (function () {
     t.id = 'bgn-sec-toast';
     const bg = type === 'info' ? '#1e293b' : '#dc2626';
     t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:99990;padding:10px 18px;background:${bg};color:#fff;font-size:12px;font-weight:600;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.25);display:flex;align-items:center;gap:8px;max-width:320px;font-family:Plus Jakarta Sans,sans-serif;`;
-    t.innerHTML = `<span class="material-symbols-outlined" style="font-size:16px;">shield</span><span>${msg}</span>`;
+    t.setAttribute('role', 'status');
+    const icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined';
+    icon.textContent = 'shield';
+    const text = document.createElement('span');
+    text.textContent = String(msg);
+    t.append(icon, text);
     document.body.appendChild(t);
     setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(() => t.remove(), 400); }, 3500);
   }
@@ -305,8 +323,7 @@ const BGNSecurity = (function () {
   function init() {
     patchFetch();
     attachFormGuards();
-    devToolsGuard();
-    rightClickGuard();
+    // Browser tooling and copying are not security boundaries; keep them accessible.
     setupLoginRateLimit();
   }
 

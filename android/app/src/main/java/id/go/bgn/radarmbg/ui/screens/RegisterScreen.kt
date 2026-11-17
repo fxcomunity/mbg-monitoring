@@ -71,7 +71,7 @@ fun RegisterScreen(
     var localError by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState) {
-        if (uiState is AuthUiState.Success) {
+        if (uiState is AuthUiState.Registered) {
             onRegisterSuccess()
         }
     }

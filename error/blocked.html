@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IP Diblokir — Radar MBG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] } } } };
+  </script>
+</head>
+<body class="min-h-screen bg-[#001026] text-white font-sans">
+  <div class="min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-xl w-full rounded-3xl border border-red-500/30 bg-slate-900/80 shadow-2xl p-8 text-center">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/15 text-red-300 ring-8 ring-red-500/10">
+        <span class="material-symbols-outlined text-4xl">gpp_bad</span>
+      </div>
+      <p class="mt-5 text-xs font-bold uppercase tracking-[0.22em] text-red-300">BGN Security Lockout</p>
+      <h1 class="mt-3 text-3xl font-extrabold">Akses dari IP Anda dibatasi</h1>
+      <p class="mt-4 text-sm leading-7 text-slate-300">
+        Sistem keamanan kami telah memblokir sementara atau permanen alamat IP ini karena beberapa percobaan login yang gagal.
+        Aktivitas ini telah dicatat untuk audit admin dan dipertimbangkan sebagai upaya brute force.
+      </p>
+      <div class="mt-6 rounded-2xl border border-white/10 bg-slate-950/40 p-4 text-left text-xs text-slate-200">
+        <div class="flex items-center justify-between gap-3"><span class="text-slate-400">IP Pelaku</span><strong id="blocked-ip" class="font-mono text-emerald-300">-</strong></div>
+      </div>
+      <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <a href="../index.html" class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#001026] to-[#134074] px-5 py-3 text-sm font-bold text-white shadow-lg transition hover:opacity-90">Kembali ke Beranda</a>
+        <a href="../auth/login.html" class="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10">Coba Login Lagi</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const ip = params.get('ip') || (window.location.hash || '').replace('#', '');
+      if (ip) document.getElementById('blocked-ip').textContent = ip;
+    } catch (error) {}
+  </script>
+</body>
+</html>

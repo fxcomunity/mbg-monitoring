@@ -8,8 +8,7 @@
  * Mengubah <, >, &, ", ' menjadi HTML entities agar tidak dieksekusi browser.
  */
 function escapeHTML(str) {
-  if (!str) return '';
-  return String(str)
+  return String(str ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -17,8 +16,43 @@ function escapeHTML(str) {
     .replace(/'/g, '&#39;');
 }
 
+// Capture the script location now; document.currentScript is null in callbacks.
+const mbgAppBaseURL = new URL('../../', document.currentScript.src);
+const menuImageFallbackURL = new URL('assets/images/food-placeholder.svg', mbgAppBaseURL).href;
+const profileImageFallbackURL = new URL('assets/images/ic_launcher.png', mbgAppBaseURL).href;
+
+function safeImageURL(value, fallbackURL) {
+  if (typeof value !== 'string' || !value.trim() || /[\u0000-\u001f\u007f\\]/.test(value)) return fallbackURL;
+  try {
+    const url = new URL(value.trim(), document.baseURI);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return fallbackURL;
+    return url.href;
+  } catch (_) {
+    return fallbackURL;
+  }
+}
+
+function finiteNumber(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return 0;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+}
+
+function attachImageFallbacks(container, fallbackURL) {
+  container.querySelectorAll('img').forEach(image => {
+    const useFallback = () => {
+      if (image.src !== fallbackURL) image.src = fallbackURL;
+    };
+    image.addEventListener('error', useFallback, { once: true });
+    // A cached/broken image may have finished before its listener was attached.
+    if (image.complete && image.naturalWidth === 0) useFallback();
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   'use strict';
+
+  initPublicPolish();
 
   // Inisialisasi Mobile Navigation
   initMobileNav();
@@ -46,6 +80,100 @@ document.addEventListener('DOMContentLoaded', function() {
   // Inisialisasi Province Modal Drill-Down
   initProvinsiModal();
 });
+
+function initPublicPolish() {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if ('IntersectionObserver' in window && !reducedMotion.matches) {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('mbg-reveal');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('main section > .max-w-7xl, .portal-cards > div').forEach(element => observer.observe(element));
+    reducedMotion.addEventListener('change', event => {
+      if (event.matches) observer.disconnect();
+    });
+  }
+
+  const search = document.getElementById('navGlobalSearch');
+  if (search) search.setAttribute('aria-label', 'Cari sekolah atau SPPG');
+  const nav = document.querySelector('header nav');
+  if (nav) nav.setAttribute('aria-label', 'Navigasi utama');
+  const currentPath = window.location.pathname.replace(/index\.html$/, '').replace(/\/$/, '');
+  document.querySelectorAll('header nav a, #mobileNavMenu a').forEach(link => {
+    const path = new URL(link.href).pathname.replace(/index\.html$/, '').replace(/\/$/, '');
+    if (path === currentPath) link.setAttribute('aria-current', 'page');
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    [['navUserBtn', 'navUserDropdown'], ['btnHeaderProfile', 'headerProfileMenu']].forEach(([buttonId, panelId]) => {
+      const button = document.getElementById(buttonId);
+      const panel = document.getElementById(panelId);
+      if (button && panel && !panel.classList.contains('hidden')) {
+        button.click();
+        button.focus();
+      }
+    });
+  });
+
+  initModalFocus('schoolModalBackdrop', 'btnCloseModal', 'modalSchoolQuery');
+  initModalFocus('provinsiModal', 'closeProvinsiModal');
+}
+
+function initModalFocus(modalId, closeId, inputId) {
+  const modal = document.getElementById(modalId);
+  const close = document.getElementById(closeId);
+  if (!modal || !close) return;
+  const dialog = modal.firstElementChild;
+  dialog.setAttribute('role', 'dialog');
+  dialog.setAttribute('aria-modal', 'true');
+  dialog.setAttribute('tabindex', '-1');
+  const heading = dialog.querySelector('h2, h4');
+  if (heading) {
+    if (!heading.id) heading.id = modalId + 'Title';
+    dialog.setAttribute('aria-labelledby', heading.id);
+  }
+  let wasOpen = false;
+  let previousFocus;
+  let previousOverflow;
+  new MutationObserver(() => {
+    const isOpen = !modal.classList.contains('hidden');
+    if (isOpen === wasOpen) return;
+    wasOpen = isOpen;
+    if (isOpen) {
+      previousFocus = document.activeElement;
+      previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      (document.getElementById(inputId) || close).focus({ preventScroll: true });
+    } else {
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus && previousFocus.isConnected) previousFocus.focus({ preventScroll: true });
+    }
+  }).observe(modal, { attributes: true, attributeFilter: ['class'] });
+
+  document.addEventListener('keydown', event => {
+    if (modal.classList.contains('hidden')) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close.click();
+    }
+    if (event.key !== 'Tab') return;
+    const controls = Array.from(dialog.querySelectorAll('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]'))
+      .filter(element => element.getClientRects().length);
+    const first = controls[0] || dialog;
+    const last = controls[controls.length - 1] || dialog;
+    if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+}
 
 async function initHomepageMenuPreview() {
   const container = document.getElementById('homepageMenuPreview');
@@ -104,39 +232,37 @@ function getApiPrefix() {
 function initMobileNav() {
   const toggleBtn = document.getElementById('btnMobileNavToggle');
   const mobileMenu = document.getElementById('mobileNavMenu');
+  if (!toggleBtn || !mobileMenu) return;
 
-  if (toggleBtn && mobileMenu) {
-    function toggleMenu(e) {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      const isHidden = mobileMenu.classList.contains('hidden');
-      if (isHidden) {
-        mobileMenu.classList.remove('hidden');
-        toggleBtn.setAttribute('aria-expanded', 'true');
-      } else {
-        mobileMenu.classList.add('hidden');
-        toggleBtn.setAttribute('aria-expanded', 'false');
-      }
-    }
-
-    toggleBtn.addEventListener('click', toggleMenu);
-    toggleBtn.addEventListener('touchstart', function(e) {
-      toggleMenu(e);
-    }, { passive: false });
-
-    // Tutup jika klik / tap di luar menu
-    function closeMenuOutside(e) {
-      if (!mobileMenu.contains(e.target) && !toggleBtn.contains(e.target)) {
-        mobileMenu.classList.add('hidden');
-        toggleBtn.setAttribute('aria-expanded', 'false');
-      }
-    }
-
-    document.addEventListener('click', closeMenuOutside);
-    document.addEventListener('touchstart', closeMenuOutside, { passive: true });
+  toggleBtn.setAttribute('aria-controls', mobileMenu.id);
+  mobileMenu.setAttribute('aria-label', 'Navigasi seluler');
+  mobileMenu.setAttribute('role', 'navigation');
+  function setOpen(open, restoreFocus = false) {
+    mobileMenu.classList.toggle('hidden', !open);
+    toggleBtn.setAttribute('aria-expanded', String(open));
+    toggleBtn.setAttribute('aria-label', open ? 'Tutup navigasi' : 'Buka navigasi');
+    if (restoreFocus) toggleBtn.focus();
   }
+  setOpen(false);
+  // Feature pages still register legacy inline toggles. Handle this control
+  // in capture phase so one tap/keyboard click always produces one toggle.
+  toggleBtn.addEventListener('click', event => {
+    event.stopImmediatePropagation();
+    setOpen(mobileMenu.classList.contains('hidden'));
+  }, true);
+  mobileMenu.addEventListener('click', event => {
+    if (event.target.closest('a')) setOpen(false);
+  });
+  document.addEventListener('click', event => {
+    if (!mobileMenu.contains(event.target) && !toggleBtn.contains(event.target)) setOpen(false);
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !mobileMenu.classList.contains('hidden')) setOpen(false, true);
+  });
+  document.addEventListener('focusin', event => {
+    if (!mobileMenu.contains(event.target) && !toggleBtn.contains(event.target)) setOpen(false);
+  });
+  window.matchMedia('(min-width: 1600px)').addEventListener('change', () => setOpen(false));
 }
 
 function initGlobalSearch() {
@@ -253,12 +379,12 @@ function renderDistribusiTable(region) {
     return;
   }
   tableBody.innerHTML = filteredRows.map(item => {
-    const prov = BGNSecurity ? BGNSecurity.escapeHTML(item.provinsi) : String(item.provinsi || '');
-    const status = BGNSecurity ? BGNSecurity.escapeHTML(item.status) : String(item.status || '');
+    const prov = escapeHTML(item.provinsi);
+    const status = escapeHTML(item.status);
     return `<tr class="hover:bg-surface-canvas transition-colors cursor-pointer" data-provinsi="${prov}" title="Klik untuk lihat SPPG">
-      <td class="py-3 px-3 font-semibold text-primary">${prov}</td>
-      <td class="py-3 px-3">${Number(item.target_porsi).toLocaleString('id-ID')}</td>
-      <td class="py-3 px-3 text-status-success font-semibold">${Number(item.ketepatan)}%</td>
+      <td class="py-3 px-3 font-semibold text-primary"><button type="button" class="text-left underline decoration-dotted underline-offset-4" aria-haspopup="dialog" aria-label="Lihat SPPG di ${prov}">${prov}</button></td>
+      <td class="py-3 px-3">${finiteNumber(item.target_porsi).toLocaleString('id-ID')}</td>
+      <td class="py-3 px-3 text-status-success font-semibold">${finiteNumber(item.ketepatan)}%</td>
       <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm">${status}</span></td>
     </tr>`;
   }).join('');
@@ -320,7 +446,7 @@ async function loadMenuData(params = {}) {
 
 function renderEmptyState(container, searchKeyword = '') {
   const msg = searchKeyword 
-    ? `Tidak ditemukan menu yang sesuai dengan pencarian "<strong>${BGNSecurity.escapeHTML(searchKeyword)}</strong>".`
+    ? `Tidak ditemukan menu yang sesuai dengan pencarian "${searchKeyword}".`
     : `Belum ada data menu terverifikasi untuk filter yang dipilih. Silakan masukkan data melalui Dashboard SPPG.`;
 
   container.innerHTML = `
@@ -345,21 +471,21 @@ function renderEmptyState(container, searchKeyword = '') {
 function renderMenuItems(container, items) {
   let html = '';
   items.forEach(item => {
-    const namaMenu = BGNSecurity.escapeHTML(item.nama_menu || 'Menu Terverifikasi BGN');
-    const namaSppg = BGNSecurity.escapeHTML(item.nama_sppg || 'SPPG Nasional');
-    const wilayah = BGNSecurity.escapeHTML(item.wilayah || 'Indonesia');
-    const targetSekolah = BGNSecurity.escapeHTML(item.target_sekolah || '-');
-    const kalori = item.kalori_total || 620;
-    const protein = item.protein_gram || 25;
-    const karbo = item.karbo_gram || 75;
-    const lemak = item.lemak_gram || 18;
-    const status = item.status_distribusi || 'Telah Tiba di Sekolah';
-    const foto = item.foto_url || 'assets/images/food-placeholder.svg';
+    const namaMenu = escapeHTML(item.nama_menu || 'Menu Terverifikasi BGN');
+    const namaSppg = escapeHTML(item.nama_sppg || 'SPPG Nasional');
+    const wilayah = escapeHTML(item.wilayah || 'Indonesia');
+    const targetSekolah = escapeHTML(item.target_sekolah || '-');
+    const kalori = finiteNumber(item.kalori_total);
+    const protein = finiteNumber(item.protein_gram);
+    const karbo = finiteNumber(item.karbo_gram);
+    const lemak = finiteNumber(item.lemak_gram);
+    const status = escapeHTML(item.status_distribusi || 'Telah Tiba di Sekolah');
+    const foto = escapeHTML(safeImageURL(item.foto_url, menuImageFallbackURL));
 
     html += `
       <div class="bg-surface-card rounded-2xl border border-border-subtle overflow-hidden card-hover flex flex-col">
         <div class="relative h-48 w-full bg-surface-container-low overflow-hidden">
-          <img src="${foto}" alt="${namaMenu}" class="w-full h-full object-cover" onerror="this.src='assets/images/food-placeholder.svg'" />
+          <img src="${foto}" alt="${namaMenu}" class="w-full h-full object-cover" />
           <div class="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/90 backdrop-blur-sm text-xs font-bold text-primary shadow-sm flex items-center gap-1">
             <span class="material-symbols-outlined text-[14px] text-status-success">verified</span>
             <span>Terverifikasi BGN</span>
@@ -392,6 +518,7 @@ function renderMenuItems(container, items) {
   });
 
   container.innerHTML = html;
+  attachImageFallbacks(container, menuImageFallbackURL);
 }
 
 /**
@@ -436,6 +563,9 @@ async function initUserAuthStatus() {
     if (!data.logged_in || !data.user) { applyStaticSessionFallback(); return; }
 
     const u = data.user;
+    // Role is a path segment and controls which links are shown, not free text.
+    if (!['admin', 'sppg', 'user'].includes(u.role)) return;
+    const avatarURL = escapeHTML(safeImageURL(u.avatar, profileImageFallbackURL));
     const desktopLoginLink = document.querySelector('header nav + div a[href*="login.html"], header a[href*="login.html"]:not(#mobileNavMenu a)');
     const mobileLoginLink = document.querySelector('#mobileNavMenu a[href*="login.html"]');
 
@@ -447,21 +577,21 @@ async function initUserAuthStatus() {
 
       wrapper.innerHTML = `
         <button id="btnHeaderProfile" type="button" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-border-subtle shadow-sm transition-all focus:outline-none">
-          <img src="${escapeHTML(u.avatar)}" alt="${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}" class="w-7 h-7 rounded-full border border-primary/20 object-cover bg-white">
+          <img src="${avatarURL}" alt="${escapeHTML(u.full_name)}" class="w-7 h-7 rounded-full border border-primary/20 object-cover bg-white">
           <div class="flex flex-col text-left hidden lg:flex">
-            <span class="text-xs font-bold text-on-surface leading-tight max-w-[110px] truncate">${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}</span>
-            <span class="text-[10px] text-secondary font-medium leading-none">${escapeHTML(BGNSecurity.escapeHTML(u.role_label))}</span>
+            <span class="text-xs font-bold text-on-surface leading-tight max-w-[110px] truncate">${escapeHTML(u.full_name)}</span>
+            <span class="text-[10px] text-secondary font-medium leading-none">${escapeHTML(u.role_label)}</span>
           </div>
           <span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
         </button>
         
         <div id="headerProfileMenu" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50">
           <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3 bg-slate-50/70">
-            <img src="${escapeHTML(u.avatar)}" alt="${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white">
+            <img src="${avatarURL}" alt="${escapeHTML(u.full_name)}" class="w-10 h-10 rounded-full border-2 border-white shadow-sm bg-white">
             <div class="flex flex-col overflow-hidden">
-              <span class="text-xs font-bold text-slate-900 truncate">${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}</span>
-              <span class="text-[11px] text-slate-500 font-mono truncate">@${escapeHTML(BGNSecurity.escapeHTML(u.username))}</span>
-              <span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 w-fit">${escapeHTML(BGNSecurity.escapeHTML(u.role_label))}</span>
+              <span class="text-xs font-bold text-slate-900 truncate">${escapeHTML(u.full_name)}</span>
+              <span class="text-[11px] text-slate-500 font-mono truncate">@${escapeHTML(u.username)}</span>
+              <span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 w-fit">${escapeHTML(u.role_label)}</span>
             </div>
           </div>
 
@@ -515,6 +645,7 @@ async function initUserAuthStatus() {
         </div>
       `;
 
+      attachImageFallbacks(wrapper, profileImageFallbackURL);
       desktopLoginLink.replaceWith(wrapper);
 
       // Event listener dropdown
@@ -540,10 +671,10 @@ async function initUserAuthStatus() {
       mobWrapper.className = 'p-3 bg-surface-container rounded-xl flex flex-col gap-2 border border-border-subtle';
       mobWrapper.innerHTML = `
         <div class="flex items-center gap-3">
-          <img src="${escapeHTML(u.avatar)}" alt="${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}" class="w-9 h-9 rounded-full border border-primary/20 bg-white">
+          <img src="${avatarURL}" alt="${escapeHTML(u.full_name)}" class="w-9 h-9 rounded-full border border-primary/20 bg-white">
           <div class="flex flex-col">
-            <span class="text-xs font-bold text-on-surface">${escapeHTML(BGNSecurity.escapeHTML(u.full_name))}</span>
-            <span class="text-[11px] text-secondary font-medium">${escapeHTML(BGNSecurity.escapeHTML(u.role_label))}</span>
+            <span class="text-xs font-bold text-on-surface">${escapeHTML(u.full_name)}</span>
+            <span class="text-[11px] text-secondary font-medium">${escapeHTML(u.role_label)}</span>
           </div>
         </div>
         <div class="flex flex-col gap-1 pt-2 border-t border-border-subtle">
@@ -577,6 +708,7 @@ async function initUserAuthStatus() {
           </a>
         </div>
       `;
+      attachImageFallbacks(mobWrapper, profileImageFallbackURL);
       mobileLoginLink.replaceWith(mobWrapper);
     }
   } catch (err) {
@@ -600,15 +732,27 @@ function initNotificationBell() {
 
   if (!btnBell || !dropdown) return;
 
+  btnBell.setAttribute('aria-label', 'Notifikasi laporan dan sistem');
+  btnBell.setAttribute('aria-controls', dropdown.id);
+  btnBell.setAttribute('aria-expanded', 'false');
   btnBell.addEventListener('click', function(e) {
     e.stopPropagation();
-    dropdown.classList.toggle('hidden');
+    const isOpen = !dropdown.classList.toggle('hidden');
+    btnBell.setAttribute('aria-expanded', String(isOpen));
     fetchNotifications();
   });
 
   document.addEventListener('click', function(e) {
     if (container && !container.contains(e.target)) {
       dropdown.classList.add('hidden');
+      btnBell.setAttribute('aria-expanded', 'false');
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !dropdown.classList.contains('hidden')) {
+      dropdown.classList.add('hidden');
+      btnBell.setAttribute('aria-expanded', 'false');
+      btnBell.focus();
     }
   });
 
@@ -620,7 +764,8 @@ function initNotificationBell() {
       if (!json || json.status !== 'success') throw new Error(json.message || 'Data notifikasi tidak tersedia');
 
       const data = json;
-      const count = data.badge_count || 0;
+      const count = finiteNumber(data.badge_count);
+      const pendingLogos = finiteNumber(data.pending_sppg_logos);
 
       if (badge) {
         if (count > 0) {
@@ -637,13 +782,13 @@ function initNotificationBell() {
 
       if (listContainer) {
         let itemsHtml = '';
-        if (data.pending_sppg_logos > 0) {
+        if (pendingLogos > 0) {
           itemsHtml += `
             <a href="dashboard/admin/#verifikasi-logo-sppg" class="block px-4 py-3 hover:bg-amber-50/70 transition-colors bg-amber-50/30">
               <div class="flex items-start gap-2.5">
                 <span class="material-symbols-outlined text-amber-600 text-[20px] shrink-0">verified_user</span>
                 <div>
-                  <p class="text-xs font-bold text-slate-800">Verifikasi Logo Dapur SPPG (${data.pending_sppg_logos})</p>
+                  <p class="text-xs font-bold text-slate-800">Verifikasi Logo Dapur SPPG (${pendingLogos})</p>
                   <p class="text-[11px] text-slate-600 mt-0.5">Ada permohonan pergantian logo SPPG yang menunggu konfirmasi Satgas BGN.</p>
                 </div>
               </div>
@@ -651,7 +796,7 @@ function initNotificationBell() {
           `;
         }
 
-        if (data.latest_reports && data.latest_reports.length > 0) {
+        if (Array.isArray(data.latest_reports) && data.latest_reports.length > 0) {
           data.latest_reports.forEach(r => {
             const timeAgo = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : 'Baru saja';
             itemsHtml += `
@@ -660,11 +805,11 @@ function initNotificationBell() {
                   <span class="material-symbols-outlined text-red-500 text-[18px] shrink-0">report_problem</span>
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between">
-                      <span class="text-[11px] font-mono font-bold text-blue-700">${BGNSecurity.escapeHTML(r.ticket_code)}</span>
-                      <span class="text-[10px] text-slate-400">${timeAgo}</span>
+                      <span class="text-[11px] font-mono font-bold text-blue-700">${escapeHTML(r.ticket_code)}</span>
+                      <span class="text-[10px] text-slate-400">${escapeHTML(timeAgo)}</span>
                     </div>
-                    <p class="text-xs font-semibold text-slate-800 truncate">${BGNSecurity.escapeHTML(r.issue_category)}: ${BGNSecurity.escapeHTML(r.school_target || '-')}</p>
-                    <p class="text-[11px] text-slate-500 truncate">Status: ${BGNSecurity.escapeHTML(r.status)}</p>
+                    <p class="text-xs font-semibold text-slate-800 truncate">${escapeHTML(r.issue_category)}: ${escapeHTML(r.school_target || '-')}</p>
+                    <p class="text-[11px] text-slate-500 truncate">Status: ${escapeHTML(r.status)}</p>
                   </div>
                 </div>
               </a>
@@ -708,55 +853,171 @@ function initNotificationBell() {
  * ============================================================
  */
 let mbgLeafletMap = null;
+let mbgMapLocationsFitted = false;
+let mbgMapRefreshInProgress = false;
+let mbgMapDataSignature = null;
 
 async function initInteractiveTelemetryMap() {
   const mapElement = document.getElementById('mbgInteractiveMap');
-  if (!mapElement || typeof L === 'undefined') return;
+  const mapCount = document.getElementById('mapLocationCount');
+  if (!mapElement) return;
+  if (typeof L === 'undefined') {
+    if (mapCount) mapCount.textContent = 'Peta gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.';
+    return;
+  }
 
   mbgLeafletMap = L.map(mapElement, { center: [-2.5, 118], zoom: 5 });
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(mbgLeafletMap);
-  const markerLayer = L.featureGroup().addTo(mbgLeafletMap);
-  const mapCount = document.getElementById('mapLocationCount');
+  const markerLayer = typeof L.markerClusterGroup === 'function'
+    ? L.markerClusterGroup({
+        chunkedLoading: true,
+        maxClusterRadius: 48,
+        showCoverageOnHover: false,
+        iconCreateFunction: cluster => {
+          const sppgCount = cluster.getAllChildMarkers().reduce(
+            (total, marker) => total + (marker.sppgCount || 1),
+            0
+          );
+          return L.divIcon({
+            html: `<span>${sppgCount.toLocaleString('id-ID')}</span>`,
+            className: 'sppg-map-cluster',
+            iconSize: [42, 42]
+          });
+        }
+      })
+    : L.featureGroup();
+  markerLayer.addTo(mbgLeafletMap);
 
-  try {
-    const response = await fetch(`${getApiPrefix()}sppg_map.php`, { headers: { Accept: 'application/json' } });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const geoJson = await response.json();
-    if (!geoJson || !Array.isArray(geoJson.features)) throw new Error('Format data peta tidak valid');
-
-    geoJson.features.forEach(feature => {
-      const coordinates = feature.geometry && feature.geometry.coordinates;
-      if (!Array.isArray(coordinates) || coordinates.length < 2) return;
-      const properties = feature.properties || {};
-      const marker = L.marker([coordinates[1], coordinates[0]]).addTo(markerLayer);
-      const popup = document.createElement('div');
-      const name = document.createElement('strong');
-      name.textContent = properties.nama || 'SPPG';
-      popup.appendChild(name);
-      if (properties.kabupaten_kota || properties.provinsi) {
-        const location = document.createElement('div');
-        location.textContent = [properties.kabupaten_kota, properties.provinsi].filter(Boolean).join(', ');
-        popup.appendChild(location);
-      }
-      if (properties.status) {
-        const status = document.createElement('div');
-        status.textContent = `Status: ${properties.status}`;
-        popup.appendChild(status);
-      }
-      marker.bindPopup(popup);
-    });
-
-    if (markerLayer.getLayers().length) mbgLeafletMap.fitBounds(markerLayer.getBounds(), { padding: [24, 24] });
-    if (mapCount) mapCount.textContent = geoJson.count
-      ? `${Number(geoJson.count).toLocaleString('id-ID')} lokasi SPPG`
-      : 'Belum ada lokasi SPPG di basis data';
-  } catch (error) {
-    console.error('[BGN] Gagal memuat lokasi SPPG:', error);
-    if (mapCount) mapCount.textContent = 'Lokasi SPPG tidak dapat dimuat';
+  function showMapStatus(message, canRetry) {
+    if (!mapCount) return;
+    mapCount.textContent = message;
+    if (!canRetry) return;
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'ml-2 underline font-semibold text-primary';
+    retry.textContent = 'Coba lagi';
+    retry.addEventListener('click', refreshLocations);
+    mapCount.appendChild(retry);
   }
+
+  async function refreshLocations() {
+    if (mbgMapRefreshInProgress) return;
+    mbgMapRefreshInProgress = true;
+
+    try {
+      const response = await fetch(`${getApiPrefix()}sppg_map.php?limit=50000`, {
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const geoJson = await response.json();
+      if (!geoJson || !Array.isArray(geoJson.features)) throw new Error('Format data peta tidak valid');
+
+      const dataSignature = geoJson.features.map(feature => {
+        const coordinates = feature.geometry && feature.geometry.coordinates || [];
+        return [
+          feature.properties && feature.properties.id,
+          coordinates[0],
+          coordinates[1],
+          feature.properties && feature.properties.location_accuracy,
+          feature.properties && feature.properties.sppg_count
+        ].join(':');
+      }).join('|');
+
+      if (dataSignature !== mbgMapDataSignature) {
+        markerLayer.clearLayers();
+        const newMarkers = [];
+        let approximateCount = 0;
+        let gpsCount = 0;
+        geoJson.features.forEach(feature => {
+          const coordinates = feature.geometry && feature.geometry.coordinates;
+          if (!Array.isArray(coordinates) || coordinates.length < 2) return;
+          const longitude = Number(coordinates[0]);
+          const latitude = Number(coordinates[1]);
+          if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+              latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return;
+
+          const properties = feature.properties || {};
+          const isApproximate = properties.location_accuracy === 'approximate';
+          const sppgCount = Math.max(1, Number(properties.sppg_count) || 1);
+          if (isApproximate) approximateCount += sppgCount;
+          else gpsCount += sppgCount;
+          const marker = L.marker([latitude, longitude], {
+            icon: L.divIcon({
+              html: '<span class="sppg-map-marker-dot"></span>',
+              className: `sppg-map-marker${isApproximate ? ' approximate' : ''}`,
+              iconSize: [24, 24],
+              iconAnchor: [12, 12]
+            })
+          });
+          marker.sppgCount = sppgCount;
+          const popup = document.createElement('div');
+          popup.className = 'sppg-map-popup';
+          const name = document.createElement('strong');
+          name.textContent = properties.nama || 'SPPG';
+          popup.appendChild(name);
+          if (sppgCount > 1) {
+            const count = document.createElement('div');
+            count.textContent = `${sppgCount.toLocaleString('id-ID')} dapur SPPG di wilayah ini`;
+            popup.appendChild(count);
+          }
+          if (Array.isArray(properties.sample_names) && properties.sample_names.length) {
+            const samples = document.createElement('small');
+            samples.textContent = `Contoh: ${properties.sample_names.join(', ')}`;
+            popup.appendChild(samples);
+          }
+          if (properties.kabupaten_kota || properties.provinsi) {
+            const location = document.createElement('div');
+            location.textContent = [properties.kabupaten_kota, properties.provinsi].filter(Boolean).join(', ');
+            popup.appendChild(location);
+          }
+          if (properties.status) {
+            const status = document.createElement('div');
+            status.textContent = `Status: ${properties.status}`;
+            popup.appendChild(status);
+          }
+          const accuracy = document.createElement('small');
+          accuracy.className = isApproximate ? 'approximate' : 'verified';
+          accuracy.textContent = properties.location_label || 'Koordinat GPS terdaftar';
+          popup.appendChild(accuracy);
+          marker.bindPopup(popup, { maxWidth: 260 });
+          newMarkers.push(marker);
+        });
+
+        if (typeof markerLayer.addLayers === 'function') markerLayer.addLayers(newMarkers);
+        else newMarkers.forEach(marker => markerLayer.addLayer(marker));
+        mbgMapDataSignature = dataSignature;
+
+        const locationCount = Number(geoJson.count) || newMarkers.length;
+        const unmappedCount = Number(geoJson.unmapped) || 0;
+        approximateCount = Number(geoJson.approximate_count) || approximateCount;
+        gpsCount = Number(geoJson.gps_count) || gpsCount;
+        if (newMarkers.length && !mbgMapLocationsFitted) {
+          mbgLeafletMap.fitBounds(L.featureGroup(newMarkers).getBounds(), { padding: [24, 24], maxZoom: 6 });
+          mbgMapLocationsFitted = true;
+        }
+        if (mapCount) {
+          mapCount.textContent = locationCount
+            ? `${locationCount.toLocaleString('id-ID')} lokasi · ${approximateCount.toLocaleString('id-ID')} perkiraan · ${gpsCount.toLocaleString('id-ID')} GPS · ${unmappedCount.toLocaleString('id-ID')} belum terpetakan`
+            : 'Belum ada lokasi SPPG yang dapat dipetakan';
+        }
+      }
+    } catch (error) {
+      console.error('[BGN] Gagal memuat lokasi SPPG:', error);
+      const reason = error instanceof Error && /^HTTP \d+$/.test(error.message)
+        ? `API peta mengembalikan ${error.message}`
+        : 'API peta tidak dapat dihubungi atau datanya tidak valid';
+      showMapStatus(`${reason}. Pastikan Laragon dan koneksi database aktif.`, true);
+    } finally {
+      mbgMapRefreshInProgress = false;
+    }
+  }
+
+  refreshLocations();
+  window.setInterval(refreshLocations, 300000);
 
   setTimeout(() => mbgLeafletMap && mbgLeafletMap.invalidateSize(), 200);
 }
@@ -789,13 +1050,8 @@ function initProvinsiModal() {
   modal.addEventListener('click', function(e) {
     if (e.target === modal) closeProvinsiModal();
   });
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeProvinsiModal();
-  });
-
   function closeProvinsiModal() {
     modal.classList.add('hidden');
-    document.body.style.overflow = '';
   }
 
   function openProvinsiModal(provinsi) {
@@ -806,7 +1062,6 @@ function initProvinsiModal() {
       '<div class="w-8 h-8 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mx-auto mb-3"></div>' +
       'Memuat data SPPG...</div>';
     modal.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
 
     var apiPrefix = getApiPrefix();
     fetch(apiPrefix + 'sppg_provinsi.php?provinsi=' + encodeURIComponent(provinsi))
@@ -845,6 +1100,6 @@ function initProvinsiModal() {
   }
 
   function _escM(s) {
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return escapeHTML(s);
   }
 }

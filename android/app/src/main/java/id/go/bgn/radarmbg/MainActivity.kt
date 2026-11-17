@@ -14,6 +14,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import id.go.bgn.radarmbg.ui.screens.AdminPanelScreen
 import id.go.bgn.radarmbg.ui.screens.DashboardScreen
+import id.go.bgn.radarmbg.ui.screens.ChatScreen
 import id.go.bgn.radarmbg.ui.screens.HomeScreen
 import id.go.bgn.radarmbg.ui.screens.LaporanScreen
 import id.go.bgn.radarmbg.ui.screens.LoginScreen
@@ -102,6 +103,18 @@ class MainActivity : ComponentActivity() {
                         NotifikasiScreen()
                     }
 
+                    composable("chat") {
+                        ChatScreen(onBack = { navController.popBackStack() })
+                    }
+
+                    composable("report") {
+                        LaporanScreen()
+                    }
+
+                    composable("public_menu") {
+                        MenuScreen()
+                    }
+
                     composable("profile") {
                         ProfileScreen(
                             onLogout = {
@@ -115,6 +128,9 @@ class MainActivity : ComponentActivity() {
                             onNavigateToAdminPanel = {
                                 navController.navigate("admin_panel")
                             },
+                            onNavigateToLaporan = {
+                                navController.navigate("report")
+                            },
                             authViewModel = authViewModel
                         )
                     }
@@ -123,13 +139,19 @@ class MainActivity : ComponentActivity() {
                         val role = (authViewModel.uiState.value as? AuthUiState.Success)?.user?.role ?: ""
                         DashboardScreen(
                             userRole = role,
-                            onNavigateToAdminPanel = { navController.navigate("admin_panel") },
-                            onNavigateToLaporan = { navController.navigate("main") }
+                            onNavigateToPortal = { navController.navigate("admin_panel") },
+                            onNavigateToLaporan = { navController.navigate("report") },
+                            onNavigateToMenu = { navController.navigate("public_menu") },
+                            onNavigateToChat = { navController.navigate("chat") }
                         )
                     }
 
                     composable("admin_panel") {
-                        AdminPanelScreen(onBack = { navController.popBackStack() })
+                        val role = (authViewModel.uiState.value as? AuthUiState.Success)?.user?.role ?: ""
+                        AdminPanelScreen(
+                            onBack = { navController.popBackStack() },
+                            userRole = role
+                        )
                     }
                 }
             }
@@ -163,6 +185,7 @@ fun MainScaffold(
                 AppTopBar(
                     title = stringResource(R.string.app_name),
                     badgeCount = 0,
+                    onChatClick = { outerNavController.navigate("chat") },
                     onNotificationClick = { outerNavController.navigate("notifikasi") },
                     onProfileClick = { outerNavController.navigate("profile") },
                     userInitial = userInitial,

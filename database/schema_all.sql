@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
   username           VARCHAR(60) NOT NULL UNIQUE,
   email              VARCHAR(120) NOT NULL UNIQUE,
   password_hash      VARCHAR(255) NOT NULL,
+  salt               VARCHAR(128),
   full_name          VARCHAR(120) NOT NULL,
   role               VARCHAR(20) NOT NULL DEFAULT 'user'
                        CHECK (role IN ('admin', 'sppg', 'user')),
@@ -43,6 +44,7 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_status      VARCHAR(20) NOT NULL DEFAULT 'approved'
                        CHECK (avatar_status IN ('approved', 'pending_approval', 'rejected')),
   is_active          BOOLEAN NOT NULL DEFAULT TRUE,
+  session_version    INTEGER NOT NULL DEFAULT 0,
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -225,6 +227,30 @@ CREATE TABLE IF NOT EXISTS exploit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_exploit_type ON exploit_logs(exploit_type);
 CREATE INDEX IF NOT EXISTS idx_exploit_time ON exploit_logs(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS auth_ip_lockouts (
+  ip_address      VARCHAR(45) PRIMARY KEY,
+  failed_attempts INTEGER NOT NULL DEFAULT 0 CHECK (failed_attempts >= 0),
+  locked_until    TIMESTAMPTZ,
+  is_permanent    BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS auth_security_events (
+  id              BIGSERIAL PRIMARY KEY,
+  ip_address      VARCHAR(45) NOT NULL,
+  event_type      VARCHAR(40) NOT NULL,
+  failed_attempts INTEGER NOT NULL DEFAULT 0,
+  blocked_until   TIMESTAMPTZ,
+  is_permanent    BOOLEAN NOT NULL DEFAULT FALSE,
+  actor_username  VARCHAR(80),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_security_events_created
+  ON auth_security_events (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_auth_security_events_ip_created
+  ON auth_security_events (ip_address, created_at DESC);
 
 -- ------------------------------------------------------------------------------
 -- 9. TABEL: live_chat_messages (Sistem Pesan Interaktif User <-> Admin & SPPG)

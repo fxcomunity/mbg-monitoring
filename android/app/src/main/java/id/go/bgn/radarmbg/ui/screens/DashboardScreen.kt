@@ -59,26 +59,28 @@ private data class DashboardTile(
 @Composable
 fun DashboardScreen(
     userRole: String,
-    onNavigateToAdminPanel: () -> Unit,
-    onNavigateToLaporan: () -> Unit
+    onNavigateToPortal: () -> Unit,
+    onNavigateToLaporan: () -> Unit,
+    onNavigateToMenu: () -> Unit,
+    onNavigateToChat: () -> Unit
 ) {
     val tiles: List<DashboardTile> = when (userRole) {
         "admin" -> listOf(
-            DashboardTile(R.string.tile_kpi_nasional, Icons.Default.ShowChart, {}, false),
-            DashboardTile(R.string.tile_manajemen_akun, Icons.Default.People, {}, false),
-            DashboardTile(R.string.tile_status_sppg, Icons.Default.CheckCircle, {}, false),
-            DashboardTile(R.string.tile_backup_menu, Icons.Default.Archive, {}, false),
-            DashboardTile(R.string.tile_log_keamanan, Icons.Default.Security, onNavigateToAdminPanel, true)
+            DashboardTile(R.string.tile_kpi_nasional, Icons.Default.ShowChart, onNavigateToPortal, true),
+            DashboardTile(R.string.tile_manajemen_akun, Icons.Default.People, onNavigateToPortal, true),
+            DashboardTile(R.string.tile_status_sppg, Icons.Default.CheckCircle, onNavigateToPortal, true),
+            DashboardTile(R.string.tile_backup_menu, Icons.Default.Archive, onNavigateToPortal, true),
+            DashboardTile(R.string.tile_log_keamanan, Icons.Default.Security, onNavigateToPortal, true)
         )
         "sppg" -> listOf(
-            DashboardTile(R.string.tile_input_menu, Icons.Default.Edit, {}, false),
-            DashboardTile(R.string.tile_profil_dapur, Icons.Default.Restaurant, {}, false),
-            DashboardTile(R.string.tile_laporan_distribusi, Icons.Default.BarChart, {}, false)
+            DashboardTile(R.string.tile_input_menu, Icons.Default.Edit, onNavigateToPortal, true),
+            DashboardTile(R.string.tile_profil_dapur, Icons.Default.Restaurant, onNavigateToPortal, true),
+            DashboardTile(R.string.tile_laporan_distribusi, Icons.Default.BarChart, onNavigateToPortal, true)
         )
         else -> listOf(
             DashboardTile(R.string.tile_status_laporan, Icons.Default.Assignment, onNavigateToLaporan, true),
-            DashboardTile(R.string.tile_menu_sekolah, Icons.Default.MenuBook, {}, false),
-            DashboardTile(R.string.tile_kontak_satgas, Icons.Default.Phone, {}, false)
+            DashboardTile(R.string.tile_menu_sekolah, Icons.Default.MenuBook, onNavigateToMenu, true),
+            DashboardTile(R.string.tile_kontak_satgas, Icons.Default.Phone, onNavigateToChat, true)
         )
     }
 
@@ -112,7 +114,11 @@ fun DashboardScreen(
                         fontSize = 22.sp
                     )
                     Text(
-                        text = "Pilih fitur yang tersedia untuk akun Anda.",
+                        text = if (userRole == "admin" || userRole == "sppg") {
+                            "Kelola program melalui portal web resmi."
+                        } else {
+                            "Pilih layanan yang ingin Anda gunakan."
+                        },
                         color = BgnOnSurfaceVariant,
                         fontSize = 14.sp,
                         modifier = Modifier.padding(top = 4.dp)
@@ -146,7 +152,7 @@ private fun DashboardTileCard(
     tile: DashboardTile,
     modifier: Modifier = Modifier
 ) {
-    val containerColor = if (tile.isEnabled) Color.White else BgnBackground
+    val containerColor = Color.White
     val contentColor = if (tile.isEnabled) Color.White else BgnOnSurfaceVariant
 
     ElevatedCard(
@@ -154,9 +160,9 @@ private fun DashboardTileCard(
         modifier = modifier.height(136.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = containerColor,
-            contentColor = if (tile.isEnabled) BgnPrimaryContainer else BgnOnSurfaceVariant
+            contentColor = BgnPrimaryContainer
         ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (tile.isEnabled) 2.dp else 0.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
         enabled = tile.isEnabled
     ) {
         Box(
@@ -172,25 +178,23 @@ private fun DashboardTileCard(
                 Icon(
                     imageVector = tile.icon,
                     contentDescription = null,
-                    tint = if (tile.isEnabled) BgnPrimaryContainer else contentColor,
+                    tint = BgnPrimaryContainer,
                     modifier = Modifier.size(32.dp)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(tile.labelRes),
-                    color = if (tile.isEnabled) BgnPrimary else contentColor,
+                    color = BgnPrimary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
-                if (!tile.isEnabled) {
-                    Text(
-                        text = stringResource(R.string.label_fitur_segera),
-                        color = BgnOnSurfaceVariant,
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                Text(
+                    text = "Buka",
+                    color = BgnOnSurfaceVariant,
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

@@ -3,7 +3,7 @@
  */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 1.25rem;
 }
 
@@ -53,4 +53,117 @@
 
 .bgn-table tr:hover td {
   background-color: var(--bgn-surface-low);
+}
+
+/* Match the existing light dashboard surfaces, including on dark OS themes. */
+.bgn-table td {
+  color: #0b1c30;
+  vertical-align: middle;
+}
+
+.bgn-table th,
+.bgn-table tr:hover td {
+  background: #eff4ff;
+}
+
+body > header {
+  gap: 0.75rem;
+  min-height: 4.5rem;
+}
+
+body > header > div:first-child {
+  min-width: 0;
+}
+
+body > header > div:first-child > span {
+  line-height: 1.45;
+}
+
+body > header > div:last-child,
+body > header img,
+#mbgBellWrap {
+  flex-shrink: 0;
+}
+
+body > header :is(a, button),
+#dashMobileMenu a {
+  min-height: 2.75rem;
+}
+
+#dashHamburger,
+#mbgBellBtn {
+  min-width: 2.75rem;
+}
+
+#dashMobileMenu {
+  top: var(--mbg-header-height, 4.5rem);
+  max-height: calc(100dvh - var(--mbg-header-height, 4.5rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+main > .grid > *,
+.dashboard-grid > *,
+.stat-card > * {
+  min-width: 0;
+}
+
+main :is(section, [id]) {
+  scroll-margin-top: 6rem;
+}
+
+main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select) {
+  min-height: 2.75rem;
+}
+
+main textarea {
+  min-height: 6rem;
+}
+
+main .overflow-x-auto {
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+
+main table th {
+  white-space: nowrap;
+}
+
+main table td {
+  vertical-align: middle;
+}
+
+#dashProfileCard > div {
+  gap: 0.75rem;
+}
+
+#mbgDashClock {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 639px) {
+  body > header { padding-inline: 1rem; }
+  body > header > div:first-child { gap: 0.5rem; }
+  body > header > div:first-child > span { font-size: 0.8125rem; }
+  #dashProfileCard > div { flex-wrap: wrap; }
+  #mbgDashClock {
+    flex-basis: 100%;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    text-align: left;
+  }
+  #mbgBellPanel {
+    position: fixed;
+    top: calc(var(--mbg-header-height, 4.5rem) + 0.5rem);
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - var(--mbg-header-height, 4.5rem) - 1.5rem);
+    overflow-y: auto;
+    margin-top: 0;
+  }
+  main :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    font-size: 1rem;
+  }
 }

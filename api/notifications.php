@@ -4,6 +4,7 @@
  * Menghitung laporan masuk, peringatan WAF, dan verifikasi SPPG secara real-time
  */
 
+require_once __DIR__ . '/../database/api_bootstrap.php';
 require_once __DIR__ . '/../database/auth.php';
 require_once __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/../database/security.php';
@@ -12,25 +13,27 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Origin: *');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
-$pdo = getDB();
-
+// Bell dipakai publik: hanya ringkasan agregat yang boleh tanpa login.
+if (Auth::check()) {
+    Auth::requireApiRole();
+}
 $isAdmin = Auth::check() && Auth::user()['role'] === 'admin';
 
 try {
+    $pdo = getDB();
     // 1. Hitung jumlah aduan baru status 'masuk'
     $laporanMasukCount = (int)$pdo->query("SELECT COUNT(*) FROM laporan_aduan WHERE status = 'masuk'")->fetchColumn();
 
-    // 2. Ambil 5 laporan aduan terbaru
-    $latestLaporan = $pdo->query("
-        SELECT id, ticket_code, reporter_name, school_target, issue_category, status, created_at
-        FROM laporan_aduan
-        ORDER BY created_at DESC
-        LIMIT 5
-    ")->fetchAll(PDO::FETCH_ASSOC);
-
-    // 3. Pending SPPG Logo approvals (khusus admin)
+    // Detail laporan dan antrean internal hanya untuk admin terverifikasi.
+    $latestLaporan = [];
     $pendingSppgLogos = 0;
     if ($isAdmin) {
+        $latestLaporan = $pdo->query("
+            SELECT id, ticket_code, reporter_name, school_target, issue_category, status, created_at
+            FROM laporan_aduan
+            ORDER BY created_at DESC
+            LIMIT 5
+        ")->fetchAll(PDO::FETCH_ASSOC);
         $pendingSppgLogos = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'sppg' AND avatar_status = 'pending_approval'")->fetchColumn();
     }
 
@@ -47,6 +50,7 @@ try {
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 } catch (Throwable $e) {
+    Security::logFailure('notifications.php', $e);
     http_response_code(500);
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    echo json_encode(['status' => 'error', 'message' => 'Gagal mengambil notifikasi.']);
 }

@@ -104,7 +104,19 @@ data class TiketData(
 data class ChatResponse(
     val status: String = "",
     val reply: String = "",
-    val session_id: String = ""
+    val session_id: String = "",
+    val message: String = ""
+)
+
+data class ActionResponse(
+    val status: String = "",
+    val message: String = ""
+)
+
+data class ReportSubmitResponse(
+    val status: String = "",
+    val ticket_code: String = "",
+    val message: String = ""
 )
 
 data class SppgData(

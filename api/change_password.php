@@ -4,6 +4,7 @@
  * Berlaku untuk Administrator, Dapur SPPG, dan Pengguna / Wali Murid
  */
 
+require_once __DIR__ . '/../database/api_bootstrap.php';
 require_once __DIR__ . '/../database/auth.php';
 require_once __DIR__ . '/../database/security.php';
 
@@ -16,6 +17,7 @@ if (!Auth::check()) {
     exit;
 }
 
+Auth::requireApiRole();
 $currentUser = Auth::user();
 $pdo = getDB();
 $userId = (int)$currentUser['id'];
@@ -52,8 +54,8 @@ if ($action === 'admin_reset_user') {
         exit;
     }
 
-    $hash = password_hash($newPassword, PASSWORD_BCRYPT);
-    $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?");
+    $hash = Auth::hashNewPassword($newPassword);
+    $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, session_version = session_version + 1, updated_at = NOW() WHERE id = ?");
     $stmt->execute([$hash, $targetUserId]);
 
     echo json_encode(['status' => 'success', 'message' => 'Kata sandi pengguna ID #' . $targetUserId . ' berhasil direset.']);
@@ -88,16 +90,17 @@ $stmt = $pdo->prepare("SELECT password_hash FROM users WHERE id = ?");
 $stmt->execute([$userId]);
 $userRecord = $stmt->fetch();
 
-if (!$userRecord || !password_verify($currentPassword, $userRecord['password_hash'])) {
+if (!$userRecord || !Auth::verifyPassword($currentPassword, $userRecord['password_hash'])) {
     http_response_code(422);
     echo json_encode(['status' => 'error', 'message' => 'Kata sandi saat ini (lama) tidak valid.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 // Update dengan hash baru
-$newHash = password_hash($newPassword, PASSWORD_BCRYPT);
-$updateStmt = $pdo->prepare("UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?");
+$newHash = Auth::hashNewPassword($newPassword);
+$updateStmt = $pdo->prepare("UPDATE users SET password_hash = ?, session_version = session_version + 1, updated_at = NOW() WHERE id = ?");
 $updateStmt->execute([$newHash, $userId]);
+Auth::logout();
 
 echo json_encode([
     'status' => 'success',

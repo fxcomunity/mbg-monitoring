@@ -61,9 +61,9 @@
         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
       });
       el.innerHTML =
-        '<span class="font-black tabular-nums tracking-tight">' + time + '</span>' +
-        '<span class="text-[10px] font-bold opacity-70 ml-1">' + tzInfo.label + '</span>' +
-        '<span class="hidden sm:inline text-[10px] opacity-50 ml-2">' + date + '</span>';
+        '<span class="font-black tabular-nums tracking-tight">' + escHTML(time) + '</span>' +
+        '<span class="text-[10px] font-bold opacity-70 ml-1">' + escHTML(tzInfo.label) + '</span>' +
+        '<span class="hidden sm:inline text-[10px] opacity-50 ml-2">' + escHTML(date) + '</span>';
     }
     tick();
     setInterval(tick, 1000);
@@ -83,16 +83,17 @@
       if (!s) return;
       var roleLabel = { admin: 'Admin Satgas BGN', sppg: 'Mitra Dapur SPPG', user: 'Wali Murid / Publik' };
       var roleBg = { admin: 'bg-red-100 text-red-800', sppg: 'bg-blue-100 text-blue-800', user: 'bg-emerald-100 text-emerald-800' };
-      var tzInfo = getIndonesianTimezone();
+      var role = ['admin', 'sppg', 'user'].indexOf(s.role) >= 0 ? s.role : null;
+      var profileName = String(s.name || '—');
       card.innerHTML =
         '<div class="flex items-center gap-3 p-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/80 shadow-sm">' +
           '<div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-base shrink-0">' +
-            (s.name ? s.name.charAt(0).toUpperCase() : '?') +
+            escHTML(profileName.charAt(0).toUpperCase()) +
           '</div>' +
           '<div class="min-w-0">' +
-            '<p class="font-bold text-sm text-primary truncate">' + escHTML(s.name || '—') + '</p>' +
-            '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ' + (roleBg[s.role] || 'bg-slate-100 text-slate-700') + '">' +
-              (roleLabel[s.role] || s.role) +
+            '<p class="font-bold text-sm text-primary truncate">' + escHTML(profileName) + '</p>' +
+            '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ' + (roleBg[role] || 'bg-slate-100 text-slate-700') + '">' +
+              escHTML(role ? roleLabel[role] : s.role) +
             '</span>' +
           '</div>' +
           '<div id="mbgDashClock" class="ml-auto text-right text-xs text-slate-600 shrink-0 leading-tight"></div>' +
@@ -102,7 +103,7 @@
   }
 
   function escHTML(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   /* ═══════════════════════════════════════════════════════
@@ -115,34 +116,35 @@
     var menu = document.getElementById('dashMobileMenu');
     if (!btn || !menu) return;
 
-    btn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var isOpen = menu.classList.toggle('hidden') === false;
-      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      // Swap icon
+    btn.setAttribute('aria-controls', menu.id);
+    menu.setAttribute('role', 'navigation');
+    menu.setAttribute('aria-label', 'Navigasi dashboard');
+    function setOpen(open, restoreFocus) {
+      menu.classList.toggle('hidden', !open);
+      btn.setAttribute('aria-expanded', String(open));
+      btn.setAttribute('aria-label', open ? 'Tutup navigasi' : 'Buka navigasi');
       var icon = btn.querySelector('.material-symbols-outlined');
-      if (icon) icon.textContent = isOpen ? 'close' : 'menu';
+      if (icon) icon.textContent = open ? 'close' : 'menu';
+      if (restoreFocus) btn.focus();
+    }
+    setOpen(false);
+    btn.addEventListener('click', function () {
+      setOpen(menu.classList.contains('hidden'));
     });
-
-    // Close on outside click
     document.addEventListener('click', function (e) {
-      if (!menu.contains(e.target) && e.target !== btn) {
-        menu.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
-        var icon = btn.querySelector('.material-symbols-outlined');
-        if (icon) icon.textContent = 'menu';
-      }
+      if (!menu.contains(e.target) && !btn.contains(e.target)) setOpen(false);
     });
-
-    // Close on link click inside menu
-    menu.querySelectorAll('a').forEach(function (a) {
-      a.addEventListener('click', function () {
-        menu.classList.add('hidden');
-        btn.setAttribute('aria-expanded', 'false');
-        var icon = btn.querySelector('.material-symbols-outlined');
-        if (icon) icon.textContent = 'menu';
-      });
+    menu.addEventListener('click', function (e) {
+      if (e.target.closest('a')) setOpen(false);
     });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !menu.classList.contains('hidden')) setOpen(false, true);
+    });
+    document.addEventListener('focusin', function (e) {
+      if (!menu.contains(e.target) && !btn.contains(e.target)) setOpen(false);
+    });
+    var desktop = window.matchMedia(btn.classList.contains('md:hidden') ? '(min-width: 768px)' : '(min-width: 640px)');
+    desktop.addEventListener('change', function () { setOpen(false); });
   }
 
   /* ═══════════════════════════════════════════════════════
@@ -236,7 +238,7 @@
     var bg = type === 'success' ? '#059669' : (type === 'error' ? '#dc2626' : '#1e293b');
     var icon = type === 'success' ? 'check_circle' : (type === 'error' ? 'error' : 'info');
     t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:99990;padding:10px 20px;background:' + bg + ';color:#fff;font-size:12px;font-weight:600;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.25);display:flex;align-items:center;gap:8px;font-family:Plus Jakarta Sans,sans-serif;white-space:nowrap;';
-    t.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span><span>' + msg + '</span>';
+    t.innerHTML = '<span class="material-symbols-outlined" style="font-size:16px;">' + icon + '</span><span>' + escHTML(msg) + '</span>';
     document.body.appendChild(t);
     setTimeout(function () { t.style.opacity = '0'; t.style.transition = 'opacity .4s'; setTimeout(function () { t.remove(); }, 400); }, 3500);
   }
@@ -395,8 +397,51 @@
   /* ═══════════════════════════════════════════════════════
      INIT
   ══════════════════════════════════════════════════════ */
+  function initDashboardPolish() {
+    var header = document.querySelector('body > header');
+    if (header) {
+      function updateHeaderHeight() {
+        document.documentElement.style.setProperty('--mbg-header-height', header.getBoundingClientRect().height + 'px');
+      }
+      updateHeaderHeight();
+      if ('ResizeObserver' in window) {
+        new ResizeObserver(updateHeaderHeight).observe(header);
+      } else {
+        window.addEventListener('resize', updateHeaderHeight);
+      }
+    }
+
+    var main = document.querySelector('main');
+    if (main && !document.querySelector('.skip-link')) {
+      if (!main.id) main.id = 'dashboard-main';
+      main.setAttribute('tabindex', '-1');
+      var skip = document.createElement('a');
+      skip.className = 'skip-link';
+      skip.href = '#' + main.id;
+      skip.textContent = 'Lewati navigasi ke konten utama';
+      document.body.prepend(skip);
+    }
+
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (!('IntersectionObserver' in window) || reducedMotion.matches) return;
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('mbg-reveal');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('main > .grid > *, main > .rounded-3xl, #dashProfileCard').forEach(function (element) {
+      observer.observe(element);
+    });
+    reducedMotion.addEventListener('change', function (event) {
+      if (event.matches) observer.disconnect();
+    });
+  }
+
   function init() {
     renderProfileCard();
+    initDashboardPolish();
     initHamburger();
     hookMenuForm();
   }

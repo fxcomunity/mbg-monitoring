@@ -9,7 +9,12 @@
  *   4. Polling Realtime & Riwayat Pesan per Sesi
  */
 
+require_once __DIR__ . '/../database/api_bootstrap.php';
 require_once __DIR__ . '/../database/auth.php';
+
+if (Auth::check()) {
+    Auth::requireApiRole();
+}
 require_once __DIR__ . '/../database/security.php';
 
 header('Content-Type: application/json; charset=UTF-8');

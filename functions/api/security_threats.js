@@ -2,7 +2,7 @@ import { getSession, json, dbQuery } from './_shared.js';
 
 export async function onRequestGet({ request, env }) {
   const session = await getSession(request, env);
-  if (!session || session.role !== 'admin') {
+  if (!session || session.role !== 'admin' || typeof session.username !== 'string' || !session.username) {
     return json({ status: 'error', message: 'Akses ditolak.' }, 403);
   }
 
@@ -11,10 +11,23 @@ export async function onRequestGet({ request, env }) {
   }
 
   try {
+    // A stale admin session must not retain access after deactivation/demotion.
+    const users = await dbQuery(env.DATABASE_URL, `
+      SELECT role FROM users WHERE username = $1 AND active = TRUE LIMIT 1
+    `, [session.username]);
+    if (users[0]?.role !== 'admin') {
+      return json({ status: 'error', message: 'Akses ditolak.' }, 403);
+    }
     const data = await dbQuery(env.DATABASE_URL, `
       SELECT
         t.id,
         t.exploit_type AS type,
+        t.input_field,
+        CASE
+          WHEN t.input_field LIKE 'server:%' THEN 'server'
+          WHEN t.input_field LIKE 'client:%' THEN 'client'
+          ELSE 'legacy'
+        END AS source,
         t.ip_address AS ip,
         t.country,
         t.region,
@@ -34,7 +47,7 @@ export async function onRequestGet({ request, env }) {
 
     return json({ status: 'success', data });
   } catch (error) {
-    console.error('Gagal mengambil log keamanan dari Neon:', error);
+    console.error('Security threat list unavailable');
     return json({ status: 'error', message: 'Gagal mengambil log keamanan.' }, 500);
   }
 }

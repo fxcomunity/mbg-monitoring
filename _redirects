@@ -29,7 +29,7 @@
 /api/menu.php             /api/menu             301
 /api/notifications.php    /api/notifications    301
 /api/telemetri.php        /api/telemetri        301
-/api/tiket.php            /api/tiket            301
+/api/tiket.php            /api/tiket            308
 /api/upload_avatar.php    /api/upload_avatar    301
 /api/security_threats.php /api/security_threats     301
 

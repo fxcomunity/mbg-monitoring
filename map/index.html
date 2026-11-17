@@ -144,6 +144,18 @@
       transform: none;
       transition: all 0.3s ease;
     }
+    .sppg-marker.approximate { background: #f59e0b; }
+    .sppg-map-cluster {
+      display: flex !important; align-items: center; justify-content: center;
+      border: 0; border-radius: 50%; background: rgba(5,150,105,0.18);
+    }
+    .sppg-map-cluster span {
+      display: flex; width: 32px; height: 32px; align-items: center;
+      justify-content: center; border: 2px solid #fff; border-radius: 50%;
+      background: linear-gradient(135deg,#059669,#047857); color: #fff;
+      font: 700 10px 'Plus Jakarta Sans',sans-serif;
+      box-shadow: 0 2px 9px rgba(0,16,38,0.35);
+    }
     .sppg-marker:hover {
       transform: scale(1.2);
       box-shadow: 0 6px 16px rgba(5,150,105,0.4);
@@ -168,6 +180,11 @@
       background: rgba(0,16,38,0.9); color: #fff; font-size: 10px; font-weight: 700;
       padding: 2px 8px; border-radius: 999px; white-space: nowrap;
       border: 1px solid rgba(255,255,255,0.15); pointer-events: none;
+    }
+
+    @media (min-width: 641px) {
+      #sidebar { transform: none; }
+      #btn-sidebar-toggle { display: none; }
     }
 
     @media (max-width: 640px) {
@@ -206,9 +223,9 @@
     <div id="map"></div>
 
     <!-- SPPG data notice -->
-    <div id="sppg-notice" style="position:absolute;top:0;left:0;right:0;z-index:700;background:#fef3c7;border-bottom:1px solid #f59e0b;padding:6px 12px;font-size:11px;text-align:center;color:#92400e;">
-      ⚠️ Data dapur SPPG ditampilkan berdasarkan data historis per <strong>Maret 2025</strong>. 
-      Koordinat sebagian lokasi belum tersedia dan sedang dalam proses verifikasi.
+    <div id="sppg-notice" style="position:absolute;top:0;left:0;right:0;z-index:700;background:#fffbeb;border-bottom:1px solid #f59e0b;padding:6px 12px;font-size:11px;text-align:center;color:#92400e;">
+      ⚠️ Titik hijau memakai koordinat GPS; titik kuning adalah perkiraan pusat wilayah, bukan lokasi dapur terverifikasi.
+      Referensi centroid: <a href="https://github.com/ArrayAccess/Indonesia-Postal-And-Area" target="_blank" rel="noopener" style="color:#78350f;text-decoration:underline;">ArrayAccess / data BPS (MIT)</a>.
       <button onclick="this.parentElement.style.display='none'" style="margin-left:8px;background:none;border:none;cursor:pointer;font-size:11px;color:#92400e;font-weight:700;">✕</button>
     </div>
 
@@ -338,9 +355,9 @@
     });
   }
 
-  function makeSppgIcon() {
+  function makeSppgIcon(approximate) {
     return L.divIcon({
-      html: '<div class="sppg-marker"><span class="material-symbols-outlined" style="font-size:18px; color:#fff; display:block;">storefront</span></div>',
+      html: '<div class="sppg-marker' + (approximate ? ' approximate' : '') + '"><span class="material-symbols-outlined" style="font-size:18px; color:#fff; display:block;">storefront</span></div>',
       className: 'custom-div-icon',
       iconSize: [32, 32],
       iconAnchor: [16, 16],
@@ -359,21 +376,41 @@
 
     // Create marker cluster group
     sppgClusterGroup = (typeof L.markerClusterGroup === 'function')
-      ? L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 60 })
+      ? L.markerClusterGroup({
+          chunkedLoading: true,
+          maxClusterRadius: 60,
+          iconCreateFunction: function(cluster) {
+            var count = cluster.getAllChildMarkers().reduce(function(total, marker) {
+              return total + (marker.sppgCount || 1);
+            }, 0);
+            return L.divIcon({
+              html: '<span>' + count.toLocaleString('id-ID') + '</span>',
+              className: 'sppg-map-cluster',
+              iconSize: [42, 42]
+            });
+          }
+        })
       : null;
 
     data.forEach(function(sppg) {
-      if (!sppg.latitude || !sppg.longitude) return;
+      if (!Number.isFinite(sppg.latitude) || !Number.isFinite(sppg.longitude)) return;
       var popupHtml =
         '<div style="font-family:Plus Jakarta Sans,sans-serif;min-width:180px;">' +
           '<div style="font-weight:800;font-size:13px;color:#001026;margin-bottom:4px;">🏭 ' + escHTML(sppg.nama || '') + '</div>' +
           '<div style="font-size:11px;color:#059669;margin-bottom:4px;font-weight:600;">' + escHTML(sppg.provinsi || '') + ' — ' + escHTML(sppg.kabupaten_kota || '') + '</div>' +
           (sppg.alamat ? '<div style="font-size:10px;color:#475569;margin-bottom:3px;">📍 ' + escHTML(sppg.alamat) + '</div>' : '') +
           (sppg.nama_yayasan ? '<div style="font-size:10px;color:#64748b;margin-bottom:3px;">🏛 ' + escHTML(sppg.nama_yayasan) + '</div>' : '') +
+          (sppg.sppg_count > 1 ? '<div style="font-size:10px;color:#334155;margin:4px 0;">' + Number(sppg.sppg_count).toLocaleString('id-ID') + ' dapur SPPG di wilayah ini</div>' : '') +
+          (Array.isArray(sppg.sample_names) && sppg.sample_names.length ? '<div style="font-size:10px;color:#64748b;margin-bottom:3px;">Contoh: ' + escHTML(sppg.sample_names.join(', ')) + '</div>' : '') +
+          (sppg.location_accuracy === 'approximate' ? '<div style="font-size:10px;color:#92400e;background:#fffbeb;padding:4px 6px;border-radius:6px;margin-top:4px;">' + escHTML(sppg.location_label || 'Titik perkiraan wilayah') + ', bukan lokasi dapur terverifikasi.</div>' : '') +
           '<div style="font-size:10px;color:#94a3b8;margin-top:4px;">Status: <strong>' + escHTML(sppg.status || 'operasional') + '</strong> · ' + escHTML(sppg.data_bulan || '') + '</div>' +
         '</div>';
 
-      var marker = L.marker([sppg.latitude, sppg.longitude], { icon: makeSppgIcon(), zIndexOffset: -100 });
+      var marker = L.marker([sppg.latitude, sppg.longitude], {
+        icon: makeSppgIcon(sppg.location_accuracy === 'approximate'),
+        zIndexOffset: -100
+      });
+      marker.sppgCount = Number(sppg.sppg_count) || 1;
       marker.bindPopup(popupHtml, { maxWidth: 260 });
 
       if (sppgClusterGroup) {
@@ -388,49 +425,57 @@
       map.addLayer(sppgClusterGroup);
     }
 
-    showToast('🏭 ' + sppgMarkers.length + ' dapur SPPG dimuat', 'success');
+    var approximateCount = data.reduce(function(total, sppg) {
+      return total + (sppg.location_accuracy === 'approximate' ? (Number(sppg.sppg_count) || 1) : 0);
+    }, 0);
+    var locationCount = data.reduce(function(total, sppg) {
+      return total + (Number(sppg.sppg_count) || 1);
+    }, 0);
+    showToast('🏭 ' + locationCount + ' SPPG dimuat · ' + approximateCount + ' titik perkiraan wilayah', 'success');
   }
 
   // Load SPPG data on map init
   function loadSppgData() {
-    fetch('../api/menu.php?all_schools=1', { headers: { 'X-Requested-By': 'mbg-radar' } })
+    fetch('../api/sppg_map.php?limit=50000', { headers: { Accept: 'application/json' } })
       .then(function(r) {
-        if (!r.ok) throw new Error('not-ok');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       })
       .then(function(res) {
-        if (res.status === 'success' && res.schools) {
-          const sppgData = [];
-          const seenSppg = new Set();
-
-          Object.values(res.schools).forEach(school => {
-            if (school.sppg && school.sppg.name) {
-              const sppgId = school.sppg.name;
-              if (!seenSppg.has(sppgId)) {
-                sppgData.push({
-                  nama: school.sppg.name,
-                  provinsi: school.provinsiName,
-                  kabupaten_kota: school.kotaName,
-                  alamat: school.sppg.address,
-                  status: 'operasional',
-                  latitude: school.latitude || -7.7956,
-                  longitude: school.longitude || 110.3695,
-                  data_bulan: 'Aktif'
-                });
-                seenSppg.add(sppgId);
-              }
-            }
-          });
-
-          if (sppgData.length > 0) renderSppgMarkers(sppgData);
-          else showToast('SPPG: belum ada koordinat terverifikasi', 'info');
-        } else {
-          showToast('SPPG: gagal memuat data dari Neon', 'error');
+        if (res.type !== 'FeatureCollection' || !Array.isArray(res.features)) {
+          throw new Error('Format data peta SPPG tidak valid');
         }
+
+        var sppgData = res.features.map(function(feature) {
+          var coordinates = feature.geometry && feature.geometry.coordinates;
+          var properties = feature.properties || {};
+          if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
+
+          return {
+            id: properties.id,
+            nama: properties.nama,
+            provinsi: properties.provinsi,
+            kabupaten_kota: properties.kabupaten_kota,
+            alamat: properties.alamat,
+            nama_yayasan: properties.nama_yayasan,
+            status: properties.status,
+            data_bulan: properties.data_bulan,
+            location_accuracy: properties.location_accuracy,
+            sppg_count: properties.sppg_count,
+            sample_names: properties.sample_names,
+            longitude: Number(coordinates[0]),
+            latitude: Number(coordinates[1])
+          };
+        }).filter(function(sppg) {
+          return sppg && Number.isFinite(sppg.latitude) && Number.isFinite(sppg.longitude);
+        });
+
+        if (sppgData.length > 0) renderSppgMarkers(sppgData);
+        else showToast('Belum ada data SPPG berkoordinat di database', 'info');
       })
       .catch(function(e) {
-        console.warn('SPPG database fetch failed:', e);
-        showToast('Gagal menghubungkan ke database SPPG', 'error');
+        console.error('Gagal memuat data peta SPPG:', e);
+        showToast('Gagal memuat lokasi SPPG dari database', 'error');
       });
   }
 

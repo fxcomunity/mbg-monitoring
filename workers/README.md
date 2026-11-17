@@ -31,8 +31,8 @@ Salin setiap ID yang dihasilkan ke `wrangler.toml`.
 
 ### 3. Siapkan Neon dan deploy Worker
 Jalankan `database/security_neon.sql` pada Neon SQL Editor untuk menyiapkan tabel log,
-penghitung ancaman, dan daftar IP yang diblokir. Tabel `exploit_logs` dipakai bersama
-oleh Worker dan dashboard admin.
+daftar IP yang diblokir, dan tabel penghitung legacy yang tidak lagi ditulis oleh
+Worker keamanan. Tabel `exploit_logs` dipakai bersama oleh Worker dan dashboard admin.
 
 ```bash
 # Deploy masing-masing worker
@@ -46,7 +46,9 @@ wrangler secret put DATABASE_URL --name mbg-security
 
 Pastikan Worker keamanan memakai binding KV `SESSIONS` yang sama dengan Worker auth.
 Pages Functions keamanan juga memerlukan secret `DATABASE_URL` dan binding KV
-`SESSIONS` pada project Pages, sama seperti endpoint autentikasi.
+`SESSIONS` pada project Pages, sama seperti endpoint autentikasi. Binding KV `RATE`
+opsional digunakan untuk pembatasan advisory laporan (20 laporan/menit/IP,
+best-effort karena KV tidak atomik).
 
 ### 4. Bind ke Cloudflare Pages
 Di Dashboard Cloudflare → Pages → Project → Settings → Functions:
@@ -61,9 +63,13 @@ wrangler kv:key put --namespace-id=<USERS_ID> "user:admin" \
 ```
 
 ## Catatan Keamanan
-- Semua endpoint POST wajib kirim header `X-Requested-By: mbg-radar`
+- Worker keamanan memakai inspeksi server dan header keamanan yang sama dengan Pages melalui `../functions/_middleware.js`; header `X-Requested-By` bukan bukti keamanan.
 - Rate limiting login: 5 percobaan / 15 menit per IP
 - Log keamanan dan daftar blokir disimpan di Neon
-- Auto-block IP: 3+ ancaman dalam 1 jam → IP disimpan di Neon selama 24 jam dan endpoint keamanan menolak laporan berikutnya dari IP tersebut
-- Pemblokiran endpoint ini belum otomatis menolak request ke semua halaman/API; enforcement global perlu dipasang di jalur request utama Cloudflare
+- `POST /api/security/log` memakai handler Pages: body dibatasi 16 KiB, laporan bersifat advisory, dan tidak menambah penghitung atau membuat blokir otomatis. Payload mentah, indikator, URL kiriman, user-agent, dan kredensial tidak disimpan.
+- `GET /api/security/threats` memakai handler Pages: sesi admin wajib memiliki username dan akun tersebut harus masih aktif dengan role admin di database.
+- `GET /api/security/check` tetap mengembalikan `{ blocked, ip }` melalui `isManuallyBlocked`, termasuk ketika IP diblokir. Route read-only ini tetap diinspeksi, tetapi dikecualikan dari penolakan blokir middleware agar status dapat dibaca.
+- Blokir hanya dibaca dari `security_blocked_ips`; entri lama (termasuk auto-block legacy) tetap berlaku sampai kedaluwarsa atau dicabut manual. Worker ini tidak lagi menulis blokir.
+- Enforcement Worker ini hanya mencakup route yang diarahkan kepadanya, bukan Worker lain atau seluruh situs.
+- API keamanan ditujukan untuk same-origin dan tidak mengirim wildcard CORS. Akses browser lintas origin tidak didukung; request tulis dengan Origin/Sec-Fetch-Site lintas origin ditolak. Klien Android native tanpa header origin browser tetap didukung.
 - Lokasi kota/region bersifat perkiraan dan hanya tersedia bila Cloudflare memberikan metadata tersebut

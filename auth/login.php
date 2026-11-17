@@ -36,11 +36,11 @@ if (Auth::check()) {
 
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $formType = $_POST['form_type'] ?? 'login';
+    $formType = is_string($_POST['form_type'] ?? null) ? $_POST['form_type'] : 'login';
 
     if ($formType === 'login') {
-        $username = trim($_POST['username'] ?? '');
-        $password = $_POST['password'] ?? '';
+        $username = is_string($_POST['username'] ?? null) ? trim($_POST['username']) : '';
+        $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
 
         $res = Auth::login($username, $password);
         if ($res['status']) {
@@ -54,17 +54,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             exit;
         } else {
+            if (!empty($res['blocked'])) {
+                header('Location: blocked.html');
+                exit;
+            }
             $errorMsg  = $res['message'];
             $activeTab = 'login';
         }
     } elseif ($formType === 'register') {
-        $fullName = trim($_POST['full_name'] ?? '');
-        $email    = trim($_POST['email'] ?? '');
-        $username = trim($_POST['username'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $cfmPass  = $_POST['confirm_password'] ?? '';
-        $role     = trim($_POST['role'] ?? 'user');
-        $sppgName = trim($_POST['sppg_name'] ?? '');
+        $fullName = is_string($_POST['full_name'] ?? null) ? trim($_POST['full_name']) : '';
+        $email    = is_string($_POST['email'] ?? null) ? trim($_POST['email']) : '';
+        $username = is_string($_POST['username'] ?? null) ? trim($_POST['username']) : '';
+        $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
+        $cfmPass  = is_string($_POST['confirm_password'] ?? null) ? $_POST['confirm_password'] : '';
+        $role     = is_string($_POST['role'] ?? null) ? trim($_POST['role']) : 'user';
+        $sppgName = is_string($_POST['sppg_name'] ?? null) ? trim($_POST['sppg_name']) : '';
 
         if ($password !== $cfmPass) {
             $errorMsg  = 'Konfirmasi kata sandi tidak cocok.';
@@ -148,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <a href="../index.html" class="flex items-center gap-3 group">
         <div class="relative">
-          <img src="../assets/images/logo.webp" alt="Logo BGN" class="h-10 w-auto object-contain transition-transform group-hover:scale-105" onerror="this.src='logo.webp'"/>
+          <img src="../assets/images/ic_launcher.png" alt="Logo BGN" class="h-10 w-auto object-contain transition-transform group-hover:scale-105" onerror="this.onerror=null;this.src='../assets/images/ic_launcher.png'"/>
         </div>
         <div>
           <div class="flex items-center gap-1.5">

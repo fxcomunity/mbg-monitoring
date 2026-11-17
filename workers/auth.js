@@ -131,7 +131,14 @@ export default {
           headers.set('Set-Cookie', `mbg_token=${token}; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_TTL}; Path=/`);
           return new Response(JSON.stringify({
             status: 'success',
-            user: { full_name: user.full_name, role: user.role }
+            user: {
+              username: user.username,
+              full_name: user.full_name,
+              role: user.role,
+              role_label: { admin: 'Admin Satgas BGN', sppg: 'Pengelola Dapur SPPG', user: 'Wali Murid / Publik' }[user.role] || user.role,
+              sppg_name: user.sppg_name || '',
+              avatar: user.avatar_url || ''
+            }
           }), { status: 200, headers });
 
         } catch (err) {
@@ -165,6 +172,50 @@ export default {
           return json({ status: 'success', message: 'Akun berhasil didaftarkan. Silakan masuk.' });
         } catch (err) {
           return json({ status: 'error', message: 'Gagal mendaftar: ' + err.message }, 500);
+        }
+      }
+
+      if (action === 'change_password') {
+        const session = await getSession(request, env);
+        if (!session) return json({ status: 'error', message: 'Silakan masuk terlebih dahulu.' }, 401);
+
+        const currentPassword = String(body.current_password || '');
+        const newPassword = String(body.new_password || '');
+        const confirmPassword = String(body.confirm_password || '');
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          return json({ status: 'error', message: 'Semua kolom kata sandi wajib diisi.' }, 422);
+        }
+        if (newPassword.length < 6) {
+          return json({ status: 'error', message: 'Kata sandi baru minimal 6 karakter.' }, 422);
+        }
+        if (newPassword !== confirmPassword) {
+          return json({ status: 'error', message: 'Konfirmasi kata sandi baru tidak cocok.' }, 422);
+        }
+
+        try {
+          const users = await sql`
+            SELECT password_hash, salt FROM users
+            WHERE username = ${session.username} AND active = TRUE
+            LIMIT 1
+          `;
+          const user = users[0];
+          if (!user || !user.salt) {
+            return json({ status: 'error', message: 'Akun tidak ditemukan atau belum diaktivasi.' }, 404);
+          }
+          if (await hashPassword(currentPassword, user.salt) !== user.password_hash) {
+            return json({ status: 'error', message: 'Kata sandi lama tidak cocok.' }, 401);
+          }
+
+          const salt = generateToken().substring(0, 16);
+          const passwordHash = await hashPassword(newPassword, salt);
+          await sql`
+            UPDATE users
+            SET password_hash = ${passwordHash}, salt = ${salt}, updated_at = NOW()
+            WHERE username = ${session.username}
+          `;
+          return json({ status: 'success', message: 'Kata sandi berhasil diperbarui.' });
+        } catch {
+          return json({ status: 'error', message: 'Kata sandi gagal diperbarui. Coba lagi.' }, 500);
         }
       }
 

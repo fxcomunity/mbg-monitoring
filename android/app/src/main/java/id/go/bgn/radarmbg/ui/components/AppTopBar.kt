@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +40,7 @@ import id.go.bgn.radarmbg.ui.theme.BgnTertiaryFixed
 fun AppTopBar(
     title: String,
     badgeCount: Int = 0,
+    onChatClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onProfileClick: () -> Unit,
     userInitial: String = "U",
@@ -96,6 +98,13 @@ fun AppTopBar(
                     fontSize = 10.sp,
                     lineHeight = 14.sp,
                     maxLines = 1
+                )
+            }
+            IconButton(onClick = onChatClick) {
+                Icon(
+                    imageVector = Icons.Default.ChatBubbleOutline,
+                    contentDescription = "Live Chat",
+                    tint = Color.White
                 )
             }
             // Bell icon with badge

@@ -37,16 +37,26 @@ import id.go.bgn.radarmbg.ui.theme.BgnPrimary
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPanelScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    userRole: String
 ) {
     val context = LocalContext.current
+    val portalUrl = when (userRole) {
+        "sppg" -> "https://mbg.jack-ai.my.id/dashboard/sppg/"
+        "user" -> "https://mbg.jack-ai.my.id/dashboard/user/"
+        else -> "https://mbg.jack-ai.my.id/dashboard/admin/"
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(R.string.admin_panel_judul),
+                        text = if (userRole == "admin") {
+                            stringResource(R.string.admin_panel_judul)
+                        } else {
+                            stringResource(R.string.dashboard_judul)
+                        },
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -82,7 +92,11 @@ fun AdminPanelScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = stringResource(R.string.label_versi_admin),
+                text = if (userRole == "admin") {
+                    stringResource(R.string.label_versi_admin)
+                } else {
+                    "Portal resmi Radar MBG"
+                },
                 color = BgnPrimary,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
@@ -103,13 +117,17 @@ fun AdminPanelScreen(
                 onClick = {
                     val intent = Intent(
                         Intent.ACTION_VIEW,
-                        Uri.parse("https://mbg.jack-ai.my.id/dashboard/admin/")
+                        Uri.parse(portalUrl)
                     )
                     context.startActivity(intent)
                 }
             ) {
                 Text(
-                    text = stringResource(R.string.btn_buka_portal),
+                    text = if (userRole == "admin") {
+                        stringResource(R.string.btn_buka_portal)
+                    } else {
+                        "Buka Dashboard Web"
+                    },
                     color = BgnPrimary
                 )
             }

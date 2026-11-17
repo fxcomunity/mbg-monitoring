@@ -4,6 +4,7 @@
  * Radar MBG - Badan Gizi Nasional
  */
 
+require_once __DIR__ . '/../database/api_bootstrap.php';
 require_once __DIR__ . '/../database/auth.php';
 require_once __DIR__ . '/../database/security.php';
 
@@ -24,6 +25,7 @@ if (!Auth::check()) {
     exit;
 }
 
+Auth::requireApiRole('admin');
 $currentUser = Auth::user();
 if ($currentUser['role'] !== 'admin') {
     http_response_code(403);
@@ -47,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $body = json_decode(file_get_contents('php://input'), true);
+    $body = Security::isJsonRequest() ? Security::jsonBody() : $_POST;
     $action = $body['action'] ?? ($_POST['action'] ?? '');
 
     if ($action === 'enable') {

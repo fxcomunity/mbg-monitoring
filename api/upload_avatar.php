@@ -4,6 +4,7 @@
  * Role-Based: User & Admin langsung aktif; SPPG wajib konfirmasi Satgas BGN
  */
 
+require_once __DIR__ . '/../database/api_bootstrap.php';
 require_once __DIR__ . '/../database/auth.php';
 require_once __DIR__ . '/../database/security.php';
 
@@ -16,6 +17,11 @@ if (!Auth::check()) {
     exit;
 }
 
+Auth::requireApiRole();
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    header('Allow: POST');
+    Security::rejectRequest(405, 'Metode HTTP tidak didukung.');
+}
 $currentUser = Auth::user();
 $pdo = getDB();
 $role = $currentUser['role'];

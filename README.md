@@ -170,6 +170,8 @@ wrangler deploy security.js --name mbg-security
 npx wrangler pages deploy . --project-name=mbg-monitoring
 ```
 
+Untuk menyimpan foto lampiran aduan di Cloudflare, tambahkan binding bucket **R2 privat** bernama `TIKET_PHOTOS` pada Pages Functions. Lampiran hanya dapat diakses Admin Satgas melalui endpoint aplikasi; jangan aktifkan akses publik pada bucket.
+
 ### Android — Build APK
 
 **Prerequisite:** Android Studio + JDK 17

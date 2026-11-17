@@ -4,15 +4,28 @@
  * Radar MBG - Badan Gizi Nasional
  */
 
+require_once __DIR__ . '/../database/api_bootstrap.php';
 require_once __DIR__ . '/../database/auth.php';
 require_once __DIR__ . '/../database/security.php';
 
 header('Content-Type: application/json; charset=UTF-8');
-header('Access-Control-Allow-Origin: ' . (defined('ALLOWED_ORIGIN') ? ALLOWED_ORIGIN : '*'));
-header('Access-Control-Allow-Credentials: true');
+if (ALLOWED_ORIGIN !== '*') {
+    header('Access-Control-Allow-Origin: ' . ALLOWED_ORIGIN);
+    header('Access-Control-Allow-Credentials: true');
+    header('Vary: Origin');
+}
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ($_GET['action'] ?? '') === 'login_status') {
+    echo json_encode([
+        'status' => 'success',
+        'lockout' => Auth::lockoutStatus()
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
 if (Auth::check()) {
+    Auth::requireApiRole();
     $u = Auth::user();
     $role = $u['role'] ?? 'user';
     $roleLabels = [

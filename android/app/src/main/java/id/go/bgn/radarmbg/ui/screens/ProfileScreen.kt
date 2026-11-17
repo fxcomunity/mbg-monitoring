@@ -23,6 +23,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -61,6 +62,7 @@ import id.go.bgn.radarmbg.ui.theme.BgnBackground
 import id.go.bgn.radarmbg.ui.theme.BgnTertiaryFixed
 import id.go.bgn.radarmbg.viewmodel.AuthUiState
 import id.go.bgn.radarmbg.viewmodel.AuthViewModel
+import id.go.bgn.radarmbg.viewmodel.PasswordChangeState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,17 +70,28 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onNavigateToDashboard: () -> Unit,
     onNavigateToAdminPanel: () -> Unit,
+    onNavigateToLaporan: () -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
     val uiState by authViewModel.uiState.collectAsState()
+    val passwordChangeState by authViewModel.passwordChangeState.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showPasswordDialog by remember { mutableStateOf(false) }
     var oldPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.LoggedOut) {
             onLogout()
+        }
+    }
+
+    LaunchedEffect(passwordChangeState) {
+        if (passwordChangeState is PasswordChangeState.Success) {
+            oldPassword = ""
+            newPassword = ""
+            confirmPassword = ""
         }
     }
 
@@ -114,7 +127,10 @@ fun ProfileScreen(
     // Change password dialog
     if (showPasswordDialog) {
         AlertDialog(
-            onDismissRequest = { showPasswordDialog = false },
+            onDismissRequest = {
+                showPasswordDialog = false
+                authViewModel.resetPasswordChangeState()
+            },
             title = { Text(stringResource(R.string.btn_ganti_password)) },
             text = {
                 Column {
@@ -134,19 +150,57 @@ fun ProfileScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.label_fitur_segera),
-                        fontSize = 12.sp,
-                        color = BgnOnSurfaceVariant
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text(stringResource(R.string.hint_konfirmasi_password)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    when (val state = passwordChangeState) {
+                        is PasswordChangeState.Error -> Text(
+                            text = state.message,
+                            fontSize = 12.sp,
+                            color = Color(0xFFB91C1C)
+                        )
+                        is PasswordChangeState.Success -> Text(
+                            text = state.message,
+                            fontSize = 12.sp,
+                            color = Color(0xFF047857)
+                        )
+                        else -> Unit
+                    }
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = { showPasswordDialog = false },
+                    onClick = {
+                        if (passwordChangeState is PasswordChangeState.Success) {
+                            showPasswordDialog = false
+                            authViewModel.resetPasswordChangeState()
+                        } else {
+                            authViewModel.changePassword(oldPassword, newPassword, confirmPassword)
+                        }
+                    },
+                    enabled = passwordChangeState !is PasswordChangeState.Loading,
                     colors = ButtonDefaults.buttonColors(containerColor = BgnPrimary)
                 ) {
-                    Text(stringResource(R.string.btn_tutup))
+                    if (passwordChangeState is PasswordChangeState.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            if (passwordChangeState is PasswordChangeState.Success) {
+                                stringResource(R.string.btn_tutup)
+                            } else {
+                                "Simpan Kata Sandi"
+                            }
+                        )
+                    }
                 }
             }
         )
@@ -259,13 +313,19 @@ fun ProfileScreen(
                 titleRes = R.string.card_laporan_aduan,
                 icon = Icons.Default.Report,
                 subtitleRes = R.string.laporan_judul,
-                onClick = {}
+                onClick = onNavigateToLaporan
             )
 
             Spacer(modifier = Modifier.height(40.dp))
 
             OutlinedButton(
-                onClick = { showPasswordDialog = true },
+                onClick = {
+                    oldPassword = ""
+                    newPassword = ""
+                    confirmPassword = ""
+                    authViewModel.resetPasswordChangeState()
+                    showPasswordDialog = true
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {

@@ -1,6 +1,6 @@
 <?php
 // api/distribusi.php — Data Distribusi Provinsi Riil dari Database
-if (!function_exists('getDB')) { require_once __DIR__ . '/../database/db.php'; }
+require_once __DIR__ . '/../database/api_bootstrap.php';
 if (!class_exists('Security')) { require_once __DIR__ . '/../database/security.php'; }
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -43,6 +43,6 @@ try {
         'data'      => $data
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
-    error_log('[api/distribusi.php error] ' . $e->getMessage());
+    Security::logFailure('distribusi.php', $e);
     echo json_encode(['status' => 'error', 'message' => 'Gagal mengambil data distribusi']);
 }

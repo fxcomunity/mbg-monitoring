@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -50,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -69,13 +71,17 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
+
+private data class KategoriAduan(val value: String, val label: String)
 
 private val kategoriList = listOf(
-    "Kualitas Makanan",
-    "Keterlambatan",
-    "Porsi",
-    "Kebersihan",
-    "Lainnya"
+    KategoriAduan("waktu", "Keterlambatan pengantaran"),
+    KategoriAduan("menu", "Menu atau porsi"),
+    KategoriAduan("suhu", "Suhu makanan"),
+    KategoriAduan("higienitas", "Higienitas atau kemasan"),
+    KategoriAduan("alergen", "Alergi atau keamanan pangan"),
+    KategoriAduan("lainnya", "Lainnya")
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,7 +123,9 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
                 TextButton(onClick = {
                     val millis = datePickerState.selectedDateMillis
                     if (millis != null) {
-                        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                            timeZone = TimeZone.getTimeZone("UTC")
+                        }
                         laporanViewModel.tanggal.value = sdf.format(Date(millis))
                     }
                     showDatePicker = false
@@ -175,14 +183,21 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
                 onValueChange = { laporanViewModel.telepon.value = it },
                 label = { Text(stringResource(R.string.hint_telepon)) },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             // Role selection
             Text(text = "Pelapor sebagai:", fontSize = 13.sp, color = BgnOnSurfaceVariant)
             Column {
-                listOf("user" to "Wali Murid", "sppg" to "SPPG", "ortu" to "Orang Tua").forEach { (value, label) ->
+                listOf(
+                    "wali" to "Orang Tua / Wali Murid",
+                    "guru" to "Guru / Tenaga Pendidik",
+                    "komite" to "Komite Sekolah",
+                    "siswa" to "Peserta Didik",
+                    "masyarakat" to "Masyarakat Umum"
+                ).forEach { (value, label) ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(
                             selected = role == value,
@@ -200,7 +215,7 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
                 onExpandedChange = { kategoriExpanded = !kategoriExpanded }
             ) {
                 OutlinedTextField(
-                    value = kategori,
+                    value = kategoriList.firstOrNull { it.value == kategori }?.label ?: "",
                     onValueChange = {},
                     readOnly = true,
                     label = { Text(stringResource(R.string.label_kategori)) },
@@ -213,9 +228,9 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
                 ) {
                     kategoriList.forEach { item ->
                         DropdownMenuItem(
-                            text = { Text(item) },
+                            text = { Text(item.label) },
                             onClick = {
-                                laporanViewModel.kategori.value = item
+                                laporanViewModel.kategori.value = item.value
                                 kategoriExpanded = false
                             }
                         )
@@ -305,7 +320,7 @@ fun LaporanScreen(laporanViewModel: LaporanViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
-                onClick = { laporanViewModel.submitLaporan() },
+                onClick = { laporanViewModel.submitLaporan(context) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = BgnPrimary),
                 enabled = submitState !is TiketUiState.Loading
