@@ -21,33 +21,29 @@ export function escHTML(s) {
 }
 
 /**
- * Query Neon PostgreSQL via HTTP API
- * Tidak perlu npm package — Neon mendukung REST query via fetch + Basic Auth
+ * Query Neon PostgreSQL through the Neon serverless HTTP/WebSocket driver.
  */
 export async function dbQuery(databaseUrl, query, params = []) {
   if (!databaseUrl) throw new Error('DATABASE_URL tidak dikonfigurasi');
-
-  const m = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^\/]+)\/([^?]+)/);
-  if (!m) throw new Error('DATABASE_URL format salah');
-  const [, user, password, host] = m;
-
-  const res = await fetch(`https://${host}/sql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Basic ' + btoa(`${user}:${password}`),
-      'Neon-Connection-String': databaseUrl,
-    },
-    body: JSON.stringify({ query, params })
-  });
-
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    throw new Error(`Neon ${res.status}: ${txt.substring(0, 200)}`);
+  try {
+    const url = new URL(databaseUrl);
+    if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
+      throw new Error('invalid scheme');
+    }
+  } catch (_) {
+    throw new Error('DATABASE_URL format salah');
   }
 
-  const data = await res.json();
-  return data.rows ?? data;
+  const { neon } = await import('@neondatabase/serverless');
+  const sql = neon(databaseUrl);
+  const rows = await sql.query(query, params);
+  const normalized = Array.isArray(rows) ? rows : (rows?.rows || []);
+  Object.defineProperty(normalized, 'rows', {
+    value: normalized,
+    enumerable: false,
+    configurable: true
+  });
+  return normalized;
 }
 
 export function todayWIB() {
@@ -118,7 +114,7 @@ export async function getSession(request, env) {
   if (!session.username || !env.DATABASE_URL) return null;
   const rows = await dbQuery(env.DATABASE_URL, `
     SELECT session_version FROM users
-    WHERE username = $1 AND active = TRUE
+    WHERE username = $1 AND is_active = TRUE
     LIMIT 1
   `, [session.username]);
   if (!rows[0] || Number(rows[0].session_version || 0) !== Number(session.session_version || 0)) return null;

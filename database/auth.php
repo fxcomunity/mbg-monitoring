@@ -5,6 +5,14 @@
  */
 
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 43200,
+        'path' => '/',
+        'domain' => '',
+        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'httponly' => true,
+        'samesite' => 'Strict',
+    ]);
     session_start();
 }
 
@@ -133,7 +141,9 @@ class Auth {
                 $lockout = self::recordLoginFailure($ip);
                 return ['status' => false, 'blocked' => $lockout['blocked'], 'lockout' => $lockout, 'message' => 'Input tidak valid.'];
             }
-            if ($username === '' || strlen($username) > 120 || strlen($password) > 1024) {
+            if ($username === '' || strlen($username) > 254 || strlen($password) > 1024
+                || (!filter_var($username, FILTER_VALIDATE_EMAIL)
+                    && !preg_match('/^[a-zA-Z0-9_.-]{3,60}$/D', $username))) {
                 $lockout = self::recordLoginFailure($ip);
                 return ['status' => false, 'blocked' => $lockout['blocked'], 'lockout' => $lockout, 'message' => 'Username atau kata sandi tidak cocok.'];
             }
@@ -212,16 +222,28 @@ class Auth {
             return ['status' => false, 'message' => 'Seluruh kolom pendaftaran wajib diisi lengkap.'];
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (strlen($fullName) > 120 || strlen($email) > 120 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return ['status' => false, 'message' => 'Format alamat email tidak valid.'];
         }
 
-        if (strlen($username) < 3 || !preg_match('/^[a-zA-Z0-9_.-]+$/', $username)) {
+        if (strlen($username) > 60 || strlen($username) < 3 || !preg_match('/^[a-zA-Z0-9_.-]+$/D', $username)) {
             return ['status' => false, 'message' => 'Username minimal 3 karakter (hanya huruf, angka, titik, strip).'];
         }
 
-        if (strlen($password) < 6) {
-            return ['status' => false, 'message' => 'Kata sandi minimal 6 karakter.'];
+        if (strlen($password) < 12 || strlen($password) > 1024) {
+            return ['status' => false, 'message' => 'Kata sandi minimal 12 karakter dan maksimal 1024 karakter.'];
+        }
+        $passwordCategories = 0;
+        if (preg_match('/[a-z]/', $password)) $passwordCategories++;
+        if (preg_match('/[A-Z]/', $password)) $passwordCategories++;
+        if (preg_match('/[0-9]/', $password)) $passwordCategories++;
+        if (preg_match('/[^A-Za-z0-9]/', $password)) $passwordCategories++;
+        if ($passwordCategories < 3) {
+            return ['status' => false, 'message' => 'Kata sandi harus menggabungkan minimal tiga jenis: huruf besar, huruf kecil, angka, atau simbol.'];
+        }
+        if (Security::detectExploit($fullName) || Security::detectExploit($email) ||
+            Security::detectExploit($username) || Security::detectExploit($sppgName)) {
+            return ['status' => false, 'message' => 'Input pendaftaran tidak valid atau berisi pola berbahaya.'];
         }
 
         // Validasi khusus Mitra SPPG sesuai SOP BGN
@@ -380,10 +402,14 @@ class Auth {
         $_SESSION = [];
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000,
-                $params["path"], $params["domain"],
-                $params["secure"], $params["httponly"]
-            );
+            setcookie(session_name(), '', [
+                'expires' => time() - 42000,
+                'path' => $params['path'],
+                'domain' => $params['domain'],
+                'secure' => $params['secure'],
+                'httponly' => $params['httponly'],
+                'samesite' => $params['samesite'] ?: 'Strict',
+            ]);
         }
         session_destroy();
     }

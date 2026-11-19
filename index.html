@@ -1015,7 +1015,7 @@
     if (dropLogout) {
       dropLogout.addEventListener('click', function () {
         clearSession();
-        try { fetch('auth/logout.php', { credentials: 'same-origin', keepalive: true }).catch(function(){}); } catch(_) {}
+        try { fetch('api/auth_user?action=logout', { credentials: 'same-origin', keepalive: true }).catch(function(){}); } catch(_) {}
       });
     }
   }

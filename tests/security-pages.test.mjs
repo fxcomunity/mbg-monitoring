@@ -12,7 +12,14 @@ function mockDB(t, rows = []) {
     const call = JSON.parse(options.body);
     calls.push(call);
     const result = typeof rows === 'function' ? rows(call) : rows;
-    return new Response(JSON.stringify({ rows: result }), { headers: { 'Content-Type': 'application/json' } });
+    const sample = result[0] || {};
+    const keys = Object.keys(sample);
+    const fields = keys.map(name => ({
+      name,
+      dataTypeID: typeof sample[name] === 'boolean' ? 16 : typeof sample[name] === 'number' ? 20 : 25
+    }));
+    const values = result.map(row => keys.map(key => row[key] == null ? null : String(row[key])));
+    return new Response(JSON.stringify({ fields, rows: values }), { headers: { 'Content-Type': 'application/json' } });
   });
   return calls;
 }
@@ -159,22 +166,29 @@ function adminContext(session) {
 }
 
 test('threat list rejects non-admin, stale/demoted/deactivated and missing-username sessions', async t => {
-  const calls = mockDB(t, []);
+  const calls = mockDB(t, call => {
+    if (/SELECT session_version FROM users/.test(call.query)) return [{ session_version: 0 }];
+    return [];
+  });
   assert.equal((await onRequestGet(adminContext({ username: 'user', role: 'sppg' }))).status, 403);
   assert.equal((await onRequestGet(adminContext({ role: 'admin' }))).status, 403);
-  assert.equal(calls.length, 0);
-  assert.equal((await onRequestGet(adminContext({ username: 'old-admin', role: 'admin' }))).status, 403);
   assert.equal(calls.length, 1);
-  assert.match(calls[0].query, /active = TRUE/);
-  assert.deepEqual(calls[0].params, ['old-admin']);
-  assert.equal(/FROM exploit_logs/.test(calls[0].query), false);
+  assert.equal((await onRequestGet(adminContext({ username: 'old-admin', role: 'admin' }))).status, 403);
+  assert.equal(calls.length, 3);
+  assert.match(calls[1].query, /is_active = TRUE/);
+  assert.deepEqual(calls[1].params, ['old-admin']);
+  assert.equal(/FROM exploit_logs/.test(calls[2].query), false);
 });
 
 test('threat list revalidates active admin before returning metadata', async t => {
-  const calls = mockDB(t, call => /FROM users/.test(call.query) ? [{ role: 'admin' }] : [{ id: 1, source: 'server' }]);
+  const calls = mockDB(t, call => /SELECT session_version FROM users/.test(call.query)
+    ? [{ session_version: 0 }]
+    : /SELECT role FROM users/.test(call.query)
+      ? [{ role: 'admin' }]
+      : [{ id: 1, source: 'server' }]);
   const response = await onRequestGet(adminContext({ username: 'admin', role: 'admin' }));
   assert.equal(response.status, 200);
-  assert.equal(calls.length, 2);
-  assert.match(calls[1].query, /t.input_field/);
-  assert.doesNotMatch(calls[1].query, /payload_sample|user_agent/);
+  assert.equal(calls.length, 3);
+  assert.match(calls[2].query, /t.input_field/);
+  assert.doesNotMatch(calls[2].query, /payload_sample|user_agent/);
 });

@@ -183,7 +183,7 @@
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                   <span class="material-symbols-outlined text-[20px]">person</span>
                 </div>
-                <input type="text" id="loginUsername" name="username" required autocomplete="username"
+                <input type="text" id="loginUsername" name="username" required autocomplete="username" maxlength="254"
                        placeholder="Masukkan username atau email"
                        class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] focus:border-transparent transition-all shadow-sm">
               </div>
@@ -267,6 +267,14 @@
               <input type="text" id="regSppgName" name="sppg_name"
                      placeholder="Contoh: SPPG Bangli Landih Bali"
                      class="w-full px-3.5 py-2.5 bg-emerald-50/50 border border-emerald-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all shadow-sm">
+              <label for="regNib" class="block text-xs font-bold text-emerald-800 uppercase tracking-wider mt-3 mb-1">NIB</label>
+              <input type="text" id="regNib" name="nib" maxlength="40" autocomplete="off"
+                     placeholder="Nomor Induk Berusaha"
+                     class="w-full px-3.5 py-2.5 bg-white border border-emerald-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all shadow-sm">
+              <label for="regNoSlhs" class="block text-xs font-bold text-emerald-800 uppercase tracking-wider mt-3 mb-1">Nomor SLHS</label>
+              <input type="text" id="regNoSlhs" name="no_slhs" maxlength="60" autocomplete="off"
+                     placeholder="Nomor Sertifikat Laik Higiene Sanitasi"
+                     class="w-full px-3.5 py-2.5 bg-white border border-emerald-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all shadow-sm">
             </div>
 
             <!-- Email & Username in Grid -->
@@ -275,7 +283,8 @@
                 <label for="regEmail" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Alamat Email
                 </label>
-                <input type="email" id="regEmail" name="email" required autocomplete="email"
+                <input type="email" id="regEmail" name="email" required autocomplete="email" maxlength="120"
+                       pattern="[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}"
                        placeholder="email@anda.com"
                        class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] transition-all shadow-sm">
               </div>
@@ -283,7 +292,8 @@
                 <label for="regUsername" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Username
                 </label>
-                <input type="text" id="regUsername" name="username" required autocomplete="username" minlength="3"
+                <input type="text" id="regUsername" name="username" required autocomplete="username" minlength="3" maxlength="60"
+                       pattern="[A-Za-z0-9][A-Za-z0-9_.\-]{2,59}"
                        placeholder="huruf/angka"
                        class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] transition-all shadow-sm">
               </div>
@@ -296,8 +306,8 @@
                   Kata Sandi
                 </label>
                 <div class="relative">
-                  <input type="password" id="regPassword" name="password" required minlength="6"
-                         placeholder="Min 6 karakter"
+                  <input type="password" id="regPassword" name="password" required minlength="12" maxlength="1024"
+                         placeholder="Min 12 karakter"
                          class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] transition-all shadow-sm">
                 </div>
               </div>
@@ -306,7 +316,7 @@
                   Ulangi Sandi
                 </label>
                 <div class="relative">
-                  <input type="password" id="regCfmPassword" name="confirm_password" required minlength="6"
+                  <input type="password" id="regCfmPassword" name="confirm_password" required minlength="12" maxlength="1024"
                          placeholder="Ketik ulang"
                          class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] transition-all shadow-sm">
                 </div>
@@ -392,9 +402,13 @@
       if (show) {
         field.classList.remove('hidden');
         input.required = true;
+        document.getElementById('regNib').required = true;
+        document.getElementById('regNoSlhs').required = true;
       } else {
         field.classList.add('hidden');
         input.required = false;
+        document.getElementById('regNib').required = false;
+        document.getElementById('regNoSlhs').required = false;
       }
     }
 
@@ -424,6 +438,10 @@
       const u = document.getElementById('loginUsername').value.trim();
       const p = document.getElementById('loginPassword').value;
       const btn = document.getElementById('btnSubmitLogin');
+      if (!u || u.length > 254 || /[\u0000-\u001f\u007f]/.test(u)) {
+        showAlert('error', 'Gagal', 'Masukkan username atau alamat email yang valid.');
+        return;
+      }
 
       btn.disabled = true;
       btn.innerHTML = '<span>Memverifikasi...</span>';
@@ -434,12 +452,12 @@
         fd.append('username', u);
         fd.append('password', p);
 
-        const res = await fetch('api/auth_user.php', { method: 'POST', body: fd });
+        const apiUrl = isLocalPhp() ? '../api/auth_user.php' : '../api/auth_user';
+        const res = await fetch(apiUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { Accept: 'application/json' } });
         const json = await res.json();
         if (json.status === 'success' && json.user) {
           showAlert('success', 'Berhasil', 'Login sukses, mengarahkan ke dashboard...');
           const role = json.user.role;
-          try { const _s = JSON.stringify({ name: json.user.full_name || u, role: role, exp: Date.now() + 12 * 3600 * 1000 }); sessionStorage.setItem('mbg_session', _s); localStorage.setItem('mbg_session', _s); } catch (_) {}
           setTimeout(() => {
             if (role === 'admin') window.location.href = '../dashboard/admin/';
             else if (role === 'sppg') window.location.href = '../dashboard/sppg/';
@@ -450,12 +468,10 @@
           btn.disabled = false;
           btn.innerHTML = '<span>Masuk ke Dashboard</span><span class="material-symbols-outlined text-[18px]">arrow_forward</span>';
         }
-      } catch (err) {
-        // Fallback untuk static demo jika backend offline
-        const lu = u.toLowerCase();
-        const role = lu.includes('admin') ? 'admin' : (lu.includes('sppg') ? 'sppg' : 'user');
-        try { const _s = JSON.stringify({ name: u, role: role, demo: true, exp: Date.now() + 12 * 3600 * 1000 }); sessionStorage.setItem('mbg_session', _s); localStorage.setItem('mbg_session', _s); } catch (_) {}
-        window.location.href = '../dashboard/' + role + '/';
+      } catch (_) {
+        showAlert('error', 'Gagal', 'Layanan autentikasi tidak dapat dihubungi. Login tidak dilakukan.');
+        btn.disabled = false;
+        btn.innerHTML = '<span>Masuk ke Dashboard</span><span class="material-symbols-outlined text-[18px]">arrow_forward</span>';
       }
     }
 
@@ -469,9 +485,27 @@
       const cfmPass = document.getElementById('regCfmPassword').value;
       const role = document.querySelector('input[name="role"]:checked')?.value || 'user';
       const sppgName = document.getElementById('regSppgName')?.value.trim() || '';
+      const nib = document.getElementById('regNib')?.value.trim() || '';
+      const noSlhs = document.getElementById('regNoSlhs')?.value.trim() || '';
 
       if (password !== cfmPass) {
         showAlert('error', 'Gagal', 'Konfirmasi kata sandi tidak cocok.');
+        return;
+      }
+      if (!document.getElementById('regEmail').checkValidity()) {
+        showAlert('error', 'Gagal', 'Format alamat email tidak valid.');
+        return;
+      }
+      if (!/^[A-Za-z0-9][A-Za-z0-9_.\-]{2,59}$/.test(username)) {
+        showAlert('error', 'Gagal', 'Username hanya boleh huruf, angka, titik, garis bawah, atau strip.');
+        return;
+      }
+      if (!isStrongPassword(password)) {
+        showAlert('error', 'Gagal', 'Kata sandi minimal 12 karakter dan gunakan minimal tiga jenis karakter (huruf besar/kecil, angka, simbol).');
+        return;
+      }
+      if (role === 'sppg' && (!sppgName || !nib || !noSlhs)) {
+        showAlert('error', 'Gagal', 'NIB dan nomor SLHS wajib diisi untuk pendaftaran Mitra SPPG.');
         return;
       }
 
@@ -488,8 +522,11 @@
         fd.append('password', password);
         fd.append('role', role);
         if (sppgName) fd.append('sppg_name', sppgName);
+        if (nib) fd.append('nib', nib);
+        if (noSlhs) fd.append('no_slhs', noSlhs);
 
-        const res = await fetch('api/auth_user.php', { method: 'POST', body: fd });
+        const apiUrl = isLocalPhp() ? '../api/auth_user.php' : '../api/auth_user';
+        const res = await fetch(apiUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { Accept: 'application/json' } });
         const json = await res.json();
         if (json.status === 'success') {
           showAlert('success', 'Berhasil', 'Registrasi berhasil! Silakan masuk dengan akun Anda.');
@@ -499,9 +536,22 @@
         } else {
           showAlert('error', 'Gagal', json.message || 'Pendaftaran gagal.');
         }
-      } catch (err) {
-        showAlert('success', 'Berhasil', 'Pendaftaran akun tersimpan! Silakan login.');
-        switchAuthTab('login');
+
+        function isLocalPhp() {
+          return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+        }
+
+        function isStrongPassword(password) {
+          if (password.length < 12 || password.length > 1024 || /[\u0000-\u001f\u007f]/.test(password)) return false;
+          let kinds = 0;
+          if (/[a-z]/.test(password)) kinds++;
+          if (/[A-Z]/.test(password)) kinds++;
+          if (/[0-9]/.test(password)) kinds++;
+          if (/[^A-Za-z0-9]/.test(password)) kinds++;
+          return kinds >= 3;
+        }
+      } catch (_) {
+        showAlert('error', 'Gagal', 'Layanan pendaftaran tidak dapat dihubungi. Akun belum dibuat.');
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">verified_user</span><span>Daftarkan Akun Sekarang</span>';

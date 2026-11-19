@@ -13,7 +13,7 @@ export async function onRequestGet({ request, env }) {
   try {
     // A stale admin session must not retain access after deactivation/demotion.
     const users = await dbQuery(env.DATABASE_URL, `
-      SELECT role FROM users WHERE username = $1 AND active = TRUE LIMIT 1
+      SELECT role FROM users WHERE username = $1 AND is_active = TRUE LIMIT 1
     `, [session.username]);
     if (users[0]?.role !== 'admin') {
       return json({ status: 'error', message: 'Akses ditolak.' }, 403);

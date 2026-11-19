@@ -16,7 +16,68 @@ if (ALLOWED_ORIGIN !== '*') {
 }
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ($_GET['action'] ?? '') === 'login_status') {
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+if ($method === 'POST') {
+    $action = is_string($_POST['action'] ?? null) ? $_POST['action'] : '';
+    if ($action === 'login') {
+        $username = is_string($_POST['username'] ?? null) ? $_POST['username'] : '';
+        $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
+        $result = Auth::login($username, $password);
+        if (!$result['status']) {
+            http_response_code(!empty($result['blocked']) ? 429 : 401);
+            echo json_encode([
+                'status' => 'error',
+                'message' => $result['message'] ?? 'Username atau kata sandi tidak cocok.',
+                'lockout' => $result['lockout'] ?? null,
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        echo json_encode([
+            'status' => 'success',
+            'user' => [
+                'full_name' => $result['user']['full_name'] ?? '',
+                'role' => $result['user']['role'] ?? 'user',
+            ],
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if ($action === 'register') {
+        $fields = ['full_name', 'email', 'username', 'password', 'role', 'sppg_name', 'nib', 'no_slhs'];
+        foreach ($fields as $field) {
+            if (isset($_POST[$field]) && !is_string($_POST[$field])) {
+                Security::rejectRequest(400, 'Format data pendaftaran tidak valid.');
+            }
+        }
+        $result = Auth::register(
+            $_POST['full_name'] ?? '',
+            $_POST['email'] ?? '',
+            $_POST['username'] ?? '',
+            $_POST['password'] ?? '',
+            $_POST['role'] ?? 'user',
+            $_POST['sppg_name'] ?? null,
+            $_POST['nib'] ?? null,
+            $_POST['no_slhs'] ?? null
+        );
+        if (!$result['status']) {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => $result['message']], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        echo json_encode(['status' => 'success', 'message' => $result['message']], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    Security::rejectRequest(400, 'Aksi autentikasi tidak dikenal.');
+}
+
+if ($method === 'GET' && ($_GET['action'] ?? '') === 'logout') {
+    Auth::logout();
+    echo json_encode(['status' => 'success'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($method === 'GET' && ($_GET['action'] ?? '') === 'login_status') {
     echo json_encode([
         'status' => 'success',
         'lockout' => Auth::lockoutStatus()

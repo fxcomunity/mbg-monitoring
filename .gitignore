@@ -36,7 +36,6 @@ android/*.aab
 # Node modules (root - untuk Pages Functions)
 node_modules/
 */node_modules/
-package-lock.json
 
 # ── Local DB dumps (generated, tidak perlu di-commit) ───────
 database/scripts/local_dump*.sql

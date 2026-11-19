@@ -6,6 +6,7 @@
  * Project: MBG Monitoring
  */
 import { trustedLoginIp, getLoginLockout, recordLoginFailure, recordLoginSuccess } from './_login_lockout.js';
+import { dbQuery } from './_shared.js';
 
 const CORS = {
   'Content-Type': 'application/json; charset=UTF-8',
@@ -25,6 +26,35 @@ function json(data, status = 200) {
 function sanitize(str) {
   if (typeof str !== 'string') return '';
   return str.trim().toLowerCase();
+}
+
+function containsControl(value) {
+  return typeof value === 'string' && /[\u0000-\u001f\u007f]/.test(value);
+}
+
+function containsUnsafePayload(value) {
+  if (typeof value !== 'string') return true;
+  const decoded = value
+    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);?/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/\\u([0-9a-f]{4})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+  return /(?:'|"|`|--|;|\/\*|\*\/|<|>|\bunion\b|\bselect\b|\binsert\b|\bupdate\b|\bdelete\b|\bdrop\b|\btruncate\b|\bor\b\s+\d+\s*=|\band\b\s+\d+\s*=|javascript\s*:|on[a-z]+\s*=)/i.test(decoded);
+}
+
+function validEmail(email) {
+  return typeof email === 'string' &&
+    email.length <= 254 &&
+    /^[a-z0-9.!#$%&*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(email);
+}
+
+function validPassword(password) {
+  if (typeof password !== 'string' || password.length < 12 || password.length > 1024 || containsControl(password)) return false;
+  let categories = 0;
+  if (/[a-z]/.test(password)) categories++;
+  if (/[A-Z]/.test(password)) categories++;
+  if (/[0-9]/.test(password)) categories++;
+  if (/[^A-Za-z0-9]/.test(password)) categories++;
+  return categories >= 3;
 }
 
 async function hashPassword(password, salt) {
@@ -60,32 +90,6 @@ function generateToken() {
   return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-async function dbQuery(databaseUrl, query, params = []) {
-  if (!databaseUrl) throw new Error('DATABASE_URL tidak dikonfigurasi');
-
-  const m = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^\/]+)\/([^?]+)/);
-  if (!m) throw new Error('DATABASE_URL format salah');
-  const [, user, password, host, db] = m;
-
-  const res = await fetch(`https://${host}/sql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Basic ' + btoa(`${user}:${password}`),
-      'Neon-Connection-String': databaseUrl,
-    },
-    body: JSON.stringify({ query, params })
-  });
-
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-    throw new Error(`Neon ${res.status}: ${txt.substring(0,200)}`);
-  }
-
-  const data = await res.json();
-  return data.rows ?? data;
-}
-
 async function getSession(request, env) {
   const cookie = request.headers.get('Cookie') || '';
   const match  = cookie.match(/mbg_token=([a-f0-9]{64})/);
@@ -95,7 +99,7 @@ async function getSession(request, env) {
   const session = JSON.parse(data);
   if (!session.username) return null;
   const users = await dbQuery(env.DATABASE_URL,
-    'SELECT session_version FROM users WHERE username = $1 AND active = TRUE LIMIT 1',
+    'SELECT session_version FROM users WHERE username = $1 AND is_active = TRUE LIMIT 1',
     [session.username]
   );
   if (!users[0] || Number(users[0].session_version || 0) !== Number(session.session_version || 0)) return null;
@@ -115,6 +119,14 @@ export async function onRequest(context) {
   if (!env.DATABASE_URL) return json({ status: 'error', message: 'DATABASE_URL tidak dikonfigurasi di Cloudflare Pages' }, 500);
 
   if (request.method === 'GET') {
+    if (new URL(request.url).searchParams.get('action') === 'logout') {
+      const cookie = request.headers.get('Cookie') || '';
+      const match = cookie.match(/(?:^|;\s*)mbg_token=([a-f0-9]{64})(?:;|$)/);
+      if (match && env.SESSIONS) await env.SESSIONS.delete(match[1]);
+      const headers = new Headers(CORS);
+      headers.set('Set-Cookie', 'mbg_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/');
+      return new Response(JSON.stringify({ status: 'success' }), { headers });
+    }
     if (new URL(request.url).searchParams.get('action') === 'login_status') {
       const ip = trustedLoginIp(request);
       if (!ip) return json({ status: 'error', message: 'IP client tidak dapat diverifikasi.' }, 503);
@@ -124,7 +136,12 @@ export async function onRequest(context) {
         return json({ status: 'error', message: 'Status pembatasan login tidak tersedia.' }, 503);
       }
     }
-    const session = await getSession(request, env);
+    let session;
+    try {
+      session = await getSession(request, env);
+    } catch (_) {
+      return json({ status: 'error', logged_in: false, message: 'Status autentikasi tidak tersedia.' }, 503);
+    }
     if (!session) return json({ logged_in: false });
     return json({
       logged_in: true,
@@ -161,13 +178,17 @@ export async function onRequest(context) {
       const password = typeof body.password === 'string' ? body.password : '';
 
       try {
+        if (!env.SESSIONS) return json({ status: 'error', message: 'Sesi login belum dikonfigurasi.' }, 503);
         const currentLockout = await getLoginLockout(env, ip);
         if (currentLockout.blocked) {
           return json({ status: 'error', message: 'Alamat IP ini sedang diblokir.', lockout: currentLockout }, 429);
         }
-        if (!username || username.length > 120 || password.length > 1024 || /[\u0000-\u001f\u007f]/.test(username)) {
+        if (!username || username.length > 254 || password.length > 1024 ||
+            containsControl(username) || containsControl(password) ||
+            (!validEmail(username) && !/^[a-z0-9][a-z0-9_.-]{2,59}$/i.test(username)) ||
+            containsUnsafePayload(username)) {
           const lockout = await recordLoginFailure(env, ip);
-          return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.', lockout }, lockout.blocked ? 429 : 401);
+          return json({ status: 'error', message: 'Username atau kata sandi tidak valid.', lockout }, lockout.blocked ? 429 : 400);
         }
 
         // SECURE: Parameterized Query ($1)
@@ -175,7 +196,7 @@ export async function onRequest(context) {
           `SELECT id, username, full_name, email, role, sppg_name,
                   password_hash, salt, avatar_url, avatar_status, session_version
            FROM users
-           WHERE (username = $1 OR email = $1) AND active = TRUE
+           WHERE (username = $1 OR email = $1) AND is_active = TRUE
            LIMIT 1`,
           [username]
         );
@@ -224,43 +245,70 @@ export async function onRequest(context) {
     }
 
     if (action === 'register') {
-      const full_name = String(body.full_name || '').trim();
+      if (typeof body.full_name !== 'string' || typeof body.email !== 'string' ||
+          typeof body.username !== 'string' || typeof body.password !== 'string') {
+        return json({ status: 'error', message: 'Format data pendaftaran tidak valid.' }, 400);
+      }
+      const full_name = body.full_name.trim();
       const email     = sanitize(body.email);
       const username  = sanitize(body.username);
-      const password  = String(body.password || '');
+      const password  = body.password;
       const role      = ['sppg','user'].includes(body.role) ? body.role : 'user';
       const sppg_name = String(body.sppg_name || '').trim();
 
-      if (!full_name || !email || !username || !password) return json({ status: 'error', message: 'Semua kolom wajib diisi.' });
-      if (username.length < 3) return json({ status: 'error', message: 'Username minimal 3 karakter.' });
-      if (password.length < 6) return json({ status: 'error', message: 'Kata sandi minimal 6 karakter.' });
+      if (!full_name || !email || !username || !password) return json({ status: 'error', message: 'Semua kolom wajib diisi.' }, 400);
+      if (full_name.length > 120 || containsControl(full_name) || !/^[\p{L}\p{M}][\p{L}\p{M} .'-]{1,119}$/u.test(full_name)) {
+        return json({ status: 'error', message: 'Nama lengkap tidak valid.' }, 400);
+      }
+      if (!validEmail(email) || containsControl(email)) {
+        return json({ status: 'error', message: 'Format alamat email tidak valid.' }, 400);
+      }
+      if (!/^[a-z0-9][a-z0-9_.-]{2,59}$/i.test(username) || containsUnsafePayload(username)) {
+        return json({ status: 'error', message: 'Username 3–60 karakter: huruf, angka, titik, garis bawah, atau strip.' }, 400);
+      }
+      if (!validPassword(password)) {
+        return json({ status: 'error', message: 'Kata sandi minimal 12 karakter dan menggabungkan huruf besar, huruf kecil, angka, atau simbol.' }, 400);
+      }
+      if (role === 'sppg' && (!sppg_name || sppg_name.length > 150 || containsControl(sppg_name) || !/^[\p{L}\p{M}\p{N} .,'()/-]{2,150}$/u.test(sppg_name))) {
+        return json({ status: 'error', message: 'Nama dapur SPPG tidak valid.' }, 400);
+      }
+      const nib = typeof body.nib === 'string' ? body.nib.trim() : '';
+      const noSlhs = typeof body.no_slhs === 'string' ? body.no_slhs.trim() : '';
+      if (role === 'sppg' && (!/^[a-z0-9./-]{5,40}$/i.test(nib) || !/^[a-z0-9./-]{4,60}$/i.test(noSlhs))) {
+        return json({ status: 'error', message: 'NIB dan nomor SLHS wajib diisi dengan format yang valid.' }, 400);
+      }
 
       try {
         const check = await dbQuery(env.DATABASE_URL,
           `SELECT id FROM users WHERE username = $1 OR email = $2 LIMIT 1`,
           [username, email]
         );
-        if (check.length) return json({ status: 'error', message: 'Username atau email sudah digunakan.' });
+        if (check.length) return json({ status: 'error', message: 'Username atau email sudah digunakan.' }, 409);
 
         const salt = generateToken().substring(0, 16);
         const hash = await hashPassword(password, salt);
         await dbQuery(env.DATABASE_URL,
-          `INSERT INTO users (username, full_name, email, role, sppg_name, password_hash, salt, active, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, NOW())`,
-          [username, full_name, email, role, sppg_name || null, hash, salt]
+          `INSERT INTO users (username, full_name, email, role, sppg_name, nib, no_slhs, password_hash, salt, is_active, status_verifikasi, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, $10, NOW())`,
+          [username, full_name, email, role, sppg_name || null, role === 'sppg' ? nib : null, role === 'sppg' ? noSlhs : null, hash, salt, role === 'sppg' ? 'pending_review' : 'approved']
         );
         return json({ status: 'success', message: 'Akun berhasil didaftarkan. Silakan masuk.' });
-      } catch (err) {
-        return json({ status: 'error', message: 'Gagal mendaftar: ' + err.message }, 500);
+      } catch (_) {
+        return json({ status: 'error', message: 'Registrasi sementara tidak dapat diproses.' }, 503);
       }
     }
 
     if (action === 'list_users') {
-      const session = await getSession(request, env);
+      let session;
+      try {
+        session = await getSession(request, env);
+      } catch (_) {
+        return json({ status: 'error', message: 'Status autentikasi tidak tersedia.' }, 503);
+      }
       if (!session || session.role !== 'admin') return json({ status: 'error', message: 'Hanya admin.' }, 403);
       try {
         const rows = await dbQuery(env.DATABASE_URL,
-          `SELECT id, username, full_name, email, role, sppg_name, avatar_status, active, created_at
+          `SELECT id, username, full_name, email, role, sppg_name, avatar_status, is_active AS active, created_at
            FROM users ORDER BY created_at DESC LIMIT 200`
         );
         return json({ status: 'success', data: rows });
