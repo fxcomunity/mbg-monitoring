@@ -1,7 +1,8 @@
 /**
  * _shared.js — Shared utilities untuk semua Pages Functions di /api/
- * Tidak pakai npm package — semua vanilla JS agar Cloudflare Pages bisa bundle.
+ * Shared Pages helpers; password KDF uses Cloudflare's Node.js crypto compatibility.
  */
+import { pbkdf2 } from 'node:crypto';
 
 export const CORS = {
   'Content-Type': 'application/json; charset=UTF-8',
@@ -62,14 +63,12 @@ export function generateToken() {
 
 export async function hashPassword(password, salt = generateToken().slice(0, 32)) {
   const iterations = 310000;
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits({
-    name: 'PBKDF2',
-    salt: new TextEncoder().encode(salt),
-    iterations,
-    hash: 'SHA-256'
-  }, key, 512);
-  const digest = Array.from(new Uint8Array(bits), byte => byte.toString(16).padStart(2, '0')).join('');
+  const digest = await new Promise((resolve, reject) => {
+    pbkdf2(password, salt, iterations, 64, 'sha256', (error, derivedKey) => {
+      if (error) reject(error);
+      else resolve(derivedKey.toString('hex'));
+    });
+  });
   return `pbkdf2_sha256$${iterations}$${salt}$${digest}`;
 }
 
@@ -87,18 +86,16 @@ function constantTimeEqual(left, right) {
 
 export async function verifyPassword(password, storedHash, legacySalt = '') {
   if (typeof storedHash !== 'string') return false;
-  const match = /^pbkdf2_sha256\$(\d{6})\$([a-f0-9]{32})\$([a-f0-9]{128})$/i.exec(storedHash);
+  const match = /^pbkdf2_sha256\$(\d{6})\$([a-f0-9]{32})\$([a-f0-9]{64}|[a-f0-9]{128})$/i.exec(storedHash);
   if (match) {
     const iterations = Number(match[1]);
     if (iterations < 100000 || iterations > 600000) return false;
-    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-    const bits = await crypto.subtle.deriveBits({
-      name: 'PBKDF2',
-      salt: new TextEncoder().encode(match[2]),
-      iterations,
-      hash: 'SHA-256'
-    }, key, 512);
-    const candidate = Array.from(new Uint8Array(bits), byte => byte.toString(16).padStart(2, '0')).join('');
+    const candidate = await new Promise((resolve, reject) => {
+      pbkdf2(password, match[2], iterations, match[3].length / 2, 'sha256', (error, derivedKey) => {
+        if (error) reject(error);
+        else resolve(derivedKey.toString('hex'));
+      });
+    });
     return constantTimeEqual(candidate, match[3].toLowerCase());
   }
   if (!legacySalt || !/^[a-f0-9]{64}$/i.test(storedHash)) return false;

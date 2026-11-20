@@ -6,7 +6,7 @@
  * Project: MBG Monitoring
  */
 import { trustedLoginIp, getLoginLockout, recordLoginFailure, recordLoginSuccess } from './_login_lockout.js';
-import { dbQuery, getSession, hashSessionToken, revokeSession } from './_shared.js';
+import { dbQuery, getSession, hashPassword, hashSessionToken, revokeSession, verifyPassword } from './_shared.js';
 
 const CORS = {
   'Content-Type': 'application/json; charset=UTF-8',
@@ -55,33 +55,6 @@ function validPassword(password) {
   if (/[0-9]/.test(password)) categories++;
   if (/[^A-Za-z0-9]/.test(password)) categories++;
   return categories >= 3;
-}
-
-async function hashPassword(password, salt) {
-  const rounds = 310000;
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: rounds, hash: 'SHA-256' }, key, 512);
-  const digest = Array.from(new Uint8Array(bits), b => b.toString(16).padStart(2, '0')).join('');
-  return `pbkdf2_sha256$${rounds}$${salt}$${digest}`;
-}
-
-async function verifyPassword(password, storedHash, legacySalt = '') {
-  const match = /^pbkdf2_sha256\$(\d{6})\$([a-f0-9]{32})\$([a-f0-9]{64}|[a-f0-9]{128})$/i.exec(String(storedHash || ''));
-  if (match) {
-    const rounds = Number(match[1]);
-    if (rounds < 100000 || rounds > 600000) return false;
-    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode(match[2]), iterations: rounds, hash: 'SHA-256' }, key, match[3].length * 4);
-    const candidate = Array.from(new Uint8Array(bits), b => b.toString(16).padStart(2, '0')).join('');
-    if (candidate.length !== match[3].length) return false;
-    let diff = 0;
-    for (let i = 0; i < candidate.length; i++) diff |= candidate.charCodeAt(i) ^ match[3].toLowerCase().charCodeAt(i);
-    return diff === 0;
-  }
-  if (!legacySalt || !/^[a-f0-9]{64}$/i.test(String(storedHash || ''))) return false;
-  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(legacySalt + password));
-  const candidate = Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
-  return candidate === String(storedHash).toLowerCase();
 }
 
 function generateToken() {

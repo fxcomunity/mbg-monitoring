@@ -11,7 +11,9 @@
    `database/neon_auth_sessions.sql` before deploying the Neon-backed login.
    The Pages application does not need a `SESSIONS` KV binding. Optional `RATE`
    remains a **KV namespace**, matching the existing application binding, not a
-   Workers rate-limiter binding.
+   Workers rate-limiter binding. Keep `nodejs_compat` enabled in `wrangler.toml`:
+   password verification uses Node.js PBKDF2 so existing 310,000-iteration
+   password hashes work within Cloudflare's Web Crypto iteration limit.
 3. Deploy the `functions/` directory with the Pages application. Ensure any Pages
    `_routes.json`/deployment route exclusions do not bypass `_middleware.js` for
    protected requests. A separate Worker or PHP origin is not protected by this
