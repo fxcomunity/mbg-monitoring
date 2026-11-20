@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@neondatabase/serverless": "1.2.1",
-    "hash-wasm": "^4.13.0"
+    "@neondatabase/serverless": "1.2.1"
   }
 }
