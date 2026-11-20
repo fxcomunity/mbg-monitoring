@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { pbkdf2Sync } from 'node:crypto';
 import { onRequest } from '../functions/api/auth_user.js';
 import { hashPassword } from '../functions/api/_shared.js';
 
@@ -31,6 +32,11 @@ function mockLoginDatabase(t, { blocked = false, password = 'CorrectPassword123!
         avatar_status: 'approved',
         status_verifikasi: 'approved',
         session_version: 0
+      }];
+    } else if (/mbg_pbkdf2_sha256/.test(call.query)) {
+      const [candidatePassword, salt, iterations, outputLength] = call.params;
+      rows = [{
+        digest: pbkdf2Sync(candidatePassword, salt, Number(iterations), Number(outputLength), 'sha256').toString('hex')
       }];
     } else if (/INSERT INTO auth_security_events/.test(call.query)) {
       rows = [{ ip: '203.0.113.10', failed_attempts: 1, blocked_until: null, permanent: false, blocked: false }];
@@ -65,14 +71,15 @@ test('successful login checks lockout and account in one query, then writes succ
 
   assert.equal(response.status, 200);
   assert.equal((await response.json()).status, 'success');
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 5);
   assert.match(calls[0].query, /LEFT JOIN auth_ip_lockouts/);
   assert.match(calls[0].query, /FROM users/);
-  assert.match(calls[1].query, /WITH reset_lockout AS/);
-  assert.match(calls[1].query, /INSERT INTO auth_security_events/);
-  assert.match(calls[2].query, /DELETE FROM auth_sessions/);
-  assert.match(calls[3].query, /INSERT INTO auth_sessions/);
-  assert.match(calls[3].params[0], /^[a-f0-9]{64}$/);
+  assert.match(calls[1].query, /mbg_pbkdf2_sha256/);
+  assert.match(calls[2].query, /WITH reset_lockout AS/);
+  assert.match(calls[2].query, /INSERT INTO auth_security_events/);
+  assert.match(calls[3].query, /DELETE FROM auth_sessions/);
+  assert.match(calls[4].query, /INSERT INTO auth_sessions/);
+  assert.match(calls[4].params[0], /^[a-f0-9]{64}$/);
 });
 
 test('blocked login returns without querying account data', async t => {
@@ -95,7 +102,7 @@ test('failed login records the lockout update and security event in one query', 
   });
 
   assert.equal(response.status, 401);
-  assert.equal(calls.length, 2);
-  assert.match(calls[1].query, /WITH updated_lockout AS/);
-  assert.match(calls[1].query, /INSERT INTO auth_security_events/);
+  assert.equal(calls.length, 3);
+  assert.match(calls[2].query, /WITH updated_lockout AS/);
+  assert.match(calls[2].query, /INSERT INTO auth_security_events/);
 });

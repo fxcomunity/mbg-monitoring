@@ -411,7 +411,7 @@ export async function onRequest(context) {
         }
 
         authStep = 'verify_password';
-        if (!await verifyPassword(password, user.password_hash, user.salt || '')) {
+        if (!await verifyPassword(password, user.password_hash, user.salt || '', env.DATABASE_URL)) {
           authStep = 'record_login_failure';
           const lockout = await recordLoginFailure(env, ip);
           return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.', lockout }, lockout.blocked ? 429 : 401);
@@ -420,7 +420,7 @@ export async function onRequest(context) {
         let sessionVersion = Number(user.session_version) || 0;
         if (!String(user.password_hash).startsWith('pbkdf2_sha256$')) {
           authStep = 'upgrade_password_hash';
-          const upgradedHash = await hashPassword(password, generateToken().slice(0, 32));
+          const upgradedHash = await hashPassword(password, generateToken().slice(0, 32), env.DATABASE_URL);
           const updated = await dbQuery(env.DATABASE_URL,
             `UPDATE users SET password_hash = $1, session_version = session_version + 1, updated_at = NOW()
              WHERE id = $2 RETURNING session_version`,
@@ -511,7 +511,7 @@ export async function onRequest(context) {
         if (check.length) return json({ status: 'error', message: 'Username atau email sudah digunakan.' }, 409);
 
         const salt = generateToken().substring(0, 16);
-        const hash = await hashPassword(password, salt);
+        const hash = await hashPassword(password, salt, env.DATABASE_URL);
         await dbQuery(env.DATABASE_URL,
           `INSERT INTO users (username, full_name, email, role, sppg_name, nib, no_slhs, password_hash, salt, is_active, status_verifikasi, created_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, TRUE, $10, NOW())`,

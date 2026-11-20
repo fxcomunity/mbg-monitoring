@@ -2,7 +2,7 @@
  * _shared.js — Shared utilities untuk semua Pages Functions di /api/
  * Shared Pages helpers.
  */
-import { createHmac } from 'node:crypto';
+import { pbkdf2Sync } from 'node:crypto';
 
 export const CORS = {
   'Content-Type': 'application/json; charset=UTF-8',
@@ -61,31 +61,24 @@ export function generateToken() {
   return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-function derivePasswordKey(password, salt, iterations, hashLength) {
-  const digestLength = 32;
-  const saltBytes = new TextEncoder().encode(salt);
-  const output = new Uint8Array(hashLength);
-  const blockInput = new Uint8Array(saltBytes.length + 4);
-  blockInput.set(saltBytes);
-  const blockView = new DataView(blockInput.buffer);
-
-  for (let block = 1, offset = 0; offset < hashLength; block++, offset += digestLength) {
-    blockView.setUint32(saltBytes.length, block, false);
-    let current = createHmac('sha256', password).update(blockInput).digest();
-    const derived = Uint8Array.from(current);
-    for (let iteration = 1; iteration < iterations; iteration++) {
-      current = createHmac('sha256', password).update(current).digest();
-      for (let index = 0; index < digestLength; index++) derived[index] ^= current[index];
+async function derivePasswordKey(password, salt, iterations, hashLength, databaseUrl) {
+  if (databaseUrl) {
+    const rows = await dbQuery(databaseUrl,
+      `SELECT encode(public.mbg_pbkdf2_sha256($1, $2, $3, $4), 'hex') AS digest`,
+      [password, salt, iterations, hashLength]
+    );
+    if (typeof rows[0]?.digest !== 'string' || !/^[a-f0-9]+$/i.test(rows[0].digest)) {
+      throw new Error('Neon PBKDF2 function returned an invalid digest.');
     }
-    output.set(derived.subarray(0, Math.min(digestLength, hashLength - offset)), offset);
+    return rows[0].digest;
   }
 
-  return Array.from(output, byte => byte.toString(16).padStart(2, '0')).join('');
+  return pbkdf2Sync(password, salt, iterations, hashLength, 'sha256').toString('hex');
 }
 
-export async function hashPassword(password, salt = generateToken().slice(0, 32)) {
+export async function hashPassword(password, salt = generateToken().slice(0, 32), databaseUrl) {
   const iterations = 310000;
-  const digest = derivePasswordKey(password, salt, iterations, 64);
+  const digest = await derivePasswordKey(password, salt, iterations, 64, databaseUrl);
   return `pbkdf2_sha256$${iterations}$${salt}$${digest}`;
 }
 
@@ -101,13 +94,13 @@ function constantTimeEqual(left, right) {
   return mismatch === 0;
 }
 
-export async function verifyPassword(password, storedHash, legacySalt = '') {
+export async function verifyPassword(password, storedHash, legacySalt = '', databaseUrl) {
   if (typeof storedHash !== 'string') return false;
   const match = /^pbkdf2_sha256\$(\d{6})\$([a-f0-9]{32})\$([a-f0-9]{64}|[a-f0-9]{128})$/i.exec(storedHash);
   if (match) {
     const iterations = Number(match[1]);
     if (iterations < 100000 || iterations > 600000) return false;
-    const candidate = derivePasswordKey(password, match[2], iterations, match[3].length / 2);
+    const candidate = await derivePasswordKey(password, match[2], iterations, match[3].length / 2, databaseUrl);
     return constantTimeEqual(candidate, match[3].toLowerCase());
   }
   if (!legacySalt || !/^[a-f0-9]{64}$/i.test(storedHash)) return false;

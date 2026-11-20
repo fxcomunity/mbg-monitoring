@@ -4,7 +4,7 @@
  * Menggantikan: api/change_password.php
  */
 
-import { CORS, json, dbQuery, getSession, hashPassword, generateToken } from './_shared.js';
+import { CORS, json, dbQuery, getSession, hashPassword, verifyPassword, generateToken } from './_shared.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -35,7 +35,7 @@ export async function onRequestPost(context) {
     if (newPassword.length < 6) return json({ status: 'error', message: 'Sandi minimal 6 karakter.' }, 422);
 
     const salt = generateToken().substring(0, 16);
-    const hash = await hashPassword(newPassword, salt);
+    const hash = await hashPassword(newPassword, salt, db);
     try {
       const users = await dbQuery(db,
         `UPDATE users
@@ -69,11 +69,12 @@ export async function onRequestPost(context) {
     const user = result.rows?.[0];
     if (!user) return json({ status: 'error', message: 'Pengguna tidak ditemukan.' }, 404);
 
-    const currentHash = await hashPassword(currentPassword, user.salt);
-    if (currentHash !== user.password_hash) return json({ status: 'error', message: 'Sandi lama tidak cocok.' }, 401);
+    if (!await verifyPassword(currentPassword, user.password_hash, user.salt || '', db)) {
+      return json({ status: 'error', message: 'Sandi lama tidak cocok.' }, 401);
+    }
 
     const salt = generateToken().substring(0, 16);
-    const hash = await hashPassword(newPassword, salt);
+    const hash = await hashPassword(newPassword, salt, db);
     const updatedUsers = await dbQuery(db,
       `UPDATE users
        SET password_hash=$1, salt=$2, session_version=session_version+1, updated_at=NOW()
