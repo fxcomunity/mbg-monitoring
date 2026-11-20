@@ -34,7 +34,7 @@ export async function onRequestPost(context) {
     if (!targetUsername) return json({ status: 'error', message: 'Username target tidak valid.' }, 400);
     if (newPassword.length < 6) return json({ status: 'error', message: 'Sandi minimal 6 karakter.' }, 422);
 
-    const salt = generateToken().substring(0, 16);
+    const salt = generateToken().slice(0, 32);
     const hash = await hashPassword(newPassword, salt, db);
     try {
       const users = await dbQuery(db,
@@ -73,7 +73,7 @@ export async function onRequestPost(context) {
       return json({ status: 'error', message: 'Sandi lama tidak cocok.' }, 401);
     }
 
-    const salt = generateToken().substring(0, 16);
+    const salt = generateToken().slice(0, 32);
     const hash = await hashPassword(newPassword, salt, db);
     const updatedUsers = await dbQuery(db,
       `UPDATE users

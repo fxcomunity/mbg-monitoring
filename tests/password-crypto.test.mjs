@@ -28,3 +28,10 @@ test('new password hashes retain the existing 310,000-iteration storage format',
   assert.match(storedHash, /^pbkdf2_sha256\$310000\$[a-f0-9]{32}\$[a-f0-9]{128}$/);
   assert.equal(await verifyPassword(PASSWORD, storedHash), true);
 });
+
+test('generated salts match the verifier format', async () => {
+  const storedHash = await hashPassword(PASSWORD);
+
+  assert.match(storedHash, /^pbkdf2_sha256\$310000\$[a-f0-9]{32}\$[a-f0-9]{128}$/);
+  assert.equal(await verifyPassword(PASSWORD, storedHash), true);
+});

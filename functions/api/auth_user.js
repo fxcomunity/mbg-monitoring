@@ -510,7 +510,7 @@ export async function onRequest(context) {
         );
         if (check.length) return json({ status: 'error', message: 'Username atau email sudah digunakan.' }, 409);
 
-        const salt = generateToken().substring(0, 16);
+        const salt = generateToken().slice(0, 32);
         const hash = await hashPassword(password, salt, env.DATABASE_URL);
         await dbQuery(env.DATABASE_URL,
           `INSERT INTO users (username, full_name, email, role, sppg_name, nib, no_slhs, password_hash, salt, is_active, status_verifikasi, created_at)
