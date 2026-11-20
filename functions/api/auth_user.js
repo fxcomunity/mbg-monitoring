@@ -431,8 +431,14 @@ export async function onRequest(context) {
           session_version: row.session_version
         };
         if (!user || !ROLE_LABELS[user.role] ||
-            (user.role === 'sppg' && String(user.status_verifikasi || '').toLowerCase() !== 'approved') ||
-            !await verifyPassword(password, user.password_hash, user.salt || '')) {
+            (user.role === 'sppg' && String(user.status_verifikasi || '').toLowerCase() !== 'approved')) {
+          authStep = 'record_login_failure';
+          const lockout = await recordLoginFailure(env, ip);
+          return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.', lockout }, lockout.blocked ? 429 : 401);
+        }
+
+        authStep = 'verify_password';
+        if (!await verifyPassword(password, user.password_hash, user.salt || '')) {
           authStep = 'record_login_failure';
           const lockout = await recordLoginFailure(env, ip);
           return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.', lockout }, lockout.blocked ? 429 : 401);
@@ -483,7 +489,8 @@ export async function onRequest(context) {
         console.error('Authentication service unavailable', {
           step: authStep,
           name: err instanceof Error ? err.name : 'UnknownError',
-          code: typeof err?.code === 'string' ? err.code : undefined
+          code: typeof err?.code === 'string' ? err.code : undefined,
+          message: err?.name === 'NotSupportedError' && err instanceof Error ? err.message : undefined
         });
         return json({ status: 'error', message: 'Layanan autentikasi sementara tidak tersedia.' }, 503);
       }
