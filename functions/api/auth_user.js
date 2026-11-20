@@ -371,6 +371,7 @@ export async function onRequest(context) {
       const username = typeof body.username === 'string' ? sanitize(body.username) : '';
       const password = typeof body.password === 'string' ? body.password : '';
 
+      let authStep = 'account_lookup';
       try {
         if (!username || username.length > 254 || password.length > 1024 ||
             containsControl(username) || containsControl(password) ||
@@ -432,12 +433,14 @@ export async function onRequest(context) {
         if (!user || !ROLE_LABELS[user.role] ||
             (user.role === 'sppg' && String(user.status_verifikasi || '').toLowerCase() !== 'approved') ||
             !await verifyPassword(password, user.password_hash, user.salt || '')) {
+          authStep = 'record_login_failure';
           const lockout = await recordLoginFailure(env, ip);
           return json({ status: 'error', message: 'Username atau kata sandi tidak cocok.', lockout }, lockout.blocked ? 429 : 401);
         }
 
         let sessionVersion = Number(user.session_version) || 0;
         if (!String(user.password_hash).startsWith('pbkdf2_sha256$')) {
+          authStep = 'upgrade_password_hash';
           const upgradedHash = await hashPassword(password, generateToken().slice(0, 32));
           const updated = await dbQuery(env.DATABASE_URL,
             `UPDATE users SET password_hash = $1, session_version = session_version + 1, updated_at = NOW()
@@ -446,13 +449,16 @@ export async function onRequest(context) {
           );
           sessionVersion = Number(updated[0]?.session_version) || sessionVersion + 1;
         }
+        authStep = 'record_login_success';
         await recordLoginSuccess(env, ip);
 
         const token   = generateToken();
+        authStep = 'clean_expired_sessions';
         await dbQuery(env.DATABASE_URL,
           `DELETE FROM auth_sessions
            WHERE expires_at <= NOW() - INTERVAL '1 day'`
         );
+        authStep = 'create_session';
         await dbQuery(env.DATABASE_URL,
           `INSERT INTO auth_sessions (token_hash, user_id, session_version, expires_at)
            VALUES ($1, $2, $3, NOW() + ($4 * INTERVAL '1 second'))`,
@@ -474,7 +480,11 @@ export async function onRequest(context) {
         }), { status: 200, headers });
 
       } catch (err) {
-        console.error('Authentication service unavailable');
+        console.error('Authentication service unavailable', {
+          step: authStep,
+          name: err instanceof Error ? err.name : 'UnknownError',
+          code: typeof err?.code === 'string' ? err.code : undefined
+        });
         return json({ status: 'error', message: 'Layanan autentikasi sementara tidak tersedia.' }, 503);
       }
     }
