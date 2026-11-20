@@ -1,6 +1,7 @@
 <?php
 // api/tiket.php – Tracking Tiket Laporan Aduan Publik BGN
 require_once __DIR__ . '/../database/api_bootstrap.php';
+require_once __DIR__ . '/../database/auth.php';
 
 function normalizeReportPhoto(string $sourcePath, string $targetPath, string $sourceMime): bool {
     if (!function_exists('imagecreatefromstring') || !function_exists('imagejpeg')) {
@@ -99,6 +100,52 @@ cleanupExpiredLocalReports();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=UTF-8');
+    $action = is_string($_POST['action'] ?? null) ? $_POST['action'] : '';
+    if ($action === 'admin_update') {
+        Auth::requireApiRole('admin');
+        $actor = Auth::user();
+        $ticketCode = trim(is_string($_POST['ticket_code'] ?? null) ? $_POST['ticket_code'] : '');
+        $status = is_string($_POST['status'] ?? null) ? $_POST['status'] : '';
+        $notes = trim(is_string($_POST['satgas_notes'] ?? null) ? $_POST['satgas_notes'] : '');
+        $validStatuses = ['masuk', 'verifikasi', 'proses', 'selesai', 'ditolak'];
+        if ($ticketCode === '' || strlen($ticketCode) > 60 || !preg_match('/^[A-Za-z0-9-]+$/D', $ticketCode)
+            || !in_array($status, $validStatuses, true) || strlen($notes) > 2000) {
+            http_response_code(422);
+            echo json_encode(['status' => 'error', 'message' => 'Data pembaruan aduan tidak valid.'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        try {
+            $pdo = getDB();
+            $stmt = $pdo->prepare(
+                "WITH target AS (
+                    SELECT id, status FROM laporan_aduan WHERE ticket_code = ? FOR UPDATE
+                 ), updated AS (
+                    UPDATE laporan_aduan AS report
+                    SET status = ?, satgas_notes = NULLIF(?, ''), updated_at = NOW()
+                    FROM target
+                    WHERE report.id = target.id
+                    RETURNING report.id, target.status AS old_status, report.status AS new_status
+                 )
+                 INSERT INTO aduan_log (laporan_id, old_status, new_status, changed_by, notes)
+                 SELECT id, old_status, new_status, ?, NULLIF(?, '')
+                 FROM updated
+                 RETURNING laporan_id"
+            );
+            $stmt->execute([$ticketCode, $status, $notes, (string)($actor['username'] ?? 'admin'), $notes]);
+            if (!$stmt->fetchColumn()) {
+                http_response_code(404);
+                echo json_encode(['status' => 'error', 'message' => 'Tiket tidak ditemukan di server.'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            echo json_encode(['status' => 'success', 'message' => 'Aduan berhasil diperbarui.'], JSON_UNESCAPED_UNICODE);
+        } catch (Throwable $error) {
+            Security::logFailure('tiket_admin_update', $error);
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Pembaruan aduan gagal disimpan.'], JSON_UNESCAPED_UNICODE);
+        }
+        exit;
+    }
 
     $name = trim($_POST['reporter_name'] ?? '');
     $phone = trim($_POST['reporter_phone'] ?? '');
@@ -191,8 +238,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
+if (($_GET['action'] ?? '') === 'admin_list') {
+    header('Content-Type: application/json; charset=UTF-8');
+    Auth::requireApiRole('admin');
+    try {
+        $reports = getDB()->query(
+            "SELECT ticket_code, reporter_name, reporter_role, issue_category, school_target,
+                    incident_date, description, photo_path, status, priority, satgas_notes,
+                    created_at, updated_at
+             FROM laporan_aduan
+             ORDER BY created_at DESC
+             LIMIT 100"
+        )->fetchAll();
+        echo json_encode(['status' => 'success', 'data' => $reports], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    } catch (Throwable $error) {
+        Security::logFailure('tiket_admin_list', $error);
+        http_response_code(503);
+        echo json_encode(['status' => 'error', 'message' => 'Daftar aduan tidak dapat dimuat dari server.'], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+}
+
 if (isset($_GET['photo'])) {
-    require_once __DIR__ . '/../database/auth.php';
     $currentUser = Auth::check() ? Auth::user() : null;
     if (($currentUser['role'] ?? '') !== 'admin') {
         http_response_code(403);

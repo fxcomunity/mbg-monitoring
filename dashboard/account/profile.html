@@ -22,6 +22,7 @@
   </script>
   <link rel="stylesheet" href="../../assets/css/style.css"/>
   <link rel="stylesheet" href="../../assets/css/dashboard.css"/>
+  <link rel="stylesheet" href="../../assets/css/site-footer.css"/>
   <style>
     body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
     #account-loading { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 1.5rem; background: #f3f6fb; }
@@ -29,6 +30,7 @@
     .account-avatar { box-shadow: 0 0 0 6px rgba(111, 251, 190, .16), 0 16px 36px rgba(0, 16, 38, .2); }
     .account-field { min-height: 3rem; }
   </style>
+  <script src="../../assets/js/site-footer.js" defer></script>
 </head>
 <body class="min-h-screen bg-[#f3f6fb] text-slate-900">
   <div id="account-loading" role="status" aria-live="polite">
@@ -134,7 +136,7 @@
       </section>
     </div>
   </main>
-  <footer class="py-6 text-center text-xs text-slate-500">Radar MBG · Pengaturan akun</footer>
+  <div data-site-footer></div>
   <script src="../../assets/js/account-settings.js"></script>
 </body>
 </html>

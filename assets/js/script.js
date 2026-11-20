@@ -564,6 +564,8 @@ function applyStaticSessionFallback() {
  * Cek status autentikasi aktif via API dan render Profil Avatar + Dropdown jika login
  */
 async function initUserAuthStatus() {
+  // The homepage owns an immediate cached-avatar render and refreshes it from the session API.
+  if (document.getElementById('navUserDropdownWrap')) return;
   // Sesi statis (login.html) punya prioritas; kalau ada, tidak perlu cek PHP
   if (applyStaticSessionFallback()) return;
   try {

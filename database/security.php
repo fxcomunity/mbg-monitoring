@@ -76,7 +76,7 @@ class Security {
         header('X-Content-Type-Options: nosniff');
         header('X-Frame-Options: DENY');
         header('Referrer-Policy: no-referrer');
-        header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+        header('Permissions-Policy: camera=(), microphone=(self), geolocation=()');
         if ($api) {
             self::$apiRequest = true;
             header('Content-Type: application/json; charset=UTF-8');

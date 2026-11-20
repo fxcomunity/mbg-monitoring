@@ -6,7 +6,7 @@
   <meta content="web_standard" name="shell-type"/>
 
   <!-- Favicon & Touch Icons -->
-  <link rel="icon" type="image/webp" href="assets/images/ic_launcher.png"/>
+  <link rel="icon" type="image/webp" href="assets/images/favicon.webp"/>
   <link rel="apple-touch-icon" href="assets/images/ic_launcher.png"/>
   <link rel="image_src" href="https://mbg.jack-ai.my.id/assets/images/og-preview.png"/>
 
@@ -42,6 +42,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}
 @keyframes bgShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "background": "#f8f9ff", "on-tertiary-fixed-variant": "#005236", "surface": "#f8f9ff", "surface-container-lowest": "#ffffff", "surface-container": "#e5eeff", "border-subtle": "#E2E8F0", "on-error": "#ffffff", "primary": "#001026", "on-primary-container": "#778db2", "tertiary-fixed": "#6ffbbe", "tertiary-container": "#002b1b", "on-secondary": "#ffffff", "on-primary-fixed": "#001c3b", "on-error-container": "#93000a", "inverse-on-surface": "#eaf1ff", "border-focus": "#134074", "status-error": "#EF4444", "surface-container-low": "#eff4ff", "on-tertiary-container": "#009f6e", "secondary-fixed": "#d5e3ff", "inverse-surface": "#213145", "inverse-primary": "#b1c7f0", "on-tertiary-fixed": "#002113", "on-secondary-fixed": "#001c3b", "surface-tint": "#495f82", "outline-variant": "#c4c6cf", "on-primary": "#ffffff", "secondary-fixed-dim": "#a7c8ff", "on-background": "#0b1c30", "status-success": "#059669", "tertiary": "#00130a", "surface-card": "#FFFFFF", "surface-canvas": "#F8FAFC", "surface-variant": "#d3e4fe", "on-primary-fixed-variant": "#314769", "primary-fixed-dim": "#b1c7f0", "surface-container-high": "#dce9ff", "outline": "#74777f", "on-secondary-container": "#274f84", "on-surface": "#0b1c30", "error-container": "#ffdad6", "surface-dim": "#cbdbf5", "tertiary-fixed-dim": "#4edea3", "surface-bright": "#f8f9ff", "on-surface-variant": "#44474e", "surface-container-highest": "#d3e4fe", "on-secondary-fixed-variant": "#1d477c", "status-warning": "#F59E0B", "secondary-container": "#9dc3ff", "primary-container": "#0b2545", "secondary": "#395f95", "on-tertiary": "#ffffff", "error": "#ba1a1a", "primary-fixed": "#d5e3ff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "margin": "2rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "gutter-sm": "1rem", "gutter": "1.5rem", "margin-sm": "1rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-xl-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"] }, "fontSize": { "headline-xl-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}], "headline-sm": ["16px", {"lineHeight": "24px", "fontWeight": "600"}], "label-lg": ["14px", {"lineHeight": "20px", "fontWeight": "600"}], "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}], "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}], "body-md": ["14px", {"lineHeight": "22px", "fontWeight": "400"}], "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}], "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}], "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}], "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600"}], "label-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "500"}] } } } };</script><link rel="stylesheet" href="assets/css/style.css?v=desktop-nav-2"/>
 <link rel="stylesheet" href="assets/css/security.css"/>
+<link rel="stylesheet" href="assets/css/site-footer.css"/>
 <style>
   .sppg-map-marker { background: transparent; border: 0; }
   .sppg-map-marker-dot { display: block; width: 18px; height: 18px; margin: 3px; border: 3px solid #fff; border-radius: 50%; background: #059669; box-shadow: 0 2px 9px rgba(0,16,38,.45), 0 0 0 4px rgba(5,150,105,.22); }
@@ -53,7 +54,20 @@
   .sppg-map-popup small { padding: 4px 7px; border-radius: 7px; font-size: 10px; }
   .sppg-map-popup small.approximate { background: #fffbeb; color: #92400e; }
   .sppg-map-popup small.verified { background: #ecfdf5; color: #047857; }
+  html.mbg-has-profile-cache #navBtnLogin,
+  html.mbg-has-profile-cache #mobileNavLogin { display: none !important; }
+  html.mbg-has-profile-cache #navUserBtn,
+  html.mbg-has-profile-cache #mobileNavLogin { display: flex !important; }
 </style>
+<script>
+  try {
+    var cachedProfile = JSON.parse(localStorage.getItem('mbg_profile_cache') || 'null');
+    if (cachedProfile && ['admin', 'sppg', 'user'].includes(cachedProfile.role)) {
+      document.documentElement.classList.add('mbg-has-profile-cache');
+    }
+  } catch (_) {}
+</script>
+  <script src="assets/js/site-footer.js" defer></script>
 </head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-secondary-container selection:text-on-secondary-container">
 <script>
 /* Maintenance check — runs before page renders */
@@ -87,7 +101,7 @@
 </script><a class="skip-link" href="#main-content">Lewati navigasi ke konten utama</a><header class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
   <div class="h-20 w-full px-space-md sm:px-space-lg flex items-center justify-between gap-space-md">
     <a href="index.html" class="flex items-center gap-space-md group shrink-0 whitespace-nowrap">
-      <img src="assets/images/ic_launcher.png" alt="Logo Badan Gizi Nasional" class="h-10 sm:h-12 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-sm" />
+      <img src="assets/images/favicon.webp" alt="Logo Badan Gizi Nasional" class="h-10 sm:h-12 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-sm" />
       <div class="flex flex-col">
         <div class="flex items-center gap-space-xs">
           <span class="font-headline-sm text-headline-sm text-primary tracking-tight font-bold">Radar MBG</span>
@@ -153,8 +167,7 @@
 
         <!-- Sudah login: tampil avatar + dropdown -->
         <button id="navUserBtn" type="button" class="hidden items-center gap-2 px-2.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-border-subtle shadow-sm transition-all" aria-haspopup="true" aria-expanded="false">
-          <!-- Avatar inisial -->
-          <div id="navUserAvatar" class="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-xs shrink-0">?</div>
+          <img id="navUserAvatar" src="assets/images/ic_launcher.png" alt="Foto profil" class="w-7 h-7 rounded-full border border-primary/20 object-cover bg-white shrink-0">
           <div class="hidden sm:flex flex-col items-start leading-tight">
             <span id="navUserName" class="text-xs font-bold text-primary max-w-[80px] truncate">—</span>
             <span id="navUserRole" class="text-[10px] font-semibold text-on-surface-variant">—</span>
@@ -166,7 +179,7 @@
         <div id="navUserDropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden py-1.5">
           <!-- Header info -->
           <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
-            <div id="dropAvatarLg" class="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0" style="background:linear-gradient(135deg,#001026,#395f95)">?</div>
+            <img id="dropAvatarLg" src="assets/images/ic_launcher.png" alt="Foto profil" class="w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shrink-0">
             <div class="min-w-0">
               <p id="dropUserName" class="font-bold text-sm text-primary truncate">—</p>
               <p id="dropUserRole" class="text-[11px] text-slate-500 mt-0.5">—</p>
@@ -226,8 +239,8 @@
       <a class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-semibold shadow-sm" href="fitur/menu-hari-ini.html">
         <span>Menu MBG Hari Ini</span>
       </a>
-      <a class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs border border-border-subtle shadow-sm" href="auth/login.html">
-        <span class="material-symbols-outlined text-[18px] text-secondary">admin_panel_settings</span>
+      <a id="mobileNavLogin" class="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs border border-border-subtle shadow-sm" href="auth/login.html">
+        <img src="assets/images/ic_launcher.png" alt="" class="h-6 w-6 rounded-full object-cover">
         <span>Portal Masuk (User, SPPG & Admin)</span>
       </a>
     </div>
@@ -761,84 +774,7 @@
   </div>
 </div>
 
-</main><footer class="w-full bg-surface-container-lowest border-t border-border-subtle mt-space-xl">
-  <div class="w-full px-space-lg py-space-xl">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-xl mb-space-xl">
-      <div class="flex flex-col gap-space-sm">
-        <div class="flex items-center gap-space-sm">
-          <img src="assets/images/ic_launcher.png" alt="Logo Badan Gizi Nasional" class="h-9 w-auto object-contain" />
-          <span class="font-headline-sm text-headline-sm text-primary font-bold">Badan Gizi Nasional</span>
-        </div>
-        <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-          Lembaga Pemerintah yang bertanggung jawab atas pengelolaan, pemenuhan gizi berkualitas, dan program Makan Bergizi Gratis (MBG) bagi generasi emas Indonesia.
-        </p>
-        <div class="flex items-center gap-space-xs text-status-success font-label-sm text-label-sm">
-          <span class="material-symbols-outlined text-[16px]">check_circle</span>
-          <span>Portal Resmi Pemerintah RI Terverifikasi</span>
-        </div>
-      </div>
-      <div class="flex flex-col gap-space-sm">
-        <span class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Layanan Aduan &amp; Bantuan</span>
-        <div class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
-          <div class="flex items-start gap-space-xs">
-            <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">call</span>
-            <div>
-              <span class="font-label-md text-label-md text-primary block">Halo MBG RI:</span>
-              <a href="https://wa.me/6281110008008" target="_blank" class="hover:text-primary font-semibold transition-colors">+62 811-1000-8008</a>
-            </div>
-          </div>
-          <div class="flex items-start gap-space-xs">
-            <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">mail</span>
-            <div>
-              <span class="font-label-md text-label-md text-primary block">Surat Elektronik:</span>
-              <a href="mailto:halo@bgn.go.id" class="hover:text-primary font-semibold transition-colors">halo@bgn.go.id</a>
-            </div>
-          </div>
-          <div class="flex items-start gap-space-xs">
-            <span class="material-symbols-outlined text-primary text-[18px] mt-0.5">schedule</span>
-            <div>
-              <span class="font-label-md text-label-md text-primary block">Jam Layanan Siaga:</span>
-              <span>Senin - Minggu: 06.00 - 20.00 WIB</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="flex flex-col gap-space-sm">
-        <span class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Tautan Portal &amp; Modul</span>
-        <ul class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface-variant">
-          <li><a class="hover:text-primary transition-colors flex items-center gap-1" href="index.html"><span class="material-symbols-outlined text-[14px]">arrow_forward</span>Monitoring Nasional MBG</a></li>
-          <li><a class="hover:text-primary transition-colors flex items-center gap-1" href="fitur/menu-hari-ini.html"><span class="material-symbols-outlined text-[14px]">arrow_forward</span>Menu Hari Ini &amp; AKG</a></li>
-          <li><a class="hover:text-primary transition-colors flex items-center gap-1" href="fitur/distribusi-sebaran-sppg.html"><span class="material-symbols-outlined text-[14px]">arrow_forward</span>Distribusi &amp; Sebaran SPPG</a></li>
-          <li><a class="hover:text-primary transition-colors flex items-center gap-1" href="fitur/standar-uji-akg.html"><span class="material-symbols-outlined text-[14px]">arrow_forward</span>Standar AKG &amp; Uji Mutu</a></li>
-          <li><a class="hover:text-primary transition-colors flex items-center gap-1" href="fitur/laporan-aduan.html"><span class="material-symbols-outlined text-[14px]">arrow_forward</span>Portal Aduan &amp; Pengaduan Publik</a></li>
-        </ul>
-      </div>
-      <div class="flex flex-col gap-space-sm">
-        <span class="font-label-lg text-label-lg text-primary uppercase tracking-wider">Transparansi &amp; Partisipasi</span>
-        <div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-xs">
-          <span class="font-label-md text-label-md text-primary font-bold">Audit Publik Mandiri</span>
-          <p class="font-body-sm text-body-sm text-on-surface-variant">
-            Masyarakat berhak memantau komposisi nutrisi, asal suplai pangan lokal, dan verifikasi Satuan Pelayanan Pemenuhan Gizi (SPPG).
-          </p>
-          <a class="font-label-md text-label-md text-secondary hover:text-primary transition-colors flex items-center gap-1 mt-1 font-semibold" href="fitur/laporan-aduan.html">
-            Buka Form Aduan Cepat <span class="material-symbols-outlined text-[14px]">open_in_new</span>
-          </a>
-        </div>
-      </div>
-    </div>
-    <div class="pt-space-lg border-t border-border-subtle flex flex-col sm:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-sm text-body-sm">
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-sm font-semibold tracking-wide">Redesain</span>
-        <span>© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi Undang-Undang.</span>
-      </div>
-      <div class="flex items-center gap-space-lg font-label-md text-label-md">
-        <a class="hover:text-primary transition-colors" href="fitur/kebijakan-privasi.html">Kebijakan Privasi</a>
-        <a class="hover:text-primary transition-colors" href="fitur/standar-uji-akg.html">Standar Kualitas Pangan</a>
-        <a class="hover:text-primary transition-colors" href="index.html">Keterbukaan Informasi Publik</a>
-      </div>
-    </div>
-  </div>
-</footer>
+</main><div data-site-footer></div>
 <script>
 (function() {
 
@@ -923,106 +859,5 @@
 <script src="assets/js/api.js"></script>
 <script src="assets/js/script.js?v=maintenance-links-1"></script>
 <script src="assets/js/live_chat.js"></script>
-<script>
-// ── Nav Profile Dropdown ─────────────────────────────────────────────────
-(function () {
-  var K = 'mbg_session';
-  var roleLabel = { admin: 'Admin Satgas BGN', sppg: 'Mitra Dapur SPPG', user: 'Wali Murid / Publik' };
-  var dashLink  = { admin: 'dashboard/admin/', sppg: 'dashboard/sppg/', user: 'dashboard/user/' };
-  var roleColor = {
-    admin: 'background:linear-gradient(135deg,#dc2626,#9f1239)',
-    sppg:  'background:linear-gradient(135deg,#2563eb,#1d4ed8)',
-    user:  'background:linear-gradient(135deg,#059669,#047857)'
-  };
-
-  function getSession() {
-    try { sessionStorage.removeItem(K); localStorage.removeItem(K); } catch(e) {}
-    return null;
-  }
-  function clearSession() {
-    try { sessionStorage.removeItem(K); localStorage.removeItem(K); } catch(e) {}
-  }
-
-  function init() {
-    var s          = getSession();
-    var loginBtn   = document.getElementById('navBtnLogin');
-    var userBtn    = document.getElementById('navUserBtn');
-    var avatar     = document.getElementById('navUserAvatar');
-    var avatarLg   = document.getElementById('dropAvatarLg');
-    var nameEl     = document.getElementById('navUserName');
-    var roleEl     = document.getElementById('navUserRole');
-    var dropName   = document.getElementById('dropUserName');
-    var dropRole   = document.getElementById('dropUserRole');
-    var dropDash   = document.getElementById('dropDashboardLink');
-    var dropAdmin  = document.getElementById('dropAdminSection');
-    var dropLogout = document.getElementById('dropLogoutBtn');
-    var dropdown   = document.getElementById('navUserDropdown');
-
-    if (!loginBtn || !userBtn) return;
-
-    if (s && s.name && s.role) {
-      loginBtn.classList.add('hidden');
-      userBtn.classList.remove('hidden');
-      userBtn.classList.add('flex');
-
-      var initial = s.name.charAt(0).toUpperCase();
-      var color   = roleColor[s.role] || 'background:#001026';
-
-      // Avatar kecil di navbar
-      avatar.textContent = initial;
-      avatar.setAttribute('style', color + ';width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:12px;flex-shrink:0;');
-
-      // Avatar besar di dropdown header
-      if (avatarLg) {
-        avatarLg.textContent = initial;
-        avatarLg.setAttribute('style', color + ';width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:14px;flex-shrink:0;');
-      }
-
-      if (nameEl)   nameEl.textContent  = s.name;
-      if (roleEl)   roleEl.textContent  = roleLabel[s.role] || s.role;
-      if (dropName) dropName.textContent = s.name;
-      if (dropRole) dropRole.textContent = roleLabel[s.role] || s.role;
-      if (dropDash) dropDash.href        = dashLink[s.role] || 'dashboard/user/';
-
-      // Tampilkan section admin hanya kalau role admin
-      if (dropAdmin && s.role === 'admin') {
-        dropAdmin.classList.remove('hidden');
-      }
-    } else {
-      loginBtn.classList.remove('hidden');
-      userBtn.classList.add('hidden');
-      userBtn.classList.remove('flex');
-    }
-
-    // Toggle dropdown
-    userBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var open = dropdown.classList.toggle('hidden') === false;
-      userBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      var icon = userBtn.querySelector('.material-symbols-outlined:last-child');
-      if (icon) icon.textContent = open ? 'expand_less' : 'expand_more';
-    });
-
-    document.addEventListener('click', function () {
-      dropdown.classList.add('hidden');
-      userBtn.setAttribute('aria-expanded', 'false');
-      var icon = userBtn.querySelector('.material-symbols-outlined:last-child');
-      if (icon) icon.textContent = 'expand_more';
-    });
-
-    if (dropLogout) {
-      dropLogout.addEventListener('click', function () {
-        clearSession();
-        try { fetch('api/auth_user?action=logout', { credentials: 'same-origin', keepalive: true }).catch(function(){}); } catch(_) {}
-      });
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-</script>
+<script src="assets/js/home-auth.js?v=instant-profile-1"></script>
 </body></html>

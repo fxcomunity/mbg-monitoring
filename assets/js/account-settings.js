@@ -41,11 +41,19 @@
   }
 
   async function loadAccount() {
-    var response = await fetch(authUrl, {
-      credentials: 'same-origin',
-      cache: 'no-store',
-      headers: { Accept: 'application/json' }
-    });
+    var controller = new AbortController();
+    var timeout = window.setTimeout(function () { controller.abort(); }, 10000);
+    var response;
+    try {
+      response = await fetch(authUrl, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+        signal: controller.signal
+      });
+    } finally {
+      window.clearTimeout(timeout);
+    }
     if (!response.ok) throw new Error('Status akun tidak dapat diverifikasi.');
     var result = await response.json();
     if (!result.logged_in || !result.user || !roleLabels[result.user.role]) {

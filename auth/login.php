@@ -99,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link rel="stylesheet" href="../assets/css/site-footer.css"/>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -137,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       -webkit-backdrop-filter: blur(16px);
     }
   </style>
+  <script src="../assets/js/site-footer.js" defer></script>
 </head>
 <body class="relative bg-[#001026] font-sans text-primary min-h-screen flex flex-col justify-between selection:bg-[#6ffbbe] selection:text-[#001026] overflow-x-hidden">
   <!-- Fullscreen Video Background -->
@@ -367,9 +369,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </main>
   <!-- MINI FOOTER -->
-  <footer class="w-full py-4 text-center text-xs text-slate-400">
-    <p>© 2026 Badan Gizi Nasional (BGN) Republik Indonesia. Seluruh hak cipta dilindungi.</p>
-  </footer>
+  <div data-site-footer></div>
   <!-- SCRIPT INTERAKSI -->
   <script>
     // Tab switcher

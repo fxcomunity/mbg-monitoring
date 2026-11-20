@@ -14,11 +14,20 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
   function initLiveChatWidget() {
     if (document.getElementById('mbgLiveChatRoot')) return;
 
-    // Tentukan base path ke api/live_chat.php
-    const isSubfolder = window.location.pathname.includes('/features/') || 
-                        window.location.pathname.includes('/pages/') ||
-                        window.location.pathname.includes('/dashboard/');
-    const apiBase = isSubfolder ? '../../api/live_chat.php' : 'api/live_chat.php';
+    const chatScript = Array.from(document.scripts).find(script => /(?:^|\/)live_chat\.js(?:\?|$)/.test(script.src));
+    if (!chatScript) {
+      console.error('Live chat tidak dapat dimuat: lokasi skrip tidak ditemukan.');
+      return;
+    }
+
+    const apiBase = new URL('../../api/live_chat.php', chatScript.src).href;
+    const stylesheetUrl = new URL('../css/live-chat.css', chatScript.src).href;
+    if (!document.querySelector(`link[href="${stylesheetUrl}"]`)) {
+      const stylesheet = document.createElement('link');
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = stylesheetUrl;
+      document.head.appendChild(stylesheet);
+    }
 
     // Buat wadah utama floating widget
     const root = document.createElement('div');
@@ -27,25 +36,27 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
 
     root.innerHTML = `
       <!-- CHAT WINDOW (POPUP) -->
-      <div id="mbgChatBox" class="hidden flex flex-col w-[360px] sm:w-[410px] h-[580px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-slate-200/90 overflow-hidden mb-4 transition-all duration-200 origin-bottom-right scale-95 opacity-0">
+      <div id="mbgChatBackdrop" class="hidden" aria-hidden="true"></div>
+      <section id="mbgChatBox" role="dialog" aria-modal="true" aria-labelledby="chatDialogTitle" tabindex="-1" class="mbg-chat-box hidden flex flex-col bg-white rounded-3xl overflow-hidden mb-4 transition-all duration-200 origin-bottom-right scale-95 opacity-0">
+        <h2 id="chatDialogTitle" class="sr-only">Live Chat Radar MBG</h2>
         
         <!-- TOP CHANNEL BAR (TAB SELECTOR) -->
-        <div class="bg-[#001026] text-white px-3.5 py-2.5 flex items-center justify-between border-b border-white/10 shrink-0">
-          <div class="flex items-center gap-1.5 p-1 bg-white/10 rounded-xl">
-            <button id="btnTabSatgas" type="button" class="py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-[#001026] shadow-sm">
+        <div class="bg-[#001026] text-white px-3.5 py-3 flex items-center justify-between gap-2 border-b border-white/10 shrink-0">
+          <div role="tablist" aria-label="Pilih kanal live chat" class="flex items-center gap-1.5 p-1 bg-white/10 rounded-xl">
+            <button id="btnTabSatgas" type="button" role="tab" aria-selected="true" aria-controls="canvasSatgasBgn" class="py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-[#001026] shadow-sm">
               <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
               <span>Satgas BGN</span>
             </button>
-            <button id="btnTabSppg" type="button" class="py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white">
+            <button id="btnTabSppg" type="button" role="tab" aria-selected="false" aria-controls="canvasMitraSppg" class="py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white">
               <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
               <span>Mitra SPPG</span>
             </button>
           </div>
 
           <div class="flex items-center gap-1">
-            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true"></span>
             <span class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Live</span>
-            <button id="btnMinimizeChat" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors ml-1" title="Tutup Chat">
+            <button id="btnMinimizeChat" type="button" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors ml-1" aria-label="Tutup live chat" title="Tutup chat">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>
@@ -54,7 +65,7 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
         <!-- ======================================================== -->
         <!-- CANVAS 1: SATGAS BGN PUSAT (Pengawasan & Jaminan Mutu)  -->
         <!-- ======================================================== -->
-        <div id="canvasSatgasBgn" class="flex flex-col flex-1 h-full overflow-hidden">
+        <div id="canvasSatgasBgn" role="tabpanel" aria-labelledby="btnTabSatgas" class="flex flex-col flex-1 h-full overflow-hidden">
           
           <!-- Satgas Header Banner -->
           <div class="bg-gradient-to-r from-[#001026] via-[#0b2545] to-[#134074] text-white p-3.5 shrink-0 flex items-center justify-between border-b border-blue-900/40">
@@ -76,7 +87,7 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
           </div>
 
           <!-- Messages Stream Satgas -->
-          <div id="messagesSatgas" class="flex-grow p-3.5 overflow-y-auto space-y-3 bg-slate-50/70 text-xs">
+          <div id="messagesSatgas" role="log" aria-live="polite" aria-label="Percakapan Satgas BGN" class="flex-grow p-3.5 overflow-y-auto space-y-3 bg-slate-50/70 text-xs">
             <div class="flex items-start gap-2">
               <div class="w-7 h-7 rounded-full bg-[#001026] text-[#6ffbbe] flex items-center justify-center shrink-0 font-bold text-[10px] shadow-sm">BGN</div>
               <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200/80 shadow-sm max-w-[85%]">
@@ -111,9 +122,9 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
 
           <!-- Input Form Satgas -->
           <form id="formSatgas" class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0">
-            <input type="text" id="inputSatgas" placeholder="Ketik pertanyaan ke Satgas BGN..." required autocomplete="off"
+            <input type="text" id="inputSatgas" aria-label="Pesan untuk Satgas BGN" maxlength="1000" placeholder="Tulis pesan untuk Satgas..." required autocomplete="off"
                    class="flex-grow px-3.5 py-2.5 bg-slate-100 text-slate-900 placeholder:text-slate-400 rounded-2xl text-xs border border-transparent focus:bg-white focus:border-[#134074] focus:outline-none transition-all">
-            <button type="submit" class="w-10 h-10 rounded-2xl bg-[#001026] hover:bg-[#134074] text-white flex items-center justify-center transition-all shrink-0 shadow-sm active:scale-95">
+            <button type="submit" aria-label="Kirim pesan ke Satgas BGN" class="w-10 h-10 rounded-2xl bg-[#001026] hover:bg-[#134074] text-white flex items-center justify-center transition-all shrink-0 shadow-sm active:scale-95">
               <svg class="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
           </form>
@@ -123,7 +134,7 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
         <!-- ======================================================== -->
         <!-- CANVAS 2: MITRA DAPUR SPPG (Operasional, Menu, Alergen) -->
         <!-- ======================================================== -->
-        <div id="canvasMitraSppg" class="hidden flex flex-col flex-1 h-full overflow-hidden">
+        <div id="canvasMitraSppg" role="tabpanel" aria-labelledby="btnTabSppg" class="hidden flex flex-col flex-1 h-full overflow-hidden">
           
           <!-- SPPG Header Banner -->
           <div class="bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#047857] text-white p-3.5 shrink-0 flex flex-col gap-2 border-b border-emerald-900/40">
@@ -157,7 +168,7 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
           </div>
 
           <!-- Messages Stream SPPG -->
-          <div id="messagesSppg" class="flex-grow p-3.5 overflow-y-auto space-y-3 bg-slate-50/70 text-xs">
+          <div id="messagesSppg" role="log" aria-live="polite" aria-label="Percakapan Mitra SPPG" class="flex-grow p-3.5 overflow-y-auto space-y-3 bg-slate-50/70 text-xs">
             <div class="flex items-start gap-2">
               <div class="w-7 h-7 rounded-full bg-emerald-800 text-[#6ffbbe] flex items-center justify-center shrink-0 font-bold text-[10px] shadow-sm">SPPG</div>
               <div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200/80 shadow-sm max-w-[85%]">
@@ -192,19 +203,19 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
 
           <!-- Input Form SPPG -->
           <form id="formSppg" class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0">
-            <input type="text" id="inputSppg" placeholder="Tanya menu / porsi ke dapur SPPG..." required autocomplete="off"
+            <input type="text" id="inputSppg" aria-label="Pesan untuk Mitra SPPG" maxlength="1000" placeholder="Tulis pesan untuk dapur SPPG..." required autocomplete="off"
                    class="flex-grow px-3.5 py-2.5 bg-slate-100 text-slate-900 placeholder:text-slate-400 rounded-2xl text-xs border border-transparent focus:bg-white focus:border-emerald-600 focus:outline-none transition-all">
-            <button type="submit" class="w-10 h-10 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white flex items-center justify-center transition-all shrink-0 shadow-sm active:scale-95">
+            <button type="submit" aria-label="Kirim pesan ke Mitra SPPG" class="w-10 h-10 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white flex items-center justify-center transition-all shrink-0 shadow-sm active:scale-95">
               <svg class="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
           </form>
 
-        </div>
+        </section>
 
       </div>
 
       <!-- FLOATING TOGGLE BUTTON -->
-      <button id="btnToggleChat" type="button" aria-label="Buka Live Chat MBG" class="relative group flex items-center gap-2 px-4 py-3 rounded-full bg-[#001026] hover:bg-[#134074] text-white shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white/20">
+      <button id="btnToggleChat" type="button" aria-label="Buka Live Chat MBG" aria-expanded="false" aria-controls="mbgChatBox" class="relative group flex items-center gap-2 px-4 py-3 rounded-full bg-[#001026] hover:bg-[#134074] text-white shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white/20">
         <div class="relative flex items-center justify-center">
           <svg class="w-6 h-6 text-[#6ffbbe]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
@@ -241,6 +252,7 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
 
     // Element References
     const chatBox = document.getElementById('mbgChatBox');
+    const chatBackdrop = document.getElementById('mbgChatBackdrop');
     const btnToggle = document.getElementById('btnToggleChat');
     const btnClose = document.getElementById('btnMinimizeChat');
     const btnTabSatgas = document.getElementById('btnTabSatgas');
@@ -255,6 +267,8 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
     const inputSppg = document.getElementById('inputSppg');
     const sppgSelector = document.getElementById('chatSppgSelector');
     const sppgWelcomeName = document.getElementById('sppgWelcomeName');
+    const btnSatgasSend = formSatgas.querySelector('[type="submit"]');
+    const btnSppgSend = formSppg.querySelector('[type="submit"]');
 
     // Switch Canvas Tab
     function switchCanvas(canvas) {
@@ -262,6 +276,8 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
       if (canvas === 'satgas') {
         canvasSatgas.classList.remove('hidden');
         canvasSppg.classList.add('hidden');
+        btnTabSatgas.setAttribute('aria-selected', 'true');
+        btnTabSppg.setAttribute('aria-selected', 'false');
         btnTabSatgas.className = 'py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-[#001026] shadow-sm';
         btnTabSppg.className = 'py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white';
         inputSatgas.focus();
@@ -269,6 +285,8 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
       } else {
         canvasSppg.classList.remove('hidden');
         canvasSatgas.classList.add('hidden');
+        btnTabSppg.setAttribute('aria-selected', 'true');
+        btnTabSatgas.setAttribute('aria-selected', 'false');
         btnTabSppg.className = 'py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-white text-emerald-900 shadow-sm';
         btnTabSatgas.className = 'py-1 px-3 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-300 hover:text-white';
         inputSppg.focus();
@@ -288,12 +306,20 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
       }
 
       if (isChatOpen) {
+        root.classList.add('is-open');
+        btnToggle.setAttribute('aria-expanded', 'true');
+        btnToggle.setAttribute('aria-label', 'Tutup Live Chat MBG');
+        chatBackdrop.classList.remove('hidden');
         chatBox.classList.remove('hidden');
         setTimeout(() => {
           chatBox.classList.remove('scale-95', 'opacity-0');
           chatBox.classList.add('scale-100', 'opacity-100');
-          if (currentCanvas === 'satgas') inputSatgas.focus();
-          else inputSppg.focus();
+          if (window.matchMedia('(min-width: 641px)').matches) {
+            if (currentCanvas === 'satgas') inputSatgas.focus();
+            else inputSppg.focus();
+          } else {
+            chatBox.focus();
+          }
         }, 10);
 
         // Load history & mulai polling
@@ -302,17 +328,49 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
         loadSppgDropdown();
         startPolling();
       } else {
+        root.classList.remove('is-open');
+        btnToggle.setAttribute('aria-expanded', 'false');
+        btnToggle.setAttribute('aria-label', 'Buka Live Chat MBG');
+        chatBackdrop.classList.add('hidden');
         chatBox.classList.remove('scale-100', 'opacity-100');
         chatBox.classList.add('scale-95', 'opacity-0');
         setTimeout(() => {
           chatBox.classList.add('hidden');
         }, 200);
         stopPolling();
+        if (document.activeElement !== btnToggle) btnToggle.focus();
       }
     }
 
-    btnToggle.addEventListener('click', toggleChat);
+    btnToggle.addEventListener('click', () => toggleChat());
     btnClose.addEventListener('click', () => toggleChat(false));
+    chatBackdrop.addEventListener('click', () => toggleChat(false));
+    chatBox.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        toggleChat(false);
+        return;
+      }
+
+      if (event.key === 'Tab') {
+        const focusable = Array.from(chatBox.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled])'))
+          .filter(element => element.getClientRects().length > 0);
+        if (!focusable.length) {
+          event.preventDefault();
+          return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && (document.activeElement === first || !focusable.includes(document.activeElement))) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (document.activeElement === last || !focusable.includes(document.activeElement))) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    });
 
     // Update Welcome Name on SPPG change
     if (sppgSelector) {
@@ -347,6 +405,7 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
     async function loadSppgDropdown() {
       try {
         const res = await fetch(`${apiBase}?action=sppg_list`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         if (json.status === 'success' && json.data && json.data.length > 0) {
           sppgSelector.innerHTML = '';
@@ -359,31 +418,35 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
           });
           if (sppgWelcomeName) sppgWelcomeName.textContent = sppgSelector.value;
         }
-      } catch (e) {}
+      } catch (err) {
+        console.warn('Gagal memuat daftar SPPG untuk live chat:', err);
+      }
     }
 
     // Append Message to UI
     function appendMessage(container, msg) {
       const isUser = msg.sender_type === 'user';
-      const isOfficialHuman = (msg.sender_type === 'admin' || msg.sender_type === 'sppg') && !msg.is_template;
+      const isSystem = msg.sender_type === 'system';
 
       const div = document.createElement('div');
       div.className = isUser ? 'flex items-start justify-end gap-2' : 'flex items-start gap-2';
 
       let badgeHtml = '';
-      if (msg.sender_type === 'admin') {
+      if (isSystem) {
+        badgeHtml = '<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[9px] font-bold">Info</span>';
+      } else if (msg.sender_type === 'admin') {
         badgeHtml = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-[9px] font-bold"><svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>Satgas BGN</span>`;
       } else if (msg.sender_type === 'sppg') {
         badgeHtml = `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold"><svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.06 23h1.66c.84 0 1.53-.65 1.63-1.48L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.06zM1 22c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-4H1v4zm14-7H1V9c0-1.66 1.34-3 3-3h8c1.66 0 3 1.34 3 3v6z"/></svg>Mitra SPPG</span>`;
       }
 
       const content = `
-        ${!isUser ? `
+        ${!isUser && !isSystem ? `
           <div class="w-7 h-7 rounded-full ${msg.sender_type === 'sppg' ? 'bg-emerald-700' : 'bg-[#001026]'} text-[#6ffbbe] flex items-center justify-center shrink-0 font-bold text-[10px] shadow-sm">
             ${msg.sender_type === 'sppg' ? 'SPPG' : 'BGN'}
           </div>
         ` : ''}
-        <div class="${isUser ? 'bg-[#001026] text-white rounded-tr-none' : 'bg-white text-slate-800 rounded-tl-none border border-slate-200/80'} p-3 rounded-2xl shadow-sm max-w-[85%]">
+        <div class="${isUser ? 'bg-[#001026] text-white rounded-tr-none' : isSystem ? 'bg-amber-50 text-amber-950 border border-amber-200' : 'bg-white text-slate-800 rounded-tl-none border border-slate-200/80'} p-3 rounded-2xl shadow-sm max-w-[85%]">
           <div class="flex items-center gap-1.5 mb-1 ${isUser ? 'justify-end' : ''}">
             <span class="font-bold text-[11px] ${isUser ? 'text-[#6ffbbe]' : 'text-slate-900'}">${escapeHtml(msg.sender_name || (isUser ? 'Anda' : 'Petugas'))}</span>
             ${badgeHtml}
@@ -408,8 +471,11 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
       const text = inputEl.value.trim();
       if (!text) return;
 
+      const sendButton = targetType === 'sppg' ? btnSppgSend : btnSatgasSend;
       inputEl.value = '';
       inputEl.disabled = true;
+      sendButton.disabled = true;
+      sendButton.setAttribute('aria-busy', 'true');
 
       const targetSppg = (targetType === 'sppg' && sppgSelector) ? sppgSelector.value : '';
 
@@ -448,24 +514,30 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
         // Hapus typing
         typingDiv.remove();
 
-        if (json.status === 'success') {
-          if (json.auto_reply) {
-            appendMessage(container, json.auto_reply);
-            if (targetType === 'admin') lastIdSatgas = json.auto_reply.id || lastIdSatgas;
-            if (targetType === 'sppg') lastIdSppg = json.auto_reply.id || lastIdSppg;
-          }
+        if (!res.ok || json.status !== 'success') {
+          throw new Error(json.message || 'Pesan belum dapat dikirim.');
+        }
+
+        if (json.auto_reply) {
+          appendMessage(container, json.auto_reply);
+          if (targetType === 'admin') lastIdSatgas = json.auto_reply.id || lastIdSatgas;
+          if (targetType === 'sppg') lastIdSppg = json.auto_reply.id || lastIdSppg;
         }
       } catch (err) {
         typingDiv.remove();
+        inputEl.value = inputEl.value || text;
+        console.error('Gagal mengirim pesan live chat:', err);
         appendMessage(container, {
-          sender_type: targetType,
+          sender_type: 'system',
           sender_name: 'Sistem',
-          message: 'Pesan Anda telah dicatat. Petugas akan segera membalas.',
+          message: 'Pesan belum terkirim. Periksa koneksi internet, lalu coba kirim lagi.',
           created_at: new Date().toISOString()
         });
       } finally {
         inputEl.disabled = false;
-        inputEl.focus();
+        sendButton.disabled = false;
+        sendButton.removeAttribute('aria-busy');
+        if (isChatOpen) inputEl.focus();
       }
     }
 
@@ -487,11 +559,13 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
         if (!msg) return;
 
         if (target === 'admin') {
+          if (currentCanvas !== 'satgas') switchCanvas('satgas');
           inputSatgas.value = msg;
-          sendMessage('admin', sessionSatgas, inputSatgas, messagesSatgas);
+          inputSatgas.focus();
         } else {
+          if (currentCanvas !== 'sppg') switchCanvas('sppg');
           inputSppg.value = msg;
-          sendMessage('sppg', sessionSppg, inputSppg, messagesSppg);
+          inputSppg.focus();
         }
       });
     });
@@ -506,6 +580,7 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
         if (currentCanvas === 'satgas') {
           try {
             const res = await fetch(`${apiBase}?action=poll&session_id=${encodeURIComponent(sessionSatgas)}&after_id=${lastIdSatgas}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const json = await res.json();
             if (json.status === 'success' && json.messages && json.messages.length > 0) {
               json.messages.forEach(m => {
@@ -516,11 +591,14 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
                 if (m.id > lastIdSatgas) lastIdSatgas = m.id;
               });
             }
-          } catch (e) {}
+          } catch (err) {
+            console.warn('Gagal memeriksa pesan baru Satgas BGN:', err);
+          }
         } else {
           // Poll SPPG Canvas
           try {
             const res = await fetch(`${apiBase}?action=poll&session_id=${encodeURIComponent(sessionSppg)}&after_id=${lastIdSppg}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const json = await res.json();
             if (json.status === 'success' && json.messages && json.messages.length > 0) {
               json.messages.forEach(m => {
@@ -530,7 +608,9 @@ const OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY";
                 if (m.id > lastIdSppg) lastIdSppg = m.id;
               });
             }
-          } catch (e) {}
+          } catch (err) {
+            console.warn('Gagal memeriksa pesan baru Mitra SPPG:', err);
+          }
         }
       }, 3500);
     }

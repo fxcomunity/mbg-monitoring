@@ -160,12 +160,14 @@ class Auth {
                         COALESCE(l.is_permanent, FALSE) AS lockout_permanent,
                         COALESCE(l.is_permanent OR l.locked_until > NOW(), FALSE) AS lockout_blocked,
                         u.id, u.username, u.email, u.password_hash, u.salt, u.full_name,
-                        u.role, u.sppg_name, u.sppg_code, u.is_active, u.status_verifikasi, u.session_version
+                        u.role, u.sppg_name, u.sppg_code, u.avatar_url,
+                        u.is_active, u.status_verifikasi, u.session_version
                  FROM (SELECT 1) AS request
                  LEFT JOIN auth_ip_lockouts l ON l.ip_address = ?
                  LEFT JOIN LATERAL (
                     SELECT id, username, email, password_hash, salt, full_name,
-                           role, sppg_name, sppg_code, is_active, status_verifikasi, session_version
+                           role, sppg_name, sppg_code, avatar_url,
+                           is_active, status_verifikasi, session_version
                     FROM users
                     WHERE (username = ? OR email = ?)
                       AND NOT COALESCE(l.is_permanent OR l.locked_until > NOW(), FALSE)
@@ -223,7 +225,8 @@ class Auth {
                     'username'  => $user['username'],
                     'full_name' => $user['full_name'],
                     'role'      => $user['role'],
-                    'sppg_name' => $user['sppg_name']
+                    'sppg_name' => $user['sppg_name'],
+                    'avatar_url' => $user['avatar_url'] ?? ''
                 ]
             ];
         } catch (Throwable $e) {

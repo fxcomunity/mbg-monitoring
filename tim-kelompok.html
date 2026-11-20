@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Tim Kelompok — Radar MBG Nasional</title>
+  <meta name="description" content="Profil anggota tim kelompok pengembang sistem Radar MBG Nasional, beserta pembagian tugas masing-masing divisi."/>
+  <link rel="icon" type="image/webp" href="assets/images/favicon.webp"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#001026",
+            "primary-container": "#0b2545",
+            "surface": "#f8f9ff",
+            "surface-card": "#ffffff",
+            "surface-container-low": "#eff4ff",
+            "on-surface": "#0b1c30",
+            "on-surface-variant": "#44474e",
+            "border-subtle": "#E2E8F0",
+            "secondary": "#395f95",
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    ::-webkit-scrollbar { display: none; }
+    .hero-bg { background: linear-gradient(135deg,#001026 0%,#0b2545 55%,#134074 100%); }
+    .hero-video { filter: saturate(.8); }
+    .org-root { position: relative; }
+    .org-root::after { content: ""; position: absolute; top: 100%; left: 50%; height: 3rem; border-left: 2px solid #cbd5e1; }
+    .org-branches { position: relative; }
+    .org-branches::before { content: ""; position: absolute; top: 0; left: 16.666%; right: 16.666%; border-top: 2px solid #cbd5e1; }
+    .org-branch { position: relative; transition: transform .2s ease, box-shadow .2s ease; }
+    .org-branch:hover { transform: translateY(-3px); box-shadow: 0 18px 36px rgba(0,16,38,.09); }
+    .org-branch::before { content: ""; position: absolute; top: -1.5rem; left: 50%; height: 1.5rem; border-left: 2px solid #cbd5e1; }
+    .member-node { transition: transform .2s ease, box-shadow .2s ease; }
+    .member-node:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,16,38,.09); }
+    .member-node:focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }
+    .profile-dialog { width: min(92vw, 32rem); max-height: 85vh; }
+    .profile-dialog::backdrop { background: rgba(0,16,38,.68); backdrop-filter: blur(4px); }
+    @media (max-width: 767px) {
+      .org-branches { gap: 1.5rem; }
+      .org-branches::before { display: none; }
+      .org-branch::before { display: none; }
+      .org-root::after { display: none; }
+    }
+  </style>
+  <link rel="stylesheet" href="assets/css/site-footer.css"/>
+  <script src="assets/js/site-footer.js" defer></script>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+
+<!-- HEADER -->
+<header class="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+  <div class="h-20 w-full px-4 sm:px-6 flex items-center justify-between gap-4">
+    <a href="index.html" class="flex items-center gap-3 group shrink-0">
+      <img src="assets/images/favicon.webp" alt="Logo Badan Gizi Nasional" class="h-10 sm:h-12 w-auto object-contain group-hover:scale-105 transition-transform drop-shadow-sm"/>
+      <div class="flex flex-col">
+        <span class="text-base font-bold text-primary tracking-tight">Radar MBG</span>
+        <span class="text-xs text-on-surface-variant font-medium hidden sm:block">Badan Gizi Nasional RI</span>
+      </div>
+    </a>
+    <a href="index.html" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:bg-[#0b2545] transition-colors shadow-sm">
+      <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+      Kembali ke Beranda
+    </a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero-bg pt-32 pb-16 px-4 sm:px-8 relative overflow-hidden">
+  <video class="hero-video absolute inset-0 h-full w-full object-cover opacity-50 pointer-events-none" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1">
+    <source src="https://res.cloudinary.com/dgenxagit/video/upload/v1791923878/gemini_generated_video_22b0321d.mp4" type="video/mp4"/>
+  </video>
+  <div class="absolute inset-0 bg-gradient-to-br from-[#001026]/80 via-[#001026]/65 to-[#134074]/80 pointer-events-none"></div>
+  <div class="absolute inset-0 opacity-10 pointer-events-none">
+    <div class="absolute top-10 left-10 w-72 h-72 rounded-full bg-teal-400 blur-3xl"></div>
+    <div class="absolute bottom-0 right-10 w-96 h-96 rounded-full bg-blue-500 blur-3xl"></div>
+  </div>
+  <div class="max-w-4xl mx-auto text-center relative z-10">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md mb-6">
+      <span class="material-symbols-outlined text-[#6ffbbe] text-[18px]">groups</span>
+      <span class="text-xs font-bold text-white/80 uppercase tracking-widest">Proyek Akhir 2026</span>
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
+      Tim Kelompok<br/>
+      <span class="text-[#6ffbbe]">Radar MBG Nasional</span>
+    </h1>
+    <p class="text-sm sm:text-base text-white/70 max-w-2xl mx-auto leading-relaxed">
+      Sistem monitoring program Makan Bergizi Gratis dikembangkan oleh tim mahasiswa yang terbagi dalam tiga divisi utama dengan peran dan tanggung jawab masing-masing.
+    </p>
+    <div class="flex flex-wrap justify-center gap-3 mt-8">
+      <span class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-xs font-semibold">
+        <span class="material-symbols-outlined text-[15px] text-[#6ffbbe]">description</span> Divisi Proposal
+      </span>
+      <span class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-xs font-semibold">
+        <span class="material-symbols-outlined text-[15px] text-[#6ffbbe]">article</span> Divisi Laporan Akhir
+      </span>
+      <span class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-xs font-semibold">
+        <span class="material-symbols-outlined text-[15px] text-[#6ffbbe]">code</span> Web Dev &amp; Database
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- CONTENT -->
+<main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-8 py-14 sm:py-16">
+  <div class="text-center mb-12">
+    <span class="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[.16em] text-secondary">
+      <span class="material-symbols-outlined text-base">account_tree</span>
+      Struktur Kelompok
+    </span>
+    <h2 class="mt-4 text-2xl sm:text-3xl font-bold text-primary">Kenali Tim Kami</h2>
+    <p class="mt-3 text-sm text-on-surface-variant">Pilih nama anggota untuk melihat profil lengkap dan tanggung jawabnya.</p>
+  </div>
+
+  <div class="org-root max-w-sm mx-auto mb-12 rounded-2xl bg-gradient-to-br from-[#001026] to-[#134074] text-white px-6 py-5 text-center shadow-lg shadow-blue-950/15">
+    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
+      <span class="material-symbols-outlined text-[#6ffbbe] text-2xl">groups</span>
+    </span>
+    <p class="mt-3 text-base font-bold">Tim Proyek Akhir 2026</p>
+    <p class="mt-1 text-xs text-white/70">Radar MBG Nasional</p>
+    <div class="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/80">
+      <span class="h-1.5 w-1.5 rounded-full bg-[#6ffbbe]"></span>
+      5 Anggota <span class="text-white/40">•</span> 3 Divisi
+    </div>
+  </div>
+
+  <div class="org-branches grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+    <section class="org-branch rounded-2xl border border-blue-100 bg-white p-5 sm:p-6 shadow-sm" aria-labelledby="proposal-title">
+      <div class="mb-5 flex items-center gap-3 border-b border-blue-100 pb-4">
+        <span class="material-symbols-outlined flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-800">description</span>
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-[.14em] text-blue-700">Divisi 01</p>
+          <h3 id="proposal-title" class="mt-0.5 font-bold text-primary">Proposal</h3>
+        </div>
+        <span class="ml-auto rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-800">2 orang</span>
+      </div>
+      <div class="space-y-3">
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-blue-300 hover:bg-blue-50/60" data-member data-name="Wahyudi" data-nim="19250550" data-division="Divisi Proposal" data-description="Bertanggung jawab atas perencanaan dan penyusunan dokumen proposal, termasuk konsep, latar belakang, tujuan, ruang lingkup, serta kebutuhan proyek.">
+          <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#001026] to-[#395f95] text-sm font-bold text-white ring-4 ring-blue-50">W</span>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Wahyudi</span><span class="mt-1 block text-[11px] font-semibold text-secondary">Lihat profil anggota</span></span>
+          <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-blue-700" aria-hidden="true">arrow_forward</span>
+        </button>
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-blue-300 hover:bg-blue-50/60" data-member data-name="Ahmad Rafi Baihaqi" data-nim="19251296" data-division="Divisi Proposal" data-description="Bertanggung jawab atas perencanaan dan penyusunan dokumen proposal, termasuk konsep, latar belakang, tujuan, ruang lingkup, serta kebutuhan proyek.">
+          <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#001026] to-[#395f95] text-xs font-bold text-white ring-4 ring-blue-50">AR</span>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Ahmad Rafi Baihaqi</span><span class="mt-1 block text-[11px] font-semibold text-secondary">Lihat profil anggota</span></span>
+          <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-blue-700" aria-hidden="true">arrow_forward</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="org-branch rounded-2xl border border-emerald-100 bg-white p-5 sm:p-6 shadow-sm" aria-labelledby="report-title">
+      <div class="mb-5 flex items-center gap-3 border-b border-emerald-100 pb-4">
+        <span class="material-symbols-outlined flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800">article</span>
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-[.14em] text-emerald-700">Divisi 02</p>
+          <h3 id="report-title" class="mt-0.5 font-bold text-primary">Laporan Akhir</h3>
+        </div>
+        <span class="ml-auto rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">2 orang</span>
+      </div>
+      <div class="space-y-3">
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-emerald-300 hover:bg-emerald-50/60" data-member data-name="Putra Anugrah" data-nim="19251494" data-division="Divisi Laporan Akhir" data-description="Bertanggung jawab atas penyusunan dan dokumentasi hasil proyek, mulai dari perencanaan dan pengembangan hingga pengujian dan hasil akhir.">
+          <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-900 to-emerald-600 text-sm font-bold text-white ring-4 ring-emerald-50">P</span>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Putra Anugrah</span><span class="mt-1 block text-[11px] font-semibold text-emerald-700">Lihat profil anggota</span></span>
+          <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-emerald-700" aria-hidden="true">arrow_forward</span>
+        </button>
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-emerald-300 hover:bg-emerald-50/60" data-member data-name="Amanda Saptama Putri" data-nim="19250269" data-division="Divisi Laporan Akhir" data-description="Bertanggung jawab atas penyusunan dan dokumentasi hasil proyek, mulai dari perencanaan dan pengembangan hingga pengujian dan hasil akhir.">
+          <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-900 to-emerald-600 text-xs font-bold text-white ring-4 ring-emerald-50">AS</span>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Amanda Saptama Putri</span><span class="mt-1 block text-[11px] font-semibold text-emerald-700">Lihat profil anggota</span></span>
+          <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-emerald-700" aria-hidden="true">arrow_forward</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="org-branch rounded-2xl border border-purple-100 bg-white p-5 sm:p-6 shadow-sm" aria-labelledby="development-title">
+      <div class="mb-5 flex items-center gap-3 border-b border-purple-100 pb-4">
+        <span class="material-symbols-outlined flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-800">code</span>
+        <div>
+          <p class="text-[10px] font-bold uppercase tracking-[.14em] text-purple-700">Divisi 03</p>
+          <h3 id="development-title" class="mt-0.5 font-bold text-primary">Web Dev &amp; Database</h3>
+        </div>
+        <span class="ml-auto rounded-full bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-800">1 orang</span>
+      </div>
+      <div class="space-y-3">
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-purple-300 hover:bg-purple-50/60" data-member data-name="Muhammad Rizki Sumantri" data-nim="19250779" data-division="Divisi Web Development &amp; Database" data-description="Bertanggung jawab atas perancangan dan pengembangan website serta pengelolaan basis data, termasuk antarmuka, fitur, integrasi, dan kebutuhan sistem." data-photo="assets/images/kelompok/MuhammadRizkiSumantri.png">
+          <img src="assets/images/kelompok/MuhammadRizkiSumantri.png" alt="" class="h-12 w-12 shrink-0 rounded-full object-cover ring-4 ring-purple-50"/>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Muhammad Rizki Sumantri</span><span class="mt-1 block text-[11px] font-semibold text-purple-700">Lihat profil anggota</span></span>
+          <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-purple-700" aria-hidden="true">arrow_forward</span>
+        </button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<dialog id="memberProfileDialog" class="profile-dialog m-auto rounded-3xl border-0 bg-white p-0 text-on-surface shadow-2xl">
+  <div class="relative p-6 sm:p-8">
+    <button type="button" id="closeMemberProfile" class="absolute right-4 top-4 rounded-full p-2 text-slate-500 hover:bg-slate-100 hover:text-primary focus:outline-none focus:ring-2 focus:ring-secondary" aria-label="Tutup profil">
+      <span class="material-symbols-outlined block">close</span>
+    </button>
+    <div class="flex items-center gap-4 pr-8">
+      <div class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-100">
+        <img id="memberProfilePhoto" class="hidden h-full w-full object-cover" alt=""/>
+        <span id="memberProfilePlaceholder" class="material-symbols-outlined text-4xl text-slate-400" aria-hidden="true">person</span>
+      </div>
+      <div class="min-w-0">
+        <p id="memberProfileDivision" class="text-xs font-bold uppercase tracking-wide text-secondary"></p>
+        <h2 id="memberProfileName" class="mt-1 text-xl font-bold text-primary"></h2>
+        <p id="memberProfileNim" class="mt-1 text-sm font-medium text-on-surface-variant"></p>
+      </div>
+    </div>
+    <div class="mt-6 rounded-2xl bg-slate-50 p-4">
+      <h3 class="mb-2 flex items-center gap-2 text-sm font-bold text-primary">
+        <span class="material-symbols-outlined text-secondary">task_alt</span>
+        Tanggung Jawab
+      </h3>
+      <p id="memberProfileDescription" class="text-sm leading-relaxed text-on-surface-variant"></p>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  (function () {
+    var dialog = document.getElementById('memberProfileDialog');
+    var photo = document.getElementById('memberProfilePhoto');
+    var placeholder = document.getElementById('memberProfilePlaceholder');
+
+    document.querySelectorAll('[data-member]').forEach(function (member) {
+      member.addEventListener('click', function () {
+        document.getElementById('memberProfileName').textContent = member.dataset.name;
+        document.getElementById('memberProfileNim').textContent = 'NIM: ' + member.dataset.nim;
+        document.getElementById('memberProfileDivision').textContent = member.dataset.division;
+        document.getElementById('memberProfileDescription').textContent = member.dataset.description;
+
+        if (member.dataset.photo) {
+          photo.src = member.dataset.photo;
+          photo.alt = 'Foto ' + member.dataset.name;
+          photo.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+        } else {
+          photo.removeAttribute('src');
+          photo.alt = '';
+          photo.classList.add('hidden');
+          placeholder.classList.remove('hidden');
+        }
+
+        dialog.showModal();
+      });
+    });
+
+    document.getElementById('closeMemberProfile').addEventListener('click', function () {
+      dialog.close();
+    });
+
+    dialog.addEventListener('click', function (event) {
+      if (event.target === dialog) dialog.close();
+    });
+  })();
+</script>
+
+<!-- FOOTER -->
+<div data-site-footer></div>
+
+</body>
+</html>

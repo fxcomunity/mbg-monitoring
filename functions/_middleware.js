@@ -18,7 +18,7 @@ export function securityHeaders(response, request) {
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('X-Frame-Options', 'SAMEORIGIN');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  headers.set('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
+  headers.set('Permissions-Policy', 'geolocation=(self), camera=(), microphone=(self)');
   // Intentionally no script-src/default-src: existing inline scripts and CDNs remain compatible.
   const baseline = "base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self'";
   const existing = headers.get('Content-Security-Policy');

@@ -39,6 +39,51 @@ export async function onRequestPost(context) {
   const form = await request.formData().catch(() => null);
   if (!form) return json({ status: 'error', message: 'Data laporan tidak dapat dibaca.' }, 400);
 
+  if (form.get('action') === 'admin_update') {
+    let session;
+    try {
+      session = await getSession(request, env);
+    } catch (error) {
+      console.error('Report admin session verification failed:', error);
+      return json({ status: 'error', message: 'Sesi administrator tidak dapat diverifikasi.' }, 503);
+    }
+    if (!session || session.role !== 'admin') {
+      return json({ status: 'error', message: 'Akses hanya untuk Admin Satgas.' }, 403);
+    }
+
+    const ticketCode = String(form.get('ticket_code') || '').trim();
+    const status = String(form.get('status') || '');
+    const notes = String(form.get('satgas_notes') || '').trim();
+    const validStatuses = ['masuk', 'verifikasi', 'proses', 'selesai', 'ditolak'];
+    if (!/^[A-Za-z0-9-]{1,60}$/.test(ticketCode) || !validStatuses.includes(status) || notes.length > 2000) {
+      return json({ status: 'error', message: 'Data pembaruan aduan tidak valid.' }, 422);
+    }
+
+    try {
+      const updated = await dbQuery(env.DATABASE_URL,
+        `WITH target AS (
+           SELECT id, status FROM laporan_aduan WHERE ticket_code = $1 FOR UPDATE
+         ), changed AS (
+           UPDATE laporan_aduan AS report
+           SET status = $2, satgas_notes = NULLIF($3, ''), updated_at = NOW()
+           FROM target
+           WHERE report.id = target.id
+           RETURNING report.id, target.status AS old_status, report.status AS new_status
+         )
+         INSERT INTO aduan_log (laporan_id, old_status, new_status, changed_by, notes)
+         SELECT id, old_status, new_status, $4, NULLIF($3, '')
+         FROM changed
+         RETURNING laporan_id`,
+        [ticketCode, status, notes, String(session.username || 'admin').slice(0, 80)]
+      );
+      if (!updated[0]) return json({ status: 'error', message: 'Tiket tidak ditemukan di server.' }, 404);
+      return json({ status: 'success', message: 'Aduan berhasil diperbarui.' });
+    } catch (error) {
+      console.error('Report admin update failed:', error);
+      return json({ status: 'error', message: 'Pembaruan aduan gagal disimpan.' }, 500);
+    }
+  }
+
   const reporterName = String(form.get('reporter_name') || '').trim();
   const reporterPhone = String(form.get('reporter_phone') || '').trim();
   const reporterRole = String(form.get('reporter_role') || '').trim();
@@ -119,6 +164,33 @@ export async function onRequestGet(context) {
   const { request, env } = context;
   const url    = new URL(request.url);
   const photoKey = url.searchParams.get('photo');
+
+  if (url.searchParams.get('action') === 'admin_list') {
+    let session;
+    try {
+      session = await getSession(request, env);
+    } catch (error) {
+      console.error('Report admin session verification failed:', error);
+      return json({ status: 'error', message: 'Sesi administrator tidak dapat diverifikasi.' }, 503);
+    }
+    if (!session || session.role !== 'admin') {
+      return json({ status: 'error', message: 'Akses hanya untuk Admin Satgas.' }, 403);
+    }
+    try {
+      const reports = await dbQuery(env.DATABASE_URL,
+        `SELECT ticket_code, reporter_name, reporter_role, issue_category, school_target,
+                incident_date, description, photo_path, status, priority, satgas_notes,
+                created_at, updated_at
+         FROM laporan_aduan
+         ORDER BY created_at DESC
+         LIMIT 100`
+      );
+      return json({ status: 'success', data: reports });
+    } catch (error) {
+      console.error('Report admin list failed:', error);
+      return json({ status: 'error', message: 'Daftar aduan tidak dapat dimuat dari server.' }, 503);
+    }
+  }
 
   if (photoKey !== null) {
     const session = await getSession(request, env);

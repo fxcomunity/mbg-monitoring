@@ -1,0 +1,129 @@
+#mbgLiveChatRoot {
+  z-index: 9999;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+#mbgLiveChatRoot * {
+  box-sizing: border-box;
+}
+
+#mbgChatBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(0, 16, 38, .52);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+#mbgChatBox {
+  width: min(410px, calc(100vw - 2.5rem));
+  height: min(640px, calc(100vh - 7rem));
+  height: min(640px, calc(100dvh - 7rem));
+  min-height: 380px;
+  border: 1px solid rgba(148, 163, 184, .35);
+  box-shadow: 0 24px 80px rgba(0, 16, 38, .28);
+}
+
+#mbgChatBox [role="tab"] {
+  min-height: 40px;
+}
+
+#mbgChatBox [role="tab"]:focus-visible,
+#mbgChatBox button:focus-visible,
+#mbgChatBox select:focus-visible,
+#mbgChatBox input:focus-visible {
+  outline: 3px solid #6ffbbe;
+  outline-offset: 2px;
+}
+
+#mbgChatBox [role="log"] {
+  min-height: 0;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+#mbgChatBox .quick-chip {
+  min-height: 36px;
+}
+
+#mbgChatBox form {
+  padding: .75rem;
+  padding-bottom: max(.75rem, env(safe-area-inset-bottom));
+}
+
+#mbgChatBox form input {
+  min-width: 0;
+  min-height: 46px;
+  font-size: 16px;
+}
+
+#mbgChatBox form button {
+  width: 46px;
+  height: 46px;
+}
+
+#btnToggleChat {
+  min-height: 52px;
+  box-shadow: 0 12px 32px rgba(0, 16, 38, .28);
+}
+
+#mbgLiveChatRoot.is-open #btnToggleChat {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  #mbgLiveChatRoot {
+    right: max(.75rem, env(safe-area-inset-right));
+    bottom: max(.75rem, env(safe-area-inset-bottom));
+  }
+
+  #mbgLiveChatRoot:has(#mbgChatBox:not(.hidden)) {
+    inset: 0;
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+
+  #mbgChatBackdrop:not(.hidden) {
+    display: block;
+  }
+
+  #mbgChatBox {
+    position: fixed;
+    inset: auto 0 0;
+    width: 100%;
+    height: min(760px, 92vh);
+    height: min(760px, 92dvh);
+    min-height: min(440px, 88vh);
+    max-height: 100%;
+    margin: 0;
+    border-radius: 1.5rem 1.5rem 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    transform-origin: bottom center;
+  }
+
+  #mbgChatBox .quick-chip {
+    white-space: normal;
+    flex: 0 0 auto;
+  }
+
+  #btnToggleChat {
+    min-height: 50px;
+    padding: .75rem 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #mbgLiveChatRoot *,
+  #mbgLiveChatRoot *::before,
+  #mbgLiveChatRoot *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -1,0 +1,115 @@
+.site-footer {
+  color: rgba(255, 255, 255, .72);
+  background: linear-gradient(135deg, #001026 0%, #071b35 55%, #0b2545 100%);
+  border-color: rgba(255, 255, 255, .1) !important;
+}
+
+.site-footer > div {
+  width: 100%;
+  padding: 2.5rem 1.5rem;
+}
+
+.site-footer > div > .grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.site-footer .gap-space-xl { gap: 2.5rem; }
+.site-footer .gap-space-lg { gap: 1.5rem; }
+.site-footer .gap-space-md { gap: 1rem; }
+.site-footer .gap-space-sm { gap: .5rem; }
+.site-footer .gap-space-xs { gap: .25rem; }
+.site-footer .px-space-lg { padding-inline: 1.5rem; }
+.site-footer .py-space-xl { padding-block: 2.5rem; }
+.site-footer .mb-space-xl { margin-bottom: 2.5rem; }
+.site-footer .pt-space-lg { padding-top: 1.5rem; }
+.site-footer .p-space-md { padding: 1rem; }
+.site-footer.mt-space-xl { margin-top: 2.5rem; }
+
+.site-footer .font-body-sm,
+.site-footer .text-body-sm {
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.site-footer .font-headline-sm,
+.site-footer .text-headline-sm {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.site-footer .border-border-subtle {
+  border-color: rgba(255, 255, 255, .1) !important;
+}
+
+.site-footer .font-label-sm,
+.site-footer .text-label-sm {
+  font-size: .6875rem;
+  line-height: 1.25rem;
+}
+
+.site-footer .font-label-md,
+.site-footer .text-label-md {
+  font-size: .75rem;
+  line-height: 1rem;
+}
+
+.site-footer .font-label-lg,
+.site-footer .text-label-lg {
+  font-size: .875rem;
+  line-height: 1.25rem;
+}
+
+.site-footer .text-primary,
+.site-footer .font-headline-sm,
+.site-footer .font-label-lg,
+.site-footer .font-label-md {
+  color: #fff !important;
+}
+
+.site-footer .text-on-surface-variant {
+  color: rgba(255, 255, 255, .68) !important;
+}
+
+.site-footer .text-secondary,
+.site-footer .text-status-success {
+  color: #6ffbbe !important;
+}
+
+.site-footer .bg-surface-container-low,
+.site-footer .bg-secondary-fixed {
+  background: rgba(255, 255, 255, .08) !important;
+}
+
+.site-footer .text-on-secondary-fixed {
+  color: rgba(255, 255, 255, .82) !important;
+}
+
+.site-footer a {
+  color: rgba(255, 255, 255, .72);
+  transition: color .2s ease;
+}
+
+.site-footer a:hover,
+.site-footer a:focus-visible {
+  color: #6ffbbe !important;
+}
+
+@media (max-width: 1023px) {
+  .site-footer > div > .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .site-footer > div {
+    padding-inline: 1rem;
+  }
+
+  .site-footer > div > .grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}

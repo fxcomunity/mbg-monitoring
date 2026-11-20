@@ -480,7 +480,14 @@ export async function onRequest(context) {
         headers.set('Set-Cookie', `mbg_token=${token}; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_TTL}; Path=/`);
         return new Response(JSON.stringify({
           status: 'success',
-          user: { full_name: user.full_name, role: user.role, role_label: ROLE_LABELS[user.role] }
+          user: {
+            username: user.username,
+            full_name: user.full_name,
+            role: user.role,
+            role_label: ROLE_LABELS[user.role],
+            avatar_url: user.avatar_url || '',
+            avatar: user.avatar_url || ''
+          }
         }), { status: 200, headers });
 
       } catch (err) {

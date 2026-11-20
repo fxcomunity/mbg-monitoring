@@ -240,8 +240,10 @@ if ($method === 'POST') {
         echo json_encode([
             'status' => 'success',
             'user' => [
+                'username' => $result['user']['username'] ?? $username,
                 'full_name' => $result['user']['full_name'] ?? '',
                 'role' => $result['user']['role'] ?? 'user',
+                'avatar_url' => $result['user']['avatar_url'] ?? '',
             ],
         ], JSON_UNESCAPED_UNICODE);
         exit;

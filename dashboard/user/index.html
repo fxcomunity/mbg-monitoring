@@ -1,4 +1,4 @@
-﻿
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -32,7 +32,10 @@
   <link rel="stylesheet" href="../../assets/css/style.css"/>
   <link rel="stylesheet" href="../../assets/css/dashboard.css"/>
   <link rel="stylesheet" href="../../assets/css/security.css"/>
-<style>html{visibility:hidden}</style><script>(function(){var K='mbg_session',R='user',OK=['admin','sppg','user'];function clr(){try{sessionStorage.removeItem(K);localStorage.removeItem(K)}catch(e){}}function rd(st){try{var x=JSON.parse(st.getItem(K)||'null');if(!x||OK.indexOf(x.role)<0)return null;if(x.exp&&x.exp<Date.now()){clr();return null}return x}catch(e){return null}}function go(u){location.replace(u)}function ok(x){if(x.role!==R){go('../'+x.role+'/');return}document.documentElement.style.visibility='visible'}fetch('../../api/auth_user.php',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('auth');return r.json()}).then(function(d){if(d&&d.logged_in&&d.user&&OK.indexOf(d.user.role)>=0){ok({name:d.user.full_name,role:d.user.role})}else{go('../../auth/login.html')}}).catch(function(){go('../../auth/login.html')});document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href$="login.html"]');if(a){clr();try{fetch('../../api/auth_user?action=logout',{credentials:'same-origin',keepalive:true}).catch(function(){})}catch(_){}}});document.addEventListener('submit',function(e){var formId=e.target.id;var skipIds=['formSatgas','formSppg','formUploadUserAvatar','formUploadSppgLogo','sppgReplyForm'];if(skipIds.indexOf(formId)>=0)return;e.preventDefault();var existing=document.getElementById('mbg-demo-toast');if(existing)existing.remove();var toast=document.createElement('div');toast.id='mbg-demo-toast';toast.style.cssText=['position:fixed','top:80px','left:50%','transform:translateX(-50%)','z-index:99999','display:flex','align-items:center','gap:10px','padding:12px 20px','border-radius:12px','background:#001026','color:#fff','font-size:13px','font-weight:600','box-shadow:0 8px 24px rgba(0,16,38,0.3)','border:1px solid rgba(111,251,190,0.3)','pointer-events:none','transition:opacity 0.4s ease','opacity:1'].join(';');toast.innerHTML='<span style="color:#6ffbbe;font-size:18px;line-height:1;" class="material-symbols-outlined">info</span><span>Perubahan diterima. Data akan diperbarui setelah sinkronisasi server.</span>';document.body.appendChild(toast);setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove()},400)},3000)},true)})();</script></head>
+  <link rel="stylesheet" href="../../assets/css/site-footer.css"/>
+  <script>(function(){var nativeFetch=window.fetch.bind(window);function cached(){try{var s=JSON.parse(sessionStorage.getItem('mbg_session')||localStorage.getItem('mbg_session')||'null');return s&&s.role==='user'&&s.name&&(!s.exp||s.exp>Date.now())?s:null}catch(e){return null}}function authFallback(s){return new Response(JSON.stringify({logged_in:true,user:{role:s.role,full_name:s.name,username:s.username}}),{headers:{'Content-Type':'application/json'}})}window.fetch=function(resource,options){var url=typeof resource==='string'?new URL(resource,location.href):new URL(resource.url);if(!/^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname)&&/\/api\/auth_user\.php$/.test(url.pathname)){url.pathname=url.pathname.replace(/\.php$/,'');resource=url.href}return nativeFetch(resource,options).then(function(response){var isAuth=/\/api\/auth_user(?:\.php)?$/.test(url.pathname);var s=isAuth&&cached();if(response.status>=500&&s)return authFallback(s);if(isAuth){response.clone().json().then(function(data){if(response.ok&&data&&data.logged_in===false){sessionStorage.removeItem('mbg_session');localStorage.removeItem('mbg_session')}}).catch(function(){})}return response}).catch(function(error){var s=cached();if(/\/api\/auth_user(?:\.php)?$/.test(url.pathname)&&s)return authFallback(s);throw error})};try{var s=cached();if(s){document.documentElement.style.visibility='visible';document.documentElement.classList.add('cached-auth-ready');var style=document.createElement('style');style.textContent='html.cached-auth-ready #dashboard-auth-loading{display:none!important}';document.head.appendChild(style);}}catch(e){}})();</script>
+<style>html{visibility:hidden}</style><script>(function(){var K='mbg_session',R='user',OK=['admin','sppg','user'];function clr(){try{sessionStorage.removeItem(K);localStorage.removeItem(K)}catch(e){}}function rd(st){try{var x=JSON.parse(st.getItem(K)||'null');if(!x||OK.indexOf(x.role)<0)return null;if(x.exp&&x.exp<Date.now()){clr();return null}return x}catch(e){return null}}function go(u){location.replace(u)}function ok(x){if(x.role!==R){go('../'+x.role+'/');return}document.documentElement.style.visibility='visible'}fetch('../../api/auth_user.php',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('auth');return r.json()}).then(function(d){if(d&&d.logged_in&&d.user&&OK.indexOf(d.user.role)>=0){ok({name:d.user.full_name,role:d.user.role})}else{go('../../auth/login.html')}}).catch(function(){go('../../auth/login.html')});document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href$="login.html"]');if(a){clr();try{fetch('../../api/auth_user?action=logout',{credentials:'same-origin',keepalive:true}).catch(function(){})}catch(_){}}});document.addEventListener('submit',function(e){var formId=e.target.id;var skipIds=['formSatgas','formSppg','formUploadUserAvatar','formUploadSppgLogo','sppgReplyForm'];if(skipIds.indexOf(formId)>=0)return;e.preventDefault();var existing=document.getElementById('mbg-demo-toast');if(existing)existing.remove();var toast=document.createElement('div');toast.id='mbg-demo-toast';toast.style.cssText=['position:fixed','top:80px','left:50%','transform:translateX(-50%)','z-index:99999','display:flex','align-items:center','gap:10px','padding:12px 20px','border-radius:12px','background:#001026','color:#fff','font-size:13px','font-weight:600','box-shadow:0 8px 24px rgba(0,16,38,0.3)','border:1px solid rgba(111,251,190,0.3)','pointer-events:none','transition:opacity 0.4s ease','opacity:1'].join(';');toast.innerHTML='<span style="color:#6ffbbe;font-size:18px;line-height:1;" class="material-symbols-outlined">info</span><span>Perubahan diterima. Data akan diperbarui setelah sinkronisasi server.</span>';document.body.appendChild(toast);setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove()},400)},3000)},true)})();</script>  <script src="../../assets/js/site-footer.js" defer></script>
+</head>
 <body class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
   <div id="dashboard-auth-loading" role="status" aria-live="polite">
     <div class="dashboard-auth-loading-card">
@@ -72,14 +75,18 @@
         <span>Keluar</span>
       </a>
       <!-- Hamburger -->
-      <button id="dashHamburger" type="button" aria-expanded="false" aria-label="Menu navigasi" class="p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all flex items-center justify-center sm:hidden">
+      <button id="dashHamburger" type="button" aria-expanded="false" aria-label="Buka menu navigasi" class="p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white transition-all flex items-center justify-center">
         <span class="material-symbols-outlined text-xl">menu</span>
       </button>
     </div>
   </header>
 
   <!-- Mobile Menu Drawer (User) -->
-  <div id="dashMobileMenu" class="hidden sm:hidden fixed top-[52px] left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-2xl px-4 py-4 flex flex-col gap-2">
+  <style>#dashMobileMenu{top:68px;right:1rem;left:auto;width:min(22rem,calc(100vw - 2rem));max-height:calc(100vh - 5.5rem);overflow-y:auto}</style>
+  <div id="dashMobileMenu" class="hidden fixed top-[52px] left-0 right-0 z-50 bg-white border border-slate-200 shadow-2xl px-4 py-4 flex flex-col gap-2">
+    <a href="#dashboard-home" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
+      <span class="material-symbols-outlined text-base text-cyan-600">dashboard</span> Dashboard Utama
+    </a>
     <a href="../account/profile.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
       <span class="material-symbols-outlined text-base text-slate-500">manage_accounts</span> Profil & Sandi
     </a>
@@ -89,8 +96,17 @@
     <a href="../../fitur/laporan-aduan.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
       <span class="material-symbols-outlined text-base text-blue-500">receipt_long</span> Laporan & Aduan
     </a>
+    <a href="#buat-aduan" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
+      <span class="material-symbols-outlined text-base text-rose-500">campaign</span> Buat Aduan
+    </a>
     <a href="../../fitur/menu-hari-ini.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
       <span class="material-symbols-outlined text-base text-emerald-500">restaurant_menu</span> Menu Hari Ini
+    </a>
+    <a href="#menu-hari-ini" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
+      <span class="material-symbols-outlined text-base text-emerald-500">restaurant</span> Menu di Dashboard
+    </a>
+    <a href="#riwayat-aduan" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
+      <span class="material-symbols-outlined text-base text-amber-500">history</span> Riwayat Aduan
     </a>
     <a href="../../index.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
       <span class="material-symbols-outlined text-base text-slate-500">home</span> Web Utama MBG
@@ -102,7 +118,7 @@
   </div>
 
   <!-- Main Content -->
-  <main class="max-w-7xl mx-auto w-full p-4 sm:p-8 flex-grow">
+  <main id="dashboard-home" class="max-w-7xl mx-auto w-full p-4 sm:p-8 flex-grow">
     <!-- Profile Card + Clock (ganti greeting di header) -->
     <div id="dashProfileCard" class="mb-4"></div>
     
@@ -159,7 +175,7 @@
     </div>
 
     <!-- SEKSI 1: FORM BUAT ADUAN LANGSUNG -->
-    <div class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
+    <div id="buat-aduan" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
       <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
         <div class="w-10 h-10 rounded-xl bg-red-100 text-red-700 flex items-center justify-center">
           <span class="material-symbols-outlined text-2xl">campaign</span>
@@ -223,7 +239,7 @@
     </div>
 
     <!-- SEKSI 2: JADWAL MENU RESMI SPPG TERVERIFIKASI -->
-    <div class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
+    <div id="menu-hari-ini" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
       <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -306,115 +322,13 @@
 
     <!-- SEKSI 3: TABEL RIWAYAT TIKET ADUAN -->
     <div id="riwayat-aduan" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden mb-8">
-      <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 class="text-base font-bold text-primary">Riwayat Pelacakan Aduan</h2>
-          <p class="text-xs text-slate-500">Pantau proses tindak lanjut Satgas BGN terhadap laporan Anda.</p>
-        </div>
+      <div class="p-6 border-b border-slate-100">
+        <h2 class="text-base font-bold text-primary">Riwayat Pelacakan Aduan</h2>
+        <p class="text-xs text-slate-500">Riwayat laporan akun belum tersedia dari server; tiket publik tidak dikaitkan ke akun login.</p>
       </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr class="bg-slate-50/80 text-slate-600 font-bold border-b border-slate-100">
-              <th class="py-3.5 px-4">Kode Tiket</th>
-              <th class="py-3.5 px-4">Sekolah Sasaran</th>
-              <th class="py-3.5 px-4">Kategori Masalah</th>
-              <th class="py-3.5 px-4">Tanggal Kejadian</th>
-              <th class="py-3.5 px-4">Status Penanganan</th>
-              <th class="py-3.5 px-4">Catatan Satgas BGN</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 font-medium">
-            
-              
-                <tr class="hover:bg-slate-50/60 transition-colors">
-                  <td class="py-3.5 px-4 font-mono font-bold text-primary whitespace-nowrap">
-                    MBG-0412
-                  </td>
-                  <td class="py-3.5 px-4 text-slate-900 font-semibold">
-                    120000
-                  </td>
-                  <td class="py-3.5 px-4">
-                    <span class="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-semibold uppercase text-[10px]">
-                      Kualitas makanan
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                    2026-10-15
-                  </td>
-                  <td class="py-3.5 px-4 whitespace-nowrap">
-                    
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-yellow-100 text-yellow-800">
-                      Diproses
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-4 text-slate-600 text-[11px] max-w-xs">
-                    Laporan diterima Satgas.
-                  </td>
-                </tr>
-              
-                <tr class="hover:bg-slate-50/60 transition-colors">
-                  <td class="py-3.5 px-4 font-mono font-bold text-primary whitespace-nowrap">
-                    MBG-0411
-                  </td>
-                  <td class="py-3.5 px-4 text-slate-900 font-semibold">
-                    155000
-                  </td>
-                  <td class="py-3.5 px-4">
-                    <span class="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-semibold uppercase text-[10px]">
-                      Kualitas makanan
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                    2026-10-14
-                  </td>
-                  <td class="py-3.5 px-4 whitespace-nowrap">
-                    
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-yellow-100 text-yellow-800">
-                      Diproses
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-4 text-slate-600 text-[11px] max-w-xs">
-                    Laporan diterima Satgas.
-                  </td>
-                </tr>
-              
-                <tr class="hover:bg-slate-50/60 transition-colors">
-                  <td class="py-3.5 px-4 font-mono font-bold text-primary whitespace-nowrap">
-                    MBG-0410
-                  </td>
-                  <td class="py-3.5 px-4 text-slate-900 font-semibold">
-                    190000
-                  </td>
-                  <td class="py-3.5 px-4">
-                    <span class="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 font-semibold uppercase text-[10px]">
-                      Kualitas makanan
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                    2026-10-13
-                  </td>
-                  <td class="py-3.5 px-4 whitespace-nowrap">
-                    
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-yellow-100 text-yellow-800">
-                      Diproses
-                    </span>
-                  </td>
-                  <td class="py-3.5 px-4 text-slate-600 text-[11px] max-w-xs">
-                    Laporan diterima Satgas.
-                  </td>
-                </tr>
-              
-            
-          </tbody>
-        </table>
-      </div>
+      <div class="px-6 py-8 text-center text-sm text-slate-500">Belum ada riwayat aduan akun yang dapat ditampilkan.</div>
     </div>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-    <!-- PENGATURAN PROFIL & GANTI PASSWORD USER -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <div id="pengaturan-profil" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       <!-- Ganti Kata Sandi Akun -->
       <div id="ganti-password" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8">
@@ -507,9 +421,7 @@
   </main>
 
   <!-- Footer Mini -->
-  <footer class="py-4 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
-    <span>Redesain | Â© 2026 Badan Gizi Nasional Republik Indonesia. Dilengkapi BGN Shield Anti-Exploit.</span>
-  </footer>
+  <div data-site-footer></div>
 
   <script src="../../assets/js/security.js"></script>
   <script src="../../assets/js/live_chat.js"></script>

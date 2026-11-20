@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#075e54">
+  <meta name="site-root" content="../../../../">
+  <title>Panggilan — MBG Connect</title>
+  <link rel="icon" href="../../../../assets/images/ic_launcher.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
+  <link rel="stylesheet" href="../../../../assets/css/komunikasi.css">
+  <script src="../../../../assets/js/komunikasi-telephone.js" defer></script>
+</head>
+<body>
+  <main id="telephoneApp" class="telephone-app">
+    <header class="telephone-header">
+      <a id="backToChat" class="dashboard-link" href="../" aria-label="Kembali ke chat">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Kembali ke chat
+      </a>
+      <span class="telephone-label">MBG Connect · Panggilan suara</span>
+    </header>
+    <section class="telephone-card" aria-labelledby="callName">
+      <div id="callAvatar" class="avatar call-avatar avatar-sppg" aria-hidden="true">MB</div>
+      <p class="call-eyebrow">PANGGILAN SUARA</p>
+      <h1 id="callName">Menyiapkan panggilan...</h1>
+      <p id="callStatus" class="telephone-status" role="status" aria-live="polite">Memeriksa koneksi dan izin mikrofon.</p>
+      <p id="callError" class="telephone-error" role="alert" hidden></p>
+      <audio id="remoteAudio" autoplay playsinline></audio>
+      <div class="telephone-controls">
+        <button id="callAction" class="call-action" type="button" disabled>
+          <span class="material-symbols-outlined" aria-hidden="true">call</span>
+          <span>Memuat...</span>
+        </button>
+        <button id="muteButton" class="call-action secondary" type="button" aria-pressed="false" hidden>
+          <span class="material-symbols-outlined" aria-hidden="true">mic_off</span>
+          <span>Bisukan</span>
+        </button>
+        <button id="speakerButton" class="call-action secondary" type="button" aria-pressed="false" hidden>
+          <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
+          <span>Speaker</span>
+        </button>
+        <button id="endCallButton" class="call-action end-call" type="button" hidden>
+          <span class="material-symbols-outlined" aria-hidden="true">call_end</span>
+          <span>Akhiri</span>
+        </button>
+      </div>
+      <p class="telephone-hint">Gunakan HTTPS atau localhost dan izinkan akses mikrofon. Jika jaringan membatasi koneksi langsung, server TURN perlu dikonfigurasi.</p>
+    </section>
+  </main>
+</body>
+</html>
