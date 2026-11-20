@@ -6,7 +6,7 @@
  * Project: MBG Monitoring
  */
 import { trustedLoginIp, getLoginLockout, recordLoginFailure, recordLoginSuccess } from './_login_lockout.js';
-import { dbQuery } from './_shared.js';
+import { dbQuery, getSession, hashSessionToken, revokeSession } from './_shared.js';
 
 const CORS = {
   'Content-Type': 'application/json; charset=UTF-8',
@@ -90,24 +90,6 @@ function generateToken() {
   return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-async function getSession(request, env) {
-  const cookie = request.headers.get('Cookie') || '';
-  const match  = cookie.match(/mbg_token=([a-f0-9]{64})/);
-  if (!match || !env.SESSIONS) return null;
-  const data = await env.SESSIONS.get(match[1]);
-  if (!data) return null;
-  const session = JSON.parse(data);
-  if (!session.username) return null;
-  const users = await dbQuery(env.DATABASE_URL,
-    'SELECT session_version, role, status_verifikasi FROM users WHERE username = $1 AND is_active = TRUE LIMIT 1',
-    [session.username]
-  );
-  if (!users[0] ||
-      Number(users[0].session_version || 0) !== Number(session.session_version || 0) ||
-      (users[0].role === 'sppg' && String(users[0].status_verifikasi || '').toLowerCase() !== 'approved')) return null;
-  return session;
-}
-
 const ROLE_LABELS = {
   admin: 'Admin Satgas BGN',
   sppg:  'Pengelola Dapur SPPG',
@@ -122,9 +104,12 @@ export async function onRequest(context) {
 
   if (request.method === 'GET') {
     if (new URL(request.url).searchParams.get('action') === 'logout') {
-      const cookie = request.headers.get('Cookie') || '';
-      const match = cookie.match(/(?:^|;\s*)mbg_token=([a-f0-9]{64})(?:;|$)/);
-      if (match && env.SESSIONS) await env.SESSIONS.delete(match[1]);
+      try {
+        await revokeSession(request, env);
+      } catch (error) {
+        console.error('Session revocation failed:', error);
+        return json({ status: 'error', message: 'Sesi tidak dapat diakhiri. Coba lagi.' }, 503);
+      }
       const headers = new Headers(CORS);
       headers.set('Set-Cookie', 'mbg_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/');
       return new Response(JSON.stringify({ status: 'success' }), { headers });
@@ -387,7 +372,6 @@ export async function onRequest(context) {
       const password = typeof body.password === 'string' ? body.password : '';
 
       try {
-        if (!env.SESSIONS) return json({ status: 'error', message: 'Sesi login belum dikonfigurasi.' }, 503);
         if (!username || username.length > 254 || password.length > 1024 ||
             containsControl(username) || containsControl(password) ||
             (!validEmail(username) && !/^[a-z0-9][a-z0-9_.-]{2,59}$/i.test(username)) ||
@@ -465,16 +449,15 @@ export async function onRequest(context) {
         await recordLoginSuccess(env, ip);
 
         const token   = generateToken();
-        const session = {
-          username:     user.username,
-          name:         user.full_name,
-          role:         user.role,
-          sppg_name:    user.sppg_name || '',
-          avatar:       user.avatar_url || '',
-          avatar_status: user.avatar_status || 'approved',
-          session_version: sessionVersion
-        };
-        if (env.SESSIONS) await env.SESSIONS.put(token, JSON.stringify(session), { expirationTtl: SESSION_TTL });
+        await dbQuery(env.DATABASE_URL,
+          `DELETE FROM auth_sessions
+           WHERE expires_at <= NOW() - INTERVAL '1 day'`
+        );
+        await dbQuery(env.DATABASE_URL,
+          `INSERT INTO auth_sessions (token_hash, user_id, session_version, expires_at)
+           VALUES ($1, $2, $3, NOW() + ($4 * INTERVAL '1 second'))`,
+          [await hashSessionToken(token), user.id, sessionVersion, SESSION_TTL]
+        );
 
         const headers = new Headers(CORS);
         headers.set('Set-Cookie', `mbg_token=${token}; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_TTL}; Path=/`);

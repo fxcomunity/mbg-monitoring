@@ -58,30 +58,28 @@ function loginRequest() {
 
 test('successful login checks lockout and account in one query, then writes success metadata atomically', async t => {
   const calls = mockLoginDatabase(t);
-  let sessionStored = false;
   const response = await onRequest({
     request: loginRequest(),
-    env: {
-      DATABASE_URL,
-      SESSIONS: { put: async () => { sessionStored = true; } }
-    }
+    env: { DATABASE_URL }
   });
 
   assert.equal(response.status, 200);
   assert.equal((await response.json()).status, 'success');
-  assert.equal(sessionStored, true);
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 4);
   assert.match(calls[0].query, /LEFT JOIN auth_ip_lockouts/);
   assert.match(calls[0].query, /FROM users/);
   assert.match(calls[1].query, /WITH reset_lockout AS/);
   assert.match(calls[1].query, /INSERT INTO auth_security_events/);
+  assert.match(calls[2].query, /DELETE FROM auth_sessions/);
+  assert.match(calls[3].query, /INSERT INTO auth_sessions/);
+  assert.match(calls[3].params[0], /^[a-f0-9]{64}$/);
 });
 
 test('blocked login returns without querying account data', async t => {
   const calls = mockLoginDatabase(t, { blocked: true });
   const response = await onRequest({
     request: loginRequest(),
-    env: { DATABASE_URL, SESSIONS: { put: async () => assert.fail('session must not be stored') } }
+    env: { DATABASE_URL }
   });
 
   assert.equal(response.status, 429);
@@ -93,7 +91,7 @@ test('failed login records the lockout update and security event in one query', 
   const calls = mockLoginDatabase(t, { password: 'DifferentPassword123!' });
   const response = await onRequest({
     request: loginRequest(),
-    env: { DATABASE_URL, SESSIONS: { put: async () => assert.fail('session must not be stored') } }
+    env: { DATABASE_URL }
   });
 
   assert.equal(response.status, 401);

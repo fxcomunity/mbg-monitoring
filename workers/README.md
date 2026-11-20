@@ -45,10 +45,10 @@ wrangler secret put DATABASE_URL --name mbg-security
 ```
 
 Pastikan Worker keamanan memakai binding KV `SESSIONS` yang sama dengan Worker auth.
-Pages Functions keamanan juga memerlukan secret `DATABASE_URL` dan binding KV
-`SESSIONS` pada project Pages, sama seperti endpoint autentikasi. Binding KV `RATE`
-opsional digunakan untuk pembatasan advisory laporan (20 laporan/menit/IP,
-best-effort karena KV tidak atomik).
+Pages Functions pada project utama memakai tabel `auth_sessions` di Neon dan
+tidak memerlukan binding KV `SESSIONS`. Jalankan `database/neon_auth_sessions.sql`
+di Neon sebelum deploy. Binding KV `RATE` opsional digunakan untuk pembatasan
+advisory laporan (20 laporan/menit/IP, best-effort karena KV tidak atomik).
 
 ### 4. Bind ke Cloudflare Pages
 Di Dashboard Cloudflare → Pages → Project → Settings → Functions:

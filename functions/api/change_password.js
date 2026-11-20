@@ -37,10 +37,15 @@ export async function onRequestPost(context) {
     const salt = generateToken().substring(0, 16);
     const hash = await hashPassword(newPassword, salt);
     try {
-      const r = await dbQuery(db,
-        `UPDATE users SET password_hash=$1, salt=$2, updated_at=NOW() WHERE username=$3`,
+      const users = await dbQuery(db,
+        `UPDATE users
+         SET password_hash=$1, salt=$2, session_version=session_version+1, updated_at=NOW()
+         WHERE username=$3 AND is_active=TRUE
+         RETURNING id`,
         [hash, salt, targetUsername]
       );
+      if (!users.length) return json({ status: 'error', message: 'Pengguna tidak ditemukan atau tidak aktif.' }, 404);
+      await dbQuery(db, 'DELETE FROM auth_sessions WHERE user_id = $1', [users[0].id]);
       return json({ status: 'success', message: `Sandi ${targetUsername} berhasil direset.` });
     } catch (err) {
       return json({ status: 'error', message: err.message }, 500);
@@ -77,8 +82,7 @@ export async function onRequestPost(context) {
       [hash, salt, session.username]
     );
     if (!updatedUsers.length) return json({ status: 'error', message: 'Pengguna tidak ditemukan atau tidak aktif.' }, 404);
-    const token = (request.headers.get('Cookie') || '').match(/(?:^|;\s*)mbg_token=([a-f0-9]{64})(?:;|$)/)?.[1];
-    if (token && env.SESSIONS) await env.SESSIONS.delete(token);
+    await dbQuery(db, 'DELETE FROM auth_sessions WHERE user_id = $1', [updatedUsers[0].id]);
     const response = json({ status: 'success', message: 'Kata sandi berhasil diperbarui.' });
     response.headers.set('Set-Cookie', 'mbg_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0; Path=/');
     return response;

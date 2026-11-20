@@ -161,30 +161,42 @@ test('manual blocked-IP lookup is cached for API requests', async t => {
 function adminContext(session) {
   return {
     request: new Request('https://example.test/api/security_threats', { headers: { Cookie: `mbg_token=${'a'.repeat(64)}` } }),
-    env: { DATABASE_URL, SESSIONS: { get: async () => JSON.stringify(session) } }
+    env: { DATABASE_URL }
   };
 }
 
-test('threat list rejects non-admin, stale/demoted/deactivated and missing-username sessions', async t => {
-  const calls = mockDB(t, call => {
-    if (/SELECT session_version, role, status_verifikasi FROM users/.test(call.query) && call.params[0] !== 'old-admin') {
-      return [{ session_version: 0, role: 'admin', status_verifikasi: 'approved' }];
-    }
-    return [];
-  });
-  assert.equal((await onRequestGet(adminContext({ username: 'user', role: 'sppg' }))).status, 403);
-  assert.equal((await onRequestGet(adminContext({ role: 'admin' }))).status, 403);
+test('threat list rejects a non-admin session and requests without a cookie', async t => {
+  const calls = mockDB(t, call => /FROM auth_sessions s/.test(call.query)
+    ? [{
+        id: 1, username: 'user', name: 'Test User', role: 'sppg',
+        sppg_name: 'Test SPPG', avatar: null, avatar_status: 'approved',
+        session_version: 0
+      }]
+    : []);
+  assert.equal((await onRequestGet(adminContext({}))).status, 403);
+  const requestWithoutCookie = new Request('https://example.test/api/security_threats');
+  assert.equal((await onRequestGet({ request: requestWithoutCookie, env: { DATABASE_URL } })).status, 403);
   assert.equal(calls.length, 1);
-  assert.equal((await onRequestGet(adminContext({ username: 'old-admin', role: 'admin' }))).status, 403);
-  assert.equal(calls.length, 2);
-  assert.match(calls[1].query, /is_active = TRUE/);
-  assert.deepEqual(calls[1].params, ['old-admin']);
-  assert.equal(/FROM exploit_logs/.test(calls[1].query), false);
+  assert.match(calls[0].query, /u\.role IN \('admin', 'sppg', 'user'\)/);
+});
+
+test('threat list rejects sessions for stale or inactive accounts in Neon', async t => {
+  const calls = mockDB(t, call => /FROM auth_sessions s/.test(call.query) ? [] : []);
+  assert.equal((await onRequestGet(adminContext({}))).status, 403);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].query, /u\.is_active = TRUE/);
+  assert.match(calls[0].query, /u\.deleted_at IS NULL/);
+  assert.match(calls[0].query, /s\.session_version = u\.session_version/);
+  assert.equal(/FROM exploit_logs/.test(calls[0].query), false);
 });
 
 test('threat list revalidates active admin before returning metadata', async t => {
-  const calls = mockDB(t, call => /SELECT session_version, role, status_verifikasi FROM users/.test(call.query)
-    ? [{ session_version: 0, role: 'admin', status_verifikasi: 'approved' }]
+  const calls = mockDB(t, call => /FROM auth_sessions s/.test(call.query)
+    ? [{
+        id: 1, username: 'admin', name: 'Test Admin', role: 'admin',
+        sppg_name: null, avatar: null, avatar_status: 'approved',
+        session_version: 0
+      }]
     : [{ id: 1, source: 'server' }]);
   const response = await onRequestGet(adminContext({ username: 'admin', role: 'admin' }));
   assert.equal(response.status, 200);

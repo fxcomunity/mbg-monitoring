@@ -7,9 +7,11 @@
    It preserves the legacy counter table but removes bans with the exact old
    reason `Auto-block: 3 or more threats in 1 hour`. Manual bans are preserved.
    Review that cleanup before running the migration on a shared database.
-2. Configure Pages Functions `DATABASE_URL` (secret) and `SESSIONS` (the existing
-   session KV namespace). Optional `RATE` is a **KV namespace**, matching the
-   existing application binding, not a Workers rate-limiter binding.
+2. Configure the Pages Functions `DATABASE_URL` secret and run
+   `database/neon_auth_sessions.sql` before deploying the Neon-backed login.
+   The Pages application does not need a `SESSIONS` KV binding. Optional `RATE`
+   remains a **KV namespace**, matching the existing application binding, not a
+   Workers rate-limiter binding.
 3. Deploy the `functions/` directory with the Pages application. Ensure any Pages
    `_routes.json`/deployment route exclusions do not bypass `_middleware.js` for
    protected requests. A separate Worker or PHP origin is not protected by this

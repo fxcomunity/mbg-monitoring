@@ -21,8 +21,17 @@ function mockDatabase(t, role = 'admin') {
   t.mock.method(globalThis, 'fetch', async (_url, options) => {
     const query = JSON.parse(options.body);
     calls.push(query);
-    if (/SELECT\s+session_version,\s*role,\s*status_verifikasi\s+FROM\s+users/i.test(query.query)) {
-      return neonResponse([{ session_version: 2, role, status_verifikasi: 'approved' }]);
+    if (/FROM auth_sessions s/i.test(query.query)) {
+      return neonResponse([{
+        id: 8,
+        username: 'admin-test',
+        name: 'Admin Test',
+        role,
+        sppg_name: null,
+        avatar: null,
+        avatar_status: 'approved',
+        session_version: 2
+      }]);
     }
     if (/INSERT INTO aduan_log/.test(query.query)) {
       return neonResponse([{ laporan_id: 17 }]);
@@ -50,14 +59,7 @@ function context(request, role = 'admin') {
   return {
     request,
     env: {
-      DATABASE_URL,
-      SESSIONS: {
-        get: async () => JSON.stringify({
-          username: 'admin-test',
-          role,
-          session_version: 2
-        })
-      }
+      DATABASE_URL
     }
   };
 }

@@ -6,6 +6,7 @@
  * GET  /api/menu?date=YYYY-MM-DD → menu tanggal lama (dari menu_backup)
  * POST /api/menu              → tambah menu baru (sppg/admin only)
  */
+import { dbQuery, getSession } from '../_shared.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -21,32 +22,6 @@ function jsonRes(data, status = 200) {
 // Tanggal hari ini dalam WIB (UTC+7)
 function todayWIB() {
   return new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
-}
-
-async function dbQuery(databaseUrl, sql, params = []) {
-  const match = databaseUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^/]+)\/([^?]+)/);
-  if (!match) throw new Error('DATABASE_URL tidak valid');
-  const [, user, password, host] = match;
-
-  const res = await fetch(`https://${host}/sql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Basic ' + btoa(`${user}:${password}`)
-    },
-    body: JSON.stringify({ query: sql, params })
-  });
-
-  if (!res.ok) throw new Error(`DB error: ${await res.text()}`);
-  return res.json();
-}
-
-async function getSession(request, env) {
-  const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(/mbg_token=([a-f0-9]{64})/);
-  if (!match) return null;
-  const data = await env.SESSIONS?.get(match[1]);
-  return data ? JSON.parse(data) : null;
 }
 
 export async function onRequest(context) {

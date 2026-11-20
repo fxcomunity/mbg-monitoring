@@ -298,6 +298,20 @@ CREATE INDEX IF NOT EXISTS idx_auth_security_events_ip_created
   ON auth_security_events (ip_address, created_at DESC);
 
 -- ------------------------------------------------------------------------------
+-- 8A. TABEL: auth_sessions (Sesi login Pages disimpan di Neon)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  token_hash      CHAR(64) PRIMARY KEY
+                  CHECK (token_hash ~ '^[0-9a-f]{64}$'),
+  user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  session_version INTEGER NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at      TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions (user_id);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires ON auth_sessions (expires_at);
+
+-- ------------------------------------------------------------------------------
 -- 9. TABEL: live_chat_messages (Sistem Pesan Interaktif User <-> Admin & SPPG)
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS live_chat_messages (

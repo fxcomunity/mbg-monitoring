@@ -73,6 +73,11 @@ export async function hashPassword(password, salt = generateToken().slice(0, 32)
   return `pbkdf2_sha256$${iterations}$${salt}$${digest}`;
 }
 
+export async function hashSessionToken(token) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
 function constantTimeEqual(left, right) {
   if (typeof left !== 'string' || typeof right !== 'string' || left.length !== right.length) return false;
   let mismatch = 0;
@@ -105,21 +110,34 @@ export async function verifyPassword(password, storedHash, legacySalt = '') {
 
 export async function getSession(request, env) {
   const cookie = request.headers.get('Cookie') || '';
-  const match  = cookie.match(/mbg_token=([a-f0-9]{64})/);
-  if (!match) return null;
-  if (!env?.SESSIONS) return null;
-  const data = await env.SESSIONS.get(match[1]);
-  if (!data) return null;
-  const session = JSON.parse(data);
-  if (!session.username || !env.DATABASE_URL) return null;
+  const match = cookie.match(/(?:^|;\s*)mbg_token=([a-f0-9]{64})(?:;|$)/);
+  if (!match || !env?.DATABASE_URL) return null;
+  const tokenHash = await hashSessionToken(match[1]);
   const rows = await dbQuery(env.DATABASE_URL, `
-    SELECT session_version, role, status_verifikasi FROM users
-    WHERE username = $1 AND is_active = TRUE
+    SELECT u.id, u.username, u.full_name AS name, u.role, u.sppg_name,
+           u.avatar_url AS avatar, u.avatar_status, u.session_version
+    FROM auth_sessions s
+    JOIN users u ON u.id = s.user_id
+    WHERE s.token_hash = $1 AND s.expires_at > NOW()
+      AND u.is_active = TRUE AND u.deleted_at IS NULL
+      AND s.session_version = u.session_version
+      AND u.role IN ('admin', 'sppg', 'user')
+      AND (u.role <> 'sppg' OR LOWER(COALESCE(u.status_verifikasi, '')) = 'approved')
     LIMIT 1
-  `, [session.username]);
-  if (!rows[0] ||
-      Number(rows[0].session_version || 0) !== Number(session.session_version || 0) ||
-      String(rows[0].role || '') !== String(session.role || '') ||
-      (rows[0].role === 'sppg' && String(rows[0].status_verifikasi || '').toLowerCase() !== 'approved')) return null;
-  return session;
+  `, [tokenHash]);
+  const session = rows[0];
+  if (!session) return null;
+  return {
+    ...session,
+    id: Number(session.id),
+    session_version: Number(session.session_version)
+  };
+}
+
+export async function revokeSession(request, env) {
+  const cookie = request.headers.get('Cookie') || '';
+  const match = cookie.match(/(?:^|;\s*)mbg_token=([a-f0-9]{64})(?:;|$)/);
+  if (!match || !env?.DATABASE_URL) return;
+  const tokenHash = await hashSessionToken(match[1]);
+  await dbQuery(env.DATABASE_URL, 'DELETE FROM auth_sessions WHERE token_hash = $1', [tokenHash]);
 }

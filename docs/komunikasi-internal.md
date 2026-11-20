@@ -2,7 +2,9 @@
 
 ## Database
 
-Jalankan `database/internal_chat.sql` satu kali setelah `database/schema_all.sql`. Migrasi ini menambahkan percakapan, anggota, pesan, presence, panggilan suara, dan sinyal WebRTC.
+Jalankan `database/neon_auth_sessions.sql` dan `database/internal_chat.sql` satu kali pada database Neon. Keduanya memerlukan tabel `users` dari schema utama. File `database/schema_all.sql` juga menyertakan definisi tabel sesi untuk pemasangan baru.
+
+Sesi Cloudflare Pages kini disimpan di Neon pada tabel `auth_sessions`; halaman Pages tidak membutuhkan binding KV `SESSIONS`. Browser tetap menerima cookie token acak HttpOnly, sedangkan database hanya menyimpan hash token. Terapkan `database/neon_auth_sessions.sql` di Neon SQL Editor sebelum deploy versi ini agar login dan validasi sesi berfungsi.
 
 ## Halaman
 
