@@ -4,6 +4,9 @@ pages_build_output_dir = "."
 compatibility_date = "2026-11-20"
 compatibility_flags = ["nodejs_compat"]
 
+[limits]
+cpu_ms = 30000
+
 [env.production]
 compatibility_date = "2026-11-20"
 compatibility_flags = ["nodejs_compat"]

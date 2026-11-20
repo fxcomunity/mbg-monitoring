@@ -1,8 +1,8 @@
 /**
  * _shared.js — Shared utilities untuk semua Pages Functions di /api/
- * Shared Pages helpers; password KDF uses Cloudflare's Node.js crypto compatibility.
+ * Shared Pages helpers.
  */
-import { pbkdf2 } from 'node:crypto';
+import { createSHA256, pbkdf2 } from 'hash-wasm';
 
 export const CORS = {
   'Content-Type': 'application/json; charset=UTF-8',
@@ -61,14 +61,19 @@ export function generateToken() {
   return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
+function derivePasswordKey(password, salt, iterations, hashLength) {
+  return pbkdf2({
+    password,
+    salt,
+    iterations,
+    hashLength,
+    hashFunction: createSHA256()
+  });
+}
+
 export async function hashPassword(password, salt = generateToken().slice(0, 32)) {
   const iterations = 310000;
-  const digest = await new Promise((resolve, reject) => {
-    pbkdf2(password, salt, iterations, 64, 'sha256', (error, derivedKey) => {
-      if (error) reject(error);
-      else resolve(derivedKey.toString('hex'));
-    });
-  });
+  const digest = await derivePasswordKey(password, salt, iterations, 64);
   return `pbkdf2_sha256$${iterations}$${salt}$${digest}`;
 }
 
@@ -90,12 +95,7 @@ export async function verifyPassword(password, storedHash, legacySalt = '') {
   if (match) {
     const iterations = Number(match[1]);
     if (iterations < 100000 || iterations > 600000) return false;
-    const candidate = await new Promise((resolve, reject) => {
-      pbkdf2(password, match[2], iterations, match[3].length / 2, 'sha256', (error, derivedKey) => {
-        if (error) reject(error);
-        else resolve(derivedKey.toString('hex'));
-      });
-    });
+    const candidate = await derivePasswordKey(password, match[2], iterations, match[3].length / 2);
     return constantTimeEqual(candidate, match[3].toLowerCase());
   }
   if (!legacySalt || !/^[a-f0-9]{64}$/i.test(storedHash)) return false;
