@@ -29,6 +29,7 @@ setup_db.php
 # ── Android build output ────────────────────────────────────
 android/.gradle/
 android/build/
+android/**/build/
 android/local.properties
 android/*.apk
 android/*.aab
