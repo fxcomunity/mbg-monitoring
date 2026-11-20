@@ -113,10 +113,13 @@ export async function getSession(request, env) {
   const session = JSON.parse(data);
   if (!session.username || !env.DATABASE_URL) return null;
   const rows = await dbQuery(env.DATABASE_URL, `
-    SELECT session_version FROM users
+    SELECT session_version, role, status_verifikasi FROM users
     WHERE username = $1 AND is_active = TRUE
     LIMIT 1
   `, [session.username]);
-  if (!rows[0] || Number(rows[0].session_version || 0) !== Number(session.session_version || 0)) return null;
+  if (!rows[0] ||
+      Number(rows[0].session_version || 0) !== Number(session.session_version || 0) ||
+      String(rows[0].role || '') !== String(session.role || '') ||
+      (rows[0].role === 'sppg' && String(rows[0].status_verifikasi || '').toLowerCase() !== 'approved')) return null;
   return session;
 }

@@ -276,12 +276,14 @@
     if (eta) {
       startCountdown(eta);
     } else {
-      // Coba ambil dari maintenance.json
+      // Muat status terkini dari API maintenance.
       fetch('./api/maintenance.php')
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.message) {
-            document.getElementById('maintenanceMessage').textContent = data.message;
+            var decoder = document.createElement('textarea');
+            decoder.innerHTML = data.message;
+            document.getElementById('maintenanceMessage').textContent = decoder.value;
           }
           if (data.eta) {
             startCountdown(data.eta);

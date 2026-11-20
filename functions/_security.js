@@ -1,7 +1,7 @@
 import { dbQuery } from './api/_shared.js';
 
 export const BODY_LIMIT = 256 * 1024;
-export const MULTIPART_LIMIT = 5 * 1024 * 1024;
+export const MULTIPART_LIMIT = 12 * 1024 * 1024;
 export const REPORT_LIMIT = 16 * 1024;
 const blockedCache = new Map();
 const SAFE_PATHS = new Set(['/api/security/log', '/api/security_threats', '/api/auth_user', '/api/change_password', '/ws', '/']);

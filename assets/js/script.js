@@ -21,6 +21,10 @@ const mbgAppBaseURL = new URL('../../', document.currentScript.src);
 const menuImageFallbackURL = new URL('assets/images/food-placeholder.svg', mbgAppBaseURL).href;
 const profileImageFallbackURL = new URL('assets/images/ic_launcher.png', mbgAppBaseURL).href;
 
+function appRoute(path) {
+  return new URL(path, mbgAppBaseURL).href;
+}
+
 function safeImageURL(value, fallbackURL) {
   if (typeof value !== 'string' || !value.trim() || /[\u0000-\u001f\u007f\\]/.test(value)) return fallbackURL;
   try {
@@ -30,6 +34,14 @@ function safeImageURL(value, fallbackURL) {
   } catch (_) {
     return fallbackURL;
   }
+}
+
+function safeProfileImageURL(value) {
+  if (typeof value !== 'string' || !value.trim()) return profileImageFallbackURL;
+  const imageURL = value.trim();
+  if (/^data:image\/(?:png|jpeg|webp);base64,[a-z0-9+/]+=*$/i.test(imageURL)) return imageURL;
+  if (/^uploads\/avatars\/[a-z0-9_.-]+$/i.test(imageURL)) return appRoute(imageURL);
+  return safeImageURL(imageURL, profileImageFallbackURL);
 }
 
 function finiteNumber(value) {
@@ -63,9 +75,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Inisialisasi Status Autentikasi Pengguna & Profil Dropdown
   initUserAuthStatus();
 
-  // Inisialisasi Peta Telemetri Interaktif Realtime
-  // Delay sedikit supaya container sudah punya dimensi sebelum Leaflet init
-  setTimeout(initInteractiveTelemetryMap, 300);
+  // Peta dan puluhan ribu titik hanya dimuat saat pengguna mendekatinya.
+  initInteractiveTelemetryMapWhenVisible();
 
   // Inisialisasi Telemetri & Distribusi Riil dari Database
   initTelemetriAndDistribusi();
@@ -565,7 +576,7 @@ async function initUserAuthStatus() {
     const u = data.user;
     // Role is a path segment and controls which links are shown, not free text.
     if (!['admin', 'sppg', 'user'].includes(u.role)) return;
-    const avatarURL = escapeHTML(safeImageURL(u.avatar, profileImageFallbackURL));
+    const avatarURL = escapeHTML(safeProfileImageURL(u.avatar_url || u.avatar));
     const desktopLoginLink = document.querySelector('header nav + div a[href*="login.html"], header a[href*="login.html"]:not(#mobileNavMenu a)');
     const mobileLoginLink = document.querySelector('#mobileNavMenu a[href*="login.html"]');
 
@@ -596,48 +607,48 @@ async function initUserAuthStatus() {
           </div>
 
           <div class="py-1">
-            <a href="dashboard/${escapeHTML(u.role)}/" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="${escapeHTML(appRoute(`dashboard/${u.role}/index.html`))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-blue-600">dashboard</span>
               <span>Dashboard ${escapeHTML(u.role.toUpperCase())}</span>
             </a>
             ${u.role === 'admin' ? `
-            <a href="dashboard/admin/#telemetry-manager" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="${escapeHTML(appRoute('dashboard/admin/index.html#telemetry-manager'))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-emerald-600">monitoring</span>
               <span>Panel Input Telemetri & KPI</span>
             </a>
-            <a href="dashboard/admin/#maintenance-panel" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="${escapeHTML(appRoute('dashboard/admin/maintenance.html'))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-purple-600">admin_panel_settings</span>
               <span>Panel Pemeliharaan Sistem</span>
             </a>
             ` : ''}
             ${u.role === 'sppg' ? `
-            <a href="dashboard/sppg/#input-menu" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="${escapeHTML(appRoute('dashboard/sppg/index.html#input-menu'))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-emerald-600">soup_kitchen</span>
               <span>Panel Dapur SPPG & Input Menu</span>
             </a>
-            <a href="dashboard/sppg/#uji-akg" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="${escapeHTML(appRoute('dashboard/sppg/index.html#riwayat-menu'))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-amber-600">biotech</span>
-              <span>Uji Sampel & AKG Makanan</span>
+              <span>Riwayat Menu & Gizi</span>
             </a>
             ` : ''}
             ${u.role === 'user' ? `
-            <a href="dashboard/user/#riwayat-aduan" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="${escapeHTML(appRoute('dashboard/user/index.html#riwayat-aduan'))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-amber-600">receipt_long</span>
               <span>Status Aduan Saya</span>
             </a>
             ` : ''}
-            <a href="dashboard/${u.role}/#pengaturan-profil" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="${escapeHTML(appRoute('dashboard/account/profile.html'))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-indigo-600">account_circle</span>
-              <span>Atur Foto / Logo Profil</span>
+              <span>Atur Profil</span>
             </a>
-            <a href="dashboard/${u.role}/#ganti-password" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="${escapeHTML(appRoute('dashboard/account/password.html'))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-amber-600">key</span>
               <span>Ganti Kata Sandi</span>
             </a>
           </div>
 
           <div class="pt-1 border-t border-slate-100">
-            <a href="login.html?logout=1" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors">
+            <a href="${escapeHTML(appRoute('auth/login.html?logout=1'))}" class="flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-red-500">logout</span>
               <span>Keluar (Logout)</span>
             </a>
@@ -678,31 +689,31 @@ async function initUserAuthStatus() {
           </div>
         </div>
         <div class="flex flex-col gap-1 pt-2 border-t border-border-subtle">
-          <a href="dashboard/${escapeHTML(u.role)}/" class="px-3 py-1.5 text-xs font-bold text-primary rounded-lg bg-surface-container-high flex items-center gap-2">
+          <a href="${escapeHTML(appRoute(`dashboard/${u.role}/index.html`))}" class="px-3 py-1.5 text-xs font-bold text-primary rounded-lg bg-surface-container-high flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px]">dashboard</span>
             <span>Buka Dashboard</span>
           </a>
           ${u.role === 'admin' ? `
-          <a href="dashboard/admin/#maintenance-panel" class="px-3 py-1.5 text-xs font-bold text-purple-700 rounded-lg bg-purple-50 flex items-center gap-2">
+          <a href="${escapeHTML(appRoute('dashboard/admin/maintenance.html'))}" class="px-3 py-1.5 text-xs font-bold text-purple-700 rounded-lg bg-purple-50 flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
             <span>Panel Pemeliharaan Sistem</span>
           </a>
           ` : ''}
           ${u.role === 'sppg' ? `
-          <a href="dashboard/sppg/#input-menu" class="px-3 py-1.5 text-xs font-bold text-emerald-700 rounded-lg bg-emerald-50 flex items-center gap-2">
+          <a href="${escapeHTML(appRoute('dashboard/sppg/index.html#input-menu'))}" class="px-3 py-1.5 text-xs font-bold text-emerald-700 rounded-lg bg-emerald-50 flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px]">soup_kitchen</span>
             <span>Panel Dapur SPPG</span>
           </a>
           ` : ''}
-          <a href="dashboard/${u.role}/#pengaturan-profil" class="px-3 py-1.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-surface-container-high flex items-center gap-2">
+          <a href="${escapeHTML(appRoute('dashboard/account/profile.html'))}" class="px-3 py-1.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-surface-container-high flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px] text-indigo-600">account_circle</span>
-            <span>Atur Foto / Logo</span>
+            <span>Atur Profil</span>
           </a>
-          <a href="dashboard/${u.role}/#ganti-password" class="px-3 py-1.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-surface-container-high flex items-center gap-2">
+          <a href="${escapeHTML(appRoute('dashboard/account/password.html'))}" class="px-3 py-1.5 text-xs font-bold text-slate-700 rounded-lg hover:bg-surface-container-high flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px] text-amber-600">key</span>
             <span>Ganti Kata Sandi</span>
           </a>
-          <a href="login.html?logout=1" class="px-3 py-1.5 text-xs font-bold text-red-600 rounded-lg hover:bg-red-50 flex items-center gap-2">
+          <a href="${escapeHTML(appRoute('auth/login.html?logout=1'))}" class="px-3 py-1.5 text-xs font-bold text-red-600 rounded-lg hover:bg-red-50 flex items-center gap-2">
             <span class="material-symbols-outlined text-[16px]">logout</span>
             <span>Keluar (Logout)</span>
           </a>
@@ -784,7 +795,7 @@ function initNotificationBell() {
         let itemsHtml = '';
         if (pendingLogos > 0) {
           itemsHtml += `
-            <a href="dashboard/admin/#verifikasi-logo-sppg" class="block px-4 py-3 hover:bg-amber-50/70 transition-colors bg-amber-50/30">
+            <a href="${escapeHTML(appRoute('dashboard/admin/index.html#verifikasi-logo-sppg'))}" class="block px-4 py-3 hover:bg-amber-50/70 transition-colors bg-amber-50/30">
               <div class="flex items-start gap-2.5">
                 <span class="material-symbols-outlined text-amber-600 text-[20px] shrink-0">verified_user</span>
                 <div>
@@ -800,7 +811,7 @@ function initNotificationBell() {
           data.latest_reports.forEach(r => {
             const timeAgo = r.created_at ? new Date(r.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB' : 'Baru saja';
             itemsHtml += `
-              <a href="dashboard/admin/" class="block px-4 py-2.5 hover:bg-slate-50 transition-colors">
+              <a href="${escapeHTML(appRoute('dashboard/admin/index.html'))}" class="block px-4 py-2.5 hover:bg-slate-50 transition-colors">
                 <div class="flex items-start gap-2.5">
                   <span class="material-symbols-outlined text-red-500 text-[18px] shrink-0">report_problem</span>
                   <div class="flex-1 min-w-0">
@@ -856,6 +867,93 @@ let mbgLeafletMap = null;
 let mbgMapLocationsFitted = false;
 let mbgMapRefreshInProgress = false;
 let mbgMapDataSignature = null;
+let mbgMapRetryAttempt = 0;
+let mbgMapRetryTimer = null;
+let mbgMapAssetsPromise = null;
+const MBG_INDONESIA_MAP_BOUNDS = [[-12, 94], [7, 142]];
+
+function loadMapAsset(tagName, id, url, integrity) {
+  const existing = document.getElementById(id);
+  if (existing) {
+    if (existing.dataset.loaded === 'true') return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', resolve, { once: true });
+      existing.addEventListener('error', () => reject(new Error(`Gagal memuat ${url}`)), { once: true });
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const asset = document.createElement(tagName);
+    asset.id = id;
+    if (tagName === 'link') {
+      asset.rel = 'stylesheet';
+      asset.href = url;
+    } else {
+      asset.src = url;
+    }
+    if (integrity) {
+      asset.integrity = integrity;
+      asset.crossOrigin = 'anonymous';
+    }
+    asset.addEventListener('load', () => {
+      asset.dataset.loaded = 'true';
+      resolve();
+    }, { once: true });
+    asset.addEventListener('error', () => reject(new Error(`Gagal memuat ${url}`)), { once: true });
+    document.head.appendChild(asset);
+  });
+}
+
+function loadInteractiveMapAssets() {
+  if (!mbgMapAssetsPromise) {
+    mbgMapAssetsPromise = Promise.all([
+      loadMapAsset('link', 'mbg-leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'),
+      loadMapAsset('link', 'mbg-markercluster-css', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css'),
+      loadMapAsset('link', 'mbg-markercluster-default-css', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css')
+    ]).then(() => loadMapAsset(
+      'script',
+      'mbg-leaflet-js',
+      'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+      'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo='
+    )).then(() => loadMapAsset(
+      'script',
+      'mbg-markercluster-js',
+      'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js'
+    ));
+  }
+  return mbgMapAssetsPromise;
+}
+
+function initInteractiveTelemetryMapWhenVisible() {
+  const mapElement = document.getElementById('mbgInteractiveMap');
+  if (!mapElement) return;
+
+  let started = false;
+  const startMap = () => {
+    if (started) return;
+    started = true;
+    const mapCount = document.getElementById('mapLocationCount');
+    if (mapCount) mapCount.textContent = 'Memuat peta dan lokasi SPPG…';
+    loadInteractiveMapAssets()
+      .then(() => initInteractiveTelemetryMap())
+      .catch(error => {
+        console.error('[BGN] Gagal memuat komponen peta:', error);
+        if (mapCount) mapCount.textContent = 'Peta gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.';
+      });
+  };
+
+  if (!('IntersectionObserver' in window)) {
+    window.setTimeout(startMap, 0);
+    return;
+  }
+
+  const observer = new IntersectionObserver(entries => {
+    if (!entries.some(entry => entry.isIntersecting)) return;
+    observer.disconnect();
+    startMap();
+  }, { rootMargin: '400px 0px' });
+  observer.observe(mapElement);
+}
 
 async function initInteractiveTelemetryMap() {
   const mapElement = document.getElementById('mbgInteractiveMap');
@@ -866,11 +964,18 @@ async function initInteractiveTelemetryMap() {
     return;
   }
 
-  mbgLeafletMap = L.map(mapElement, { center: [-2.5, 118], zoom: 5 });
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  mbgLeafletMap = L.map(mapElement, {
+    center: [-2.5, 118],
+    zoom: 4,
+    minZoom: 4,
+    maxBounds: [[-22, 80], [17, 155]],
+    maxBoundsViscosity: 1
+  });
+  const baseMapLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(mbgLeafletMap);
+  const indonesiaBoundaryLayer = L.layerGroup().addTo(mbgLeafletMap);
   const markerLayer = typeof L.markerClusterGroup === 'function'
     ? L.markerClusterGroup({
         chunkedLoading: true,
@@ -903,9 +1008,53 @@ async function initInteractiveTelemetryMap() {
     mapCount.appendChild(retry);
   }
 
+  async function loadIndonesiaBoundary() {
+    try {
+      const response = await fetch('assets/data/indonesia-boundary.geojson', { cache: 'force-cache' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const feature = await response.json();
+      const polygons = feature && feature.geometry && feature.geometry.coordinates;
+      if (feature.geometry.type !== 'MultiPolygon' || !Array.isArray(polygons) || !polygons.length) {
+        throw new Error('Format batas Indonesia tidak valid');
+      }
+
+      const countryRings = polygons
+        .map(polygon => polygon[0])
+        .filter(ring => Array.isArray(ring) && ring.length >= 4)
+        .map(ring => ring.map(([longitude, latitude]) => [latitude, longitude]));
+      if (!countryRings.length) throw new Error('Batas wilayah Indonesia kosong');
+
+      const outsideRing = [[16, 78], [16, 157], [-23, 157], [-23, 78], [16, 78]];
+      L.polygon([outsideRing, ...countryRings], {
+        stroke: false,
+        fillColor: '#c9e6ed',
+        fillOpacity: 1,
+        fillRule: 'evenodd',
+        interactive: false
+      }).addTo(indonesiaBoundaryLayer);
+      L.polyline(countryRings, {
+        color: '#0f766e',
+        opacity: 0.9,
+        weight: 1,
+        interactive: false
+      }).addTo(indonesiaBoundaryLayer);
+      mbgLeafletMap.fitBounds(MBG_INDONESIA_MAP_BOUNDS, { padding: [12, 12], maxZoom: 5 });
+      return true;
+    } catch (error) {
+      console.error('[BGN] Gagal memuat batas Indonesia:', error);
+      baseMapLayer.remove();
+      if (mapCount) mapCount.textContent = 'Batas peta Indonesia gagal dimuat. Muat ulang halaman untuk mencoba kembali.';
+      return false;
+    }
+  }
+
   async function refreshLocations() {
     if (mbgMapRefreshInProgress) return;
     mbgMapRefreshInProgress = true;
+    if (mbgMapRetryTimer !== null) {
+      window.clearTimeout(mbgMapRetryTimer);
+      mbgMapRetryTimer = null;
+    }
 
     try {
       const response = await fetch(`${getApiPrefix()}sppg_map.php?limit=50000`, {
@@ -915,6 +1064,7 @@ async function initInteractiveTelemetryMap() {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const geoJson = await response.json();
       if (!geoJson || !Array.isArray(geoJson.features)) throw new Error('Format data peta tidak valid');
+      mbgMapRetryAttempt = 0;
 
       const dataSignature = geoJson.features.map(feature => {
         const coordinates = feature.geometry && feature.geometry.coordinates || [];
@@ -996,7 +1146,7 @@ async function initInteractiveTelemetryMap() {
         approximateCount = Number(geoJson.approximate_count) || approximateCount;
         gpsCount = Number(geoJson.gps_count) || gpsCount;
         if (newMarkers.length && !mbgMapLocationsFitted) {
-          mbgLeafletMap.fitBounds(L.featureGroup(newMarkers).getBounds(), { padding: [24, 24], maxZoom: 6 });
+          mbgLeafletMap.fitBounds(MBG_INDONESIA_MAP_BOUNDS, { padding: [12, 12], maxZoom: 5 });
           mbgMapLocationsFitted = true;
         }
         if (mapCount) {
@@ -1010,12 +1160,16 @@ async function initInteractiveTelemetryMap() {
       const reason = error instanceof Error && /^HTTP \d+$/.test(error.message)
         ? `API peta mengembalikan ${error.message}`
         : 'API peta tidak dapat dihubungi atau datanya tidak valid';
-      showMapStatus(`${reason}. Pastikan Laragon dan koneksi database aktif.`, true);
+      const retryDelay = Math.min(5000 * (2 ** mbgMapRetryAttempt), 60000);
+      mbgMapRetryAttempt++;
+      showMapStatus(`${reason}. Mencoba lagi otomatis dalam ${Math.round(retryDelay / 1000)} detik.`, true);
+      mbgMapRetryTimer = window.setTimeout(refreshLocations, retryDelay);
     } finally {
       mbgMapRefreshInProgress = false;
     }
   }
 
+  if (!await loadIndonesiaBoundary()) return;
   refreshLocations();
   window.setInterval(refreshLocations, 300000);
 

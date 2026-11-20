@@ -79,7 +79,7 @@
 mbg-monitoring/
 ├── index.html                  # Halaman publik utama
 ├── maintenance.html            # Halaman maintenance mode
-├── maintenance.json            # State maintenance (aktif/nonaktif)
+├── maintenance.json            # Berkas lama; state aktif kini tersimpan di Neon
 ├── _redirects                  # Cloudflare Pages routing
 ├── auth/                       # Login, register, logout
 ├── dashboard/
@@ -170,7 +170,9 @@ wrangler deploy security.js --name mbg-security
 npx wrangler pages deploy . --project-name=mbg-monitoring
 ```
 
-Untuk menyimpan foto lampiran aduan di Cloudflare, tambahkan binding bucket **R2 privat** bernama `TIKET_PHOTOS` pada Pages Functions. Lampiran hanya dapat diakses Admin Satgas melalui endpoint aplikasi; jangan aktifkan akses publik pada bucket.
+Sebelum deploy, jalankan [`database/account_lifecycle_migration.sql`](./database/account_lifecycle_migration.sql), [`database/maintenance_mode_migration.sql`](./database/maintenance_mode_migration.sql), dan [`database/report_photo_bytea_migration.sql`](./database/report_photo_bytea_migration.sql) satu kali pada database Neon.
+
+Foto aduan baru disimpan sebagai `BYTEA` di Neon dan hanya dapat diunduh Admin Satgas melalui endpoint aplikasi. Cron Worker menghapus akun setelah 7 hari dan laporan beserta fotonya setelah 30 hari; PHP lokal juga membersihkan lampiran lama saat `api/tiket.php` menerima permintaan. Binding R2 tidak diperlukan untuk unggahan baru. Jika database masih berisi foto aduan lama di R2, Worker hanya dapat membersihkannya setelah binding privat `TIKET_PHOTOS` pada Worker `mbg-auth` diarahkan ke bucket lama.
 
 ### Android — Build APK
 

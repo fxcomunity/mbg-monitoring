@@ -167,28 +167,39 @@ function adminContext(session) {
 
 test('threat list rejects non-admin, stale/demoted/deactivated and missing-username sessions', async t => {
   const calls = mockDB(t, call => {
-    if (/SELECT session_version FROM users/.test(call.query)) return [{ session_version: 0 }];
+    if (/SELECT session_version, role, status_verifikasi FROM users/.test(call.query) && call.params[0] !== 'old-admin') {
+      return [{ session_version: 0, role: 'admin', status_verifikasi: 'approved' }];
+    }
     return [];
   });
   assert.equal((await onRequestGet(adminContext({ username: 'user', role: 'sppg' }))).status, 403);
   assert.equal((await onRequestGet(adminContext({ role: 'admin' }))).status, 403);
   assert.equal(calls.length, 1);
   assert.equal((await onRequestGet(adminContext({ username: 'old-admin', role: 'admin' }))).status, 403);
-  assert.equal(calls.length, 3);
+  assert.equal(calls.length, 2);
   assert.match(calls[1].query, /is_active = TRUE/);
   assert.deepEqual(calls[1].params, ['old-admin']);
-  assert.equal(/FROM exploit_logs/.test(calls[2].query), false);
+  assert.equal(/FROM exploit_logs/.test(calls[1].query), false);
 });
 
 test('threat list revalidates active admin before returning metadata', async t => {
-  const calls = mockDB(t, call => /SELECT session_version FROM users/.test(call.query)
-    ? [{ session_version: 0 }]
-    : /SELECT role FROM users/.test(call.query)
-      ? [{ role: 'admin' }]
-      : [{ id: 1, source: 'server' }]);
+  const calls = mockDB(t, call => /SELECT session_version, role, status_verifikasi FROM users/.test(call.query)
+    ? [{ session_version: 0, role: 'admin', status_verifikasi: 'approved' }]
+    : [{ id: 1, source: 'server' }]);
   const response = await onRequestGet(adminContext({ username: 'admin', role: 'admin' }));
   assert.equal(response.status, 200);
-  assert.equal(calls.length, 3);
-  assert.match(calls[2].query, /t.input_field/);
-  assert.doesNotMatch(calls[2].query, /payload_sample|user_agent/);
+  assert.equal(calls.length, 2);
+  assert.match(calls[1].query, /t.input_field/);
+  assert.doesNotMatch(calls[1].query, /payload_sample|user_agent/);
+});
+
+test('threat list reports session database failures as unavailable', async t => {
+  const calls = mockDB(t, () => { throw new Error('database unavailable'); });
+  const response = await onRequestGet(adminContext({ username: 'admin', role: 'admin' }));
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), {
+    status: 'error',
+    message: 'Status autentikasi tidak tersedia.'
+  });
+  assert.equal(calls.length, 1);
 });

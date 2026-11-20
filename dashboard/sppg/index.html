@@ -34,6 +34,13 @@
 <link rel="stylesheet" href="../../assets/css/security.css"/>
 <style>html{visibility:hidden}</style><script>(function(){var K='mbg_session',R='sppg',OK=['admin','sppg','user'];function clr(){try{sessionStorage.removeItem(K);localStorage.removeItem(K)}catch(e){}}function rd(st){try{var x=JSON.parse(st.getItem(K)||'null');if(!x||OK.indexOf(x.role)<0)return null;if(x.exp&&x.exp<Date.now()){clr();return null}return x}catch(e){return null}}function go(u){location.replace(u)}function ok(x){if(x.role!==R){go('../'+x.role+'/');return}document.documentElement.style.visibility='visible'}fetch('../../api/auth_user.php',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('auth');return r.json()}).then(function(d){if(d&&d.logged_in&&d.user&&OK.indexOf(d.user.role)>=0){ok({name:d.user.full_name,role:d.user.role})}else{go('../../auth/login.html')}}).catch(function(){go('../../auth/login.html')});document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href$="login.html"]');if(a){clr();try{fetch('../../api/auth_user?action=logout',{credentials:'same-origin',keepalive:true}).catch(function(){})}catch(_){}}});document.addEventListener('submit',function(e){var formId=e.target.id;var skipIds=['formSatgas','formSppg','formUploadUserAvatar','formUploadSppgLogo','sppgReplyForm'];if(skipIds.indexOf(formId)>=0)return;e.preventDefault();var existing=document.getElementById('mbg-demo-toast');if(existing)existing.remove();var toast=document.createElement('div');toast.id='mbg-demo-toast';toast.style.cssText=['position:fixed','top:80px','left:50%','transform:translateX(-50%)','z-index:99999','display:flex','align-items:center','gap:10px','padding:12px 20px','border-radius:12px','background:#001026','color:#fff','font-size:13px','font-weight:600','box-shadow:0 8px 24px rgba(0,16,38,0.3)','border:1px solid rgba(111,251,190,0.3)','pointer-events:none','transition:opacity 0.4s ease','opacity:1'].join(';');toast.innerHTML='<span style="color:#6ffbbe;font-size:18px;line-height:1;" class="material-symbols-outlined">info</span><span>Perubahan diterima. Data akan diperbarui setelah sinkronisasi server.</span>';document.body.appendChild(toast);setTimeout(function(){toast.style.opacity='0';setTimeout(function(){toast.remove()},400)},3000)},true)})();</script></head>
 <body class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
+  <div id="dashboard-auth-loading" role="status" aria-live="polite">
+    <div class="dashboard-auth-loading-card">
+      <span class="dashboard-auth-loading-spinner" aria-hidden="true"></span>
+      <strong>Memverifikasi sesi...</strong>
+      <span>Menyiapkan dashboard dengan aman.</span>
+    </div>
+  </div>
 
   <!-- Navbar Dashboard -->
   <header class="w-full bg-primary text-white backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm">
@@ -73,6 +80,12 @@
 
   <!-- Mobile Menu Drawer (SPPG) -->
   <div id="dashMobileMenu" class="hidden sm:hidden fixed top-[52px] left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-2xl px-4 py-4 flex flex-col gap-2">
+    <a href="../account/profile.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
+      <span class="material-symbols-outlined text-base text-indigo-600">account_circle</span> Atur Profil
+    </a>
+    <a href="../account/password.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
+      <span class="material-symbols-outlined text-base text-amber-600">key</span> Ganti Kata Sandi
+    </a>
     <a href="../../fitur/distribusi-sebaran-sppg.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 text-sm font-semibold transition-all">
       <span class="material-symbols-outlined text-base text-blue-600">map</span> Lihat Peta Spasial
     </a>
@@ -117,7 +130,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
       
       <!-- Form Input Menu Harian (7 Cols) -->
-      <div class="lg:col-span-7 bg-surface-card p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-sm">
+      <div id="input-menu" class="lg:col-span-7 bg-surface-card p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-sm">
         <div class="flex items-center gap-3 pb-4 mb-5 border-b border-slate-100">
           <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
             <span class="material-symbols-outlined text-2xl">restaurant_menu</span>
@@ -237,7 +250,7 @@
     </div>
 
     <!-- Riwayat Menu Dapur Terdaftar -->
-    <div class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div id="riwayat-menu" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
       <div class="p-6 border-b border-slate-100 flex items-center justify-between">
         <h2 class="text-base font-bold text-primary">Riwayat Menu Masakan yang Pernah Diterbitkan</h2>
         <span class="text-xs text-slate-400">Total 3 Rekaman</span>
@@ -639,7 +652,6 @@
 })();
 </script>
 <script>(function(){try{var K="mbg_session";var s=JSON.parse(sessionStorage.getItem(K)||localStorage.getItem(K)||"null");if(s&&s.name){var u=document.getElementById("sppgUnitDisplay");var b=document.getElementById("sppgBannerName");if(u)u.textContent=s.name;if(b)b.textContent=s.name;}}catch(e){}})();</script>
-  <script src="../../assets/js/dashboard-common.js"></script>
+  <script src="../../assets/js/dashboard-common.js?v=account-pages-1"></script>
 </body>
 </html>
-

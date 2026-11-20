@@ -34,28 +34,35 @@ export async function getLoginLockout(env, ip) {
 
 export async function recordLoginFailure(env, ip) {
   const rows = await dbQuery(env.DATABASE_URL, `
-    INSERT INTO auth_ip_lockouts (ip_address, failed_attempts)
-    VALUES ($1, 1)
-    ON CONFLICT (ip_address) DO UPDATE SET
-      failed_attempts = CASE WHEN auth_ip_lockouts.is_permanent THEN auth_ip_lockouts.failed_attempts ELSE auth_ip_lockouts.failed_attempts + 1 END,
-      is_permanent = auth_ip_lockouts.is_permanent OR auth_ip_lockouts.failed_attempts + 1 >= 15,
-      locked_until = CASE
-        WHEN auth_ip_lockouts.is_permanent OR auth_ip_lockouts.failed_attempts + 1 >= 15 THEN NULL
-        WHEN auth_ip_lockouts.failed_attempts + 1 >= 10 THEN NOW() + INTERVAL '1 hour'
-        WHEN auth_ip_lockouts.failed_attempts + 1 >= 5 THEN NOW() + INTERVAL '10 minutes'
-        ELSE NULL
-      END,
-      updated_at = NOW()
-    RETURNING ip_address AS ip, failed_attempts, locked_until AS blocked_until,
-              is_permanent AS permanent,
-              (is_permanent OR locked_until > NOW()) AS blocked
+    WITH updated_lockout AS (
+      INSERT INTO auth_ip_lockouts (ip_address, failed_attempts)
+      VALUES ($1, 1)
+      ON CONFLICT (ip_address) DO UPDATE SET
+        failed_attempts = CASE WHEN auth_ip_lockouts.is_permanent THEN auth_ip_lockouts.failed_attempts ELSE auth_ip_lockouts.failed_attempts + 1 END,
+        is_permanent = auth_ip_lockouts.is_permanent OR auth_ip_lockouts.failed_attempts + 1 >= 15,
+        locked_until = CASE
+          WHEN auth_ip_lockouts.is_permanent OR auth_ip_lockouts.failed_attempts + 1 >= 15 THEN NULL
+          WHEN auth_ip_lockouts.failed_attempts + 1 >= 10 THEN NOW() + INTERVAL '1 hour'
+          WHEN auth_ip_lockouts.failed_attempts + 1 >= 5 THEN NOW() + INTERVAL '10 minutes'
+          ELSE NULL
+        END,
+        updated_at = NOW()
+      RETURNING ip_address, failed_attempts, locked_until, is_permanent
+    ),
+    logged_event AS (
+      INSERT INTO auth_security_events (ip_address, event_type, failed_attempts, blocked_until, is_permanent)
+      SELECT ip_address,
+             CASE WHEN is_permanent OR failed_attempts IN (5, 10) THEN 'login_locked' ELSE 'login_failed' END,
+             failed_attempts, locked_until, is_permanent
+      FROM updated_lockout
+    )
+    SELECT ip_address AS ip, failed_attempts, locked_until AS blocked_until,
+           is_permanent AS permanent,
+           (is_permanent OR locked_until > NOW()) AS blocked
+    FROM updated_lockout
   `, [ip]);
   const row = rows[0];
   if (!row) throw new Error('Login lockout state was not returned.');
-  await dbQuery(env.DATABASE_URL, `
-    INSERT INTO auth_security_events (ip_address, event_type, failed_attempts, blocked_until, is_permanent)
-    VALUES ($1, $2, $3, $4, $5)
-  `, [ip, row.blocked ? 'login_locked' : 'login_failed', Number(row.failed_attempts), row.blocked_until || null, row.permanent === true || row.permanent === 't']);
   return {
     ip,
     blocked: row.blocked === true || row.blocked === 't',
@@ -67,11 +74,12 @@ export async function recordLoginFailure(env, ip) {
 
 export async function recordLoginSuccess(env, ip) {
   await dbQuery(env.DATABASE_URL, `
-    UPDATE auth_ip_lockouts
-    SET failed_attempts = 0, locked_until = NULL, updated_at = NOW()
-    WHERE ip_address = $1 AND is_permanent = FALSE
-  `, [ip]);
-  await dbQuery(env.DATABASE_URL, `
+    WITH reset_lockout AS (
+      UPDATE auth_ip_lockouts
+      SET failed_attempts = 0, locked_until = NULL, updated_at = NOW()
+      WHERE ip_address = $1 AND is_permanent = FALSE
+      RETURNING ip_address
+    )
     INSERT INTO auth_security_events (ip_address, event_type)
     VALUES ($1, 'login_success')
   `, [ip]);

@@ -43,9 +43,16 @@
       #security-log .security-enter,#securityRefreshBtn[disabled] .material-symbols-outlined{animation:none}
     }
   </style>
-  <script>fetch('../../api/auth_user.php',{credentials:'same-origin',cache:'no-store'}).then(function(r){if(!r.ok)throw new Error('auth');return r.json()}).then(function(d){if(d&&d.logged_in&&d.user&&d.user.role==='admin'){document.documentElement.style.visibility='visible'}else{location.replace('../../auth/login.html')}}).catch(function(){location.replace('../../auth/login.html')});</script>
+  <script>(function(){var localPhp=/^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname);var endpoint=localPhp?'../../api/auth_user.php':'../../api/auth_user';fetch(endpoint,{credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'}}).then(function(r){if(!r.ok)throw new Error('auth');return r.json()}).then(function(d){if(d&&d.logged_in&&d.user&&d.user.role==='admin'){document.documentElement.style.visibility='visible'}else{location.replace('../../auth/login.html')}}).catch(function(){location.replace('../../auth/login.html')})})();</script>
 </head>
 <body class="bg-surface font-sans text-primary min-h-screen">
+  <div id="dashboard-auth-loading" role="status" aria-live="polite">
+    <div class="dashboard-auth-loading-card">
+      <span class="dashboard-auth-loading-spinner" aria-hidden="true"></span>
+      <strong>Memverifikasi sesi...</strong>
+      <span>Menyiapkan dashboard dengan aman.</span>
+    </div>
+  </div>
 
   <!-- Header -->
   <header class="w-full bg-primary text-white sticky top-0 z-40 px-4 sm:px-8 py-3 flex items-center justify-between shadow-md">
@@ -196,6 +203,22 @@
           </table>
         </div>
       </div>
+      <section id="rootDeletionTools" class="hidden border-t border-slate-200 bg-slate-50 p-6">
+        <div class="mb-4">
+          <h3 class="text-sm font-extrabold text-primary">Persetujuan dan akun sementara</h3>
+          <p class="mt-1 text-xs text-slate-500">Akun yang dihapus dinonaktifkan terlebih dahulu dan dapat dipulihkan selama 7 hari.</p>
+        </div>
+        <div class="grid gap-5 lg:grid-cols-2">
+          <div class="rounded-2xl border border-amber-200 bg-white p-4">
+            <h4 class="mb-3 text-xs font-extrabold uppercase tracking-wide text-amber-800">Permintaan persetujuan</h4>
+            <div id="deletionRequestList" class="space-y-2 text-xs text-slate-500" aria-live="polite">Memuat permintaan...</div>
+          </div>
+          <div class="rounded-2xl border border-blue-200 bg-white p-4">
+            <h4 class="mb-3 text-xs font-extrabold uppercase tracking-wide text-blue-800">Akun sementara · maksimal 7 hari</h4>
+            <div id="temporaryDeletedUsers" class="space-y-2 text-xs text-slate-500" aria-live="polite">Memuat akun sementara...</div>
+          </div>
+        </div>
+      </section>
     </div>
 
     <!-- ══════════════════════════════════════════
@@ -336,7 +359,7 @@
             <span id="lastBackupBadge" class="px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 text-[10px] font-bold">—</span>
           </div>
           <p class="text-[11px] text-slate-500 mb-3">Arsip otomatis setiap 00:05 WIB</p>
-          <button onclick="triggerManualBackup()" class="w-full py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold text-[11px] transition-all">Jalankan Arsip Manual</button>
+          <button id="manualBackupButton" onclick="triggerManualBackup()" class="w-full py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold text-[11px] transition-all">Jalankan Arsip Manual</button>
         </div>
 
         <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 sm:col-span-2 lg:col-span-3">
@@ -345,6 +368,9 @@
               <span class="text-xs font-bold text-slate-700 uppercase">Mode Maintenance</span>
               <span id="maintenanceStatusBadge" class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[10px] font-bold">Memeriksa...</span>
             </div>
+            <a href="maintenance.html" class="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-amber-100 px-3 text-[11px] font-bold text-amber-800 transition hover:bg-amber-200">
+              <span class="material-symbols-outlined text-base">open_in_new</span> Buka pusat maintenance
+            </a>
             <label class="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" id="maintenanceToggle" class="sr-only peer" onchange="toggleMaintenance(this.checked)"/>
               <div class="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-amber-500 transition-all"></div>
@@ -417,10 +443,10 @@
       </div>
       <div class="p-4 sm:p-6 space-y-4">
         <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 leading-relaxed">
-          <strong>Indikasi</strong>, bukan bukti serangan.</strong> Deteksi heuristik dapat menghasilkan positif palsu. Lokasi IP bersifat perkiraan, bukan identitas pelaku. Status blok mengikuti laporan API dan bukan bukti permintaan ini diblokir. Payload tidak ditampilkan.
+          <strong>Indikasi</strong>, bukan bukti serangan. Deteksi heuristik dapat menghasilkan positif palsu. Lokasi IP bersifat perkiraan, bukan identitas pelaku. Status blok mengikuti laporan API dan bukan bukti permintaan ini diblokir. Payload tidak ditampilkan.
         </div>
         <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-          <p></p>Ringkasan snapshot terbaru · maksimal 100 log, bukan total global · tidak mengikuti filter.</p>
+          <p>Ringkasan snapshot terbaru · maksimal 100 log, bukan total global · tidak mengikuti filter.</p>
           <p id="securityUpdated">Belum ada snapshot.</p>
         </div>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -436,11 +462,11 @@
             <input id="securitySearch" type="search" placeholder="Jenis, IP, negara, wilayah, kota, URL, field, rule…" oninput="filterSecurityLogs()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"/>
           </div>
           <div>
-            <label for="securi</div>tyTypeFilter" class="block text-[11px] font-bold text-slate-600 mb-1">Jenis indikasi</label>
+            <label for="securityTypeFilter" class="block text-[11px] font-bold text-slate-600 mb-1">Jenis indikasi</label>
             <select id="securityTypeFilter" onchange="filterSecurityLogs()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"><option value="">Semua jenis</option></select>
           </div>
           <div>
-            <label for="securityBlockedFilter" class="block text-[11px] font-bold text-slate-600 mb-1">Status blok</div> (API)</label>
+            <label for="securityBlockedFilter" class="block text-[11px] font-bold text-slate-600 mb-1">Status blok (API)</label>
             <select id="securityBlockedFilter" onchange="filterSecurityLogs()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"><option value="">Semua status</option><option value="yes">Ya</option><option value="no">Tidak</option><option value="unknown">Tidak diketahui</option></select>
           </div>
         </div>
@@ -453,7 +479,7 @@
             <caption class="sr-only">Metadata maksimal 100 log terbaru. Waktu menggunakan zona waktu browser. Nilai yang tidak tersedia ditandai garis.</caption>
             <thead>
               <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[11px]">
-                <</thead>th scope="col" class="py-3 px-3">Waktu (lokal)</th>
+                <th scope="col" class="py-3 px-3">Waktu (lokal)</th>
                 <th scope="col" class="py-3 px-3">Jenis indikasi</th>
                 <th scope="col" class="py-3 px-3">IP</th>
                 <th scope="col" class="py-3 px-3">Negara</th>
@@ -541,27 +567,177 @@
   }
 
   // ── Load users dari API ───────────────────────────────────────────────────
-  function loadUsers() {
-    var tbody = document.getElementById('userTableBody');
-    fetch('/api/auth?action=list_users', {
-      headers: { 'X-Requested-By': 'mbg-radar' },
-      credentials: 'include'
-    })
-    .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
-    .then(function(res){
-      if (!res.data || !res.data.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Belum ada pengguna terdaftar.</td></tr>';
-        return;
-      }
-      renderUserTable(res.data);
-    })
-    .catch(function(){ tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Gagal memuat data. Deploy Worker untuk akses API.</td></tr>'; });
+  var _allUsers = [];
+  var _isSuperAdmin = false;
+  var _currentAdminId = 0;
+
+  function adminAccountApi(action, values) {
+    var endpoint = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
+      ? '../../api/auth_user.php'
+      : '../../api/auth_user';
+    var payload = new URLSearchParams(Object.assign({ action: action }, values || {}));
+    return fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8', Accept: 'application/json' },
+      body: payload.toString(),
+      credentials: 'same-origin',
+      cache: 'no-store'
+    }).then(function(response) {
+      return response.json().then(function(data) {
+        if (!response.ok || data.status === 'error') {
+          throw new Error(data.message || 'Permintaan manajemen akun gagal.');
+        }
+        return data;
+      });
+    });
   }
 
-  var _allUsers = [];
+  function loadUsers() {
+    var tbody = document.getElementById('userTableBody');
+    adminAccountApi('list_users')
+    .then(function(res) {
+      _isSuperAdmin = res.is_superadmin === true;
+      _currentAdminId = Number(res.current_user_id) || 0;
+      document.getElementById('rootDeletionTools').classList.toggle('hidden', !_isSuperAdmin);
+      if (!res.data || !res.data.length) {
+        _allUsers = [];
+        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">Belum ada pengguna terdaftar.</td></tr>';
+      } else {
+        renderUserTable(res.data);
+      }
+      if (_isSuperAdmin) loadAccountLifecycle();
+    })
+    .catch(function(error) {
+      tbody.textContent = '';
+      var errorRow = document.createElement('tr');
+      var errorCell = createTextCell('Gagal memuat akun: ' + error.message, 'py-6 text-center text-red-600');
+      errorCell.colSpan = 6;
+      errorRow.appendChild(errorCell);
+      tbody.appendChild(errorRow);
+      showToast(error.message, 'error');
+    });
+  }
+
   function renderUserTable(users) {
     _allUsers = Array.isArray(users) ? users : [];
     filterUsers('');
+  }
+
+  function createLifecycleAction(label, className, handler) {
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.textContent = label;
+    button.addEventListener('click', handler);
+    return button;
+  }
+
+  function loadAccountLifecycle() {
+    Promise.all([
+      adminAccountApi('list_deletion_requests'),
+      adminAccountApi('list_deleted_users')
+    ]).then(function(results) {
+      renderDeletionRequests(results[0].data || []);
+      renderTemporaryDeletedUsers(results[1].data || []);
+    }).catch(function(error) {
+      document.getElementById('deletionRequestList').textContent = 'Gagal memuat permintaan: ' + error.message;
+      document.getElementById('temporaryDeletedUsers').textContent = 'Gagal memuat akun sementara: ' + error.message;
+      showToast(error.message, 'error');
+    });
+  }
+
+  function renderDeletionRequests(requests) {
+    var container = document.getElementById('deletionRequestList');
+    container.textContent = '';
+    if (!requests.length) {
+      container.textContent = 'Tidak ada permintaan yang menunggu.';
+      return;
+    }
+    requests.forEach(function(request) {
+      var card = document.createElement('div');
+      card.className = 'rounded-xl border border-amber-100 bg-amber-50/60 p-3';
+      var identity = document.createElement('p');
+      identity.className = 'font-bold text-slate-800';
+      identity.textContent = (request.full_name || request.username || 'Akun') + ' · ' + (request.email || 'tanpa email');
+      var requester = document.createElement('p');
+      requester.className = 'mt-1 text-[10px] text-slate-500';
+      requester.textContent = 'Diminta oleh ' + (request.requested_by_username || 'admin lain') + ' · ' + (request.role || 'akun');
+      var actions = document.createElement('div');
+      actions.className = 'mt-3 flex gap-2';
+      actions.appendChild(createLifecycleAction('Setujui', 'rounded-lg bg-red-600 px-3 py-1.5 font-bold text-white hover:bg-red-700', function() {
+        reviewDeletionRequest(request.id, 'approve');
+      }));
+      actions.appendChild(createLifecycleAction('Tolak', 'rounded-lg bg-white px-3 py-1.5 font-bold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100', function() {
+        reviewDeletionRequest(request.id, 'reject');
+      }));
+      card.appendChild(identity);
+      card.appendChild(requester);
+      card.appendChild(actions);
+      container.appendChild(card);
+    });
+  }
+
+  function renderTemporaryDeletedUsers(users) {
+    var container = document.getElementById('temporaryDeletedUsers');
+    container.textContent = '';
+    if (!users.length) {
+      container.textContent = 'Belum ada akun di penyimpanan sementara.';
+      return;
+    }
+    users.forEach(function(user) {
+      var row = document.createElement('div');
+      row.className = 'flex flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3';
+      var details = document.createElement('div');
+      var identity = document.createElement('p');
+      identity.className = 'font-bold text-slate-800';
+      identity.textContent = (user.full_name || user.username || 'Akun') + ' · ' + (user.email || 'tanpa email');
+      var date = document.createElement('p');
+      date.className = 'mt-1 text-[10px] text-slate-500';
+      date.textContent = 'Dihapus: ' + new Date(user.deleted_at).toLocaleString('id-ID') + ' · otomatis permanen setelah 7 hari';
+      details.appendChild(identity);
+      details.appendChild(date);
+      row.appendChild(details);
+      row.appendChild(createLifecycleAction('Pulihkan', 'rounded-lg bg-blue-700 px-3 py-1.5 font-bold text-white hover:bg-blue-800', function() {
+        restoreUser(user.id, user.username);
+      }));
+      container.appendChild(row);
+    });
+  }
+
+  function requestUserDeletion(userId, username) {
+    var message = _isSuperAdmin
+      ? 'Pindahkan akun ' + username + ' ke penyimpanan sementara selama 7 hari?'
+      : 'Kirim permintaan penghapusan akun ' + username + ' kepada superadmin?';
+    if (!confirm(message)) return;
+    adminAccountApi('request_user_deletion', { user_id: String(userId) })
+      .then(function(result) {
+        showToast(result.message, 'success');
+        loadUsers();
+      })
+      .catch(function(error) { showToast(error.message, 'error'); });
+  }
+
+  function reviewDeletionRequest(requestId, decision) {
+    var approved = decision === 'approve';
+    if (!confirm(approved
+      ? 'Setujui penghapusan? Akun akan dinonaktifkan dan disimpan sementara 7 hari.'
+      : 'Tolak permintaan penghapusan ini?')) return;
+    adminAccountApi('review_user_deletion', { request_id: String(requestId), decision: decision })
+      .then(function(result) {
+        showToast(result.message, 'success');
+        loadUsers();
+      })
+      .catch(function(error) { showToast(error.message, 'error'); });
+  }
+
+  function restoreUser(userId, username) {
+    if (!confirm('Pulihkan akun ' + username + ' dan izinkan login kembali?')) return;
+    adminAccountApi('restore_user', { user_id: String(userId) })
+      .then(function(result) {
+        showToast(result.message, 'success');
+        loadUsers();
+      })
+      .catch(function(error) { showToast(error.message, 'error'); });
   }
 
   function createTextCell(value, className) {
@@ -620,12 +796,13 @@
 
       var actionCell = document.createElement('td');
       actionCell.className = 'py-2.5 px-3';
-      var suspendButton = document.createElement('button');
-      suspendButton.type = 'button';
-      suspendButton.className = 'px-2 py-1 rounded-lg bg-slate-100 hover:bg-red-50 hover:text-red-600 text-[10px] font-semibold transition-all';
-      suspendButton.textContent = 'Suspend';
-      suspendButton.addEventListener('click', function() { suspendUser(u.username == null ? '' : String(u.username)); });
-      actionCell.appendChild(suspendButton);
+      if (Number(u.id) !== _currentAdminId && String(u.email || '').toLowerCase() !== '19250779@bsi.ac.id') {
+        actionCell.appendChild(createLifecycleAction('Hapus', 'px-2 py-1 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-[10px] font-bold transition-all', function() {
+          requestUserDeletion(u.id, u.username == null ? '' : String(u.username));
+        }));
+      } else {
+        actionCell.appendChild(createBadge('Terlindungi', 'text-[10px] text-slate-400'));
+      }
       row.appendChild(actionCell);
       tbody.appendChild(row);
     });
@@ -726,17 +903,22 @@
     if (!_securityLoaded) securityTableMessage('Memuat metadata keamanan…');
 
     var controller = new AbortController();
-    var timeout = setTimeout(function() { controller.abort(); }, 15000);
-    var options = { headers: {'X-Requested-By':'mbg-radar', 'Accept':'application/json'}, credentials:'include', cache:'no-store', signal:controller.signal };
-    fetch('/api/security_threats', options)
+    var timeout = setTimeout(function() { controller.abort(); }, 30000);
+    var isLocalPhp = /^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname);
+    var endpoint = isLocalPhp ? '../../api/security_threats.php' : '/api/security_threats';
+    var options = { headers: {'X-Requested-By':'mbg-radar', 'Accept':'application/json'}, credentials:'same-origin', cache:'no-store', signal:controller.signal };
+    fetch(endpoint, options)
     .then(function(r) {
-      // Only fall back for an unavailable route, never to bypass an auth failure.
-      if (r.status === 404 || r.status === 405) return fetch('../../api/security_threats.php', options);
-      return r;
-    })
-    .then(function(r) {
-      if (!r.ok) throw new Error(r.status === 401 || r.status === 403 ? 'auth' : 'http');
-      return r.json();
+      return r.json().catch(function() { return null; }).then(function(data) {
+        if (r.status === 401 || r.status === 403) throw new Error('auth');
+        if (!r.ok) {
+          var message = data && typeof data.message === 'string' ? data.message : 'http';
+          var error = new Error(message);
+          error.status = r.status;
+          throw error;
+        }
+        return data;
+      });
     })
     .then(function(res) {
       if (!res || res.status !== 'success' || !Array.isArray(res.data) || res.data.some(function(l) { return !l || typeof l !== 'object' || Array.isArray(l); })) {
@@ -749,7 +931,7 @@
     })
     .catch(function(error) {
       status.className = 'rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700';
-      var reason = error.message === 'auth' ? 'Akses ditolak atau sesi berakhir. Periksa sesi admin.' : error.name === 'AbortError' ? 'Permintaan melewati batas waktu 15 detik.' : 'API gagal dihubungi atau respons tidak valid. Periksa koneksi dan deployment.';
+      var reason = error.message === 'auth' ? 'Akses ditolak atau sesi berakhir. Periksa sesi admin.' : error.name === 'AbortError' ? 'Permintaan melewati batas waktu 30 detik.' : error.status ? 'API merespons HTTP ' + error.status + (error.message !== 'http' ? ': ' + error.message : '.') : error.message === 'http' ? 'API gagal dihubungi atau respons tidak valid. Periksa koneksi, database, dan deployment.' : error.message;
       status.textContent = 'Gagal memuat log. ' + reason + (_securityLoaded ? ' Data dan ringkasan di bawah adalah snapshot lama, bukan kondisi terkini.' : ' Status keamanan tidak diketahui; coba muat ulang.');
       if (!_securityLoaded) securityTableMessage('Log tidak tersedia. Kegagalan memuat bukan berarti tidak ada insiden.');
     })
@@ -883,12 +1065,49 @@
   }
 
   function clearMenuCache() { showToast('Cache menu dibersihkan (client-side).', 'success'); try { var keys=[]; for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.startsWith('mbg_menu'))keys.push(k);} keys.forEach(function(k){localStorage.removeItem(k);}); } catch(e){} }
-  function triggerManualBackup() { showToast('Memicu arsip manual via cron endpoint...', 'info'); fetch('/api/menu/cron', { method:'POST', headers:{'X-Cron-Secret':'mbg-cron-secret-2026','X-Requested-By':'mbg-radar'} }).then(function(r){return r.json();}).then(function(d){ showToast('Arsip selesai: ' + (d.archived_count||0) + ' menu diarsip.', 'success'); document.getElementById('lastBackupBadge').textContent = 'Baru saja'; }).catch(function(){ showToast('Gagal memicu arsip. Cek cron endpoint.', 'error'); }); }
+  async function triggerManualBackup() {
+    var button = document.getElementById('manualBackupButton');
+    if (button && button.disabled) return;
+    if (button) { button.disabled = true; button.textContent = 'Menjalankan arsip...'; }
+    try {
+      var isLocalPhp = /^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname);
+      var endpoint = isLocalPhp ? '../../api/menu.php?backup_action=backup_run' : '../../api/menu/backup';
+      var response = await fetch(endpoint, { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' } });
+      var result = await response.json();
+      if (!response.ok || result.status !== 'success') {
+        throw new Error(result.message || 'Permintaan backup ditolak.');
+      }
+      var archived = Number(result.archived_count) || 0;
+      if (archived) {
+        showToast('Arsip selesai: ' + archived + ' menu dipindahkan ke backup.', 'success');
+        var badge = document.getElementById('lastBackupBadge');
+        if (badge) badge.textContent = 'Baru saja';
+      } else {
+        showToast('Tidak ada menu lama yang perlu diarsip saat ini.', 'info');
+      }
+    } catch (error) {
+      showToast('Backup gagal: ' + error.message, 'error');
+    } finally {
+      if (button) { button.disabled = false; button.textContent = 'Jalankan Arsip Manual'; }
+    }
+  }
 
   // ── Maintenance mode ──────────────────────────────────────────────────────
+  function decodeMaintenanceMessage(value) {
+    var decoder = document.createElement('textarea');
+    decoder.innerHTML = String(value || '');
+    return decoder.value;
+  }
+
+  function toLocalDateTimeValue(value) {
+    var date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+
   function loadMaintenanceStatus() {
     fetch('../../api/maintenance.php')
-      .then(function(r) { return r.json(); })
+      .then(function(r) { return r.json().then(function(data) { if (!r.ok) throw new Error(data.error || 'Gagal memuat status maintenance.'); return data; }); })
       .then(function(data) {
         var toggle = document.getElementById('maintenanceToggle');
         var badge  = document.getElementById('maintenanceStatusBadge');
@@ -900,19 +1119,19 @@
           (active ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
         if (data.message) {
           var ta = document.getElementById('maintenanceMessage');
-          if (ta && !ta.value) ta.value = data.message;
+          if (ta) ta.value = decodeMaintenanceMessage(data.message);
         }
         if (data.eta) {
           var etaInput = document.getElementById('maintenanceEta');
           if (etaInput && !etaInput.value) {
-            // datetime-local expects "YYYY-MM-DDTHH:MM"
-            try { etaInput.value = new Date(data.eta).toISOString().slice(0,16); } catch(e) {}
+            etaInput.value = toLocalDateTimeValue(data.eta);
           }
         }
       })
-      .catch(function() {
+      .catch(function(error) {
         var badge = document.getElementById('maintenanceStatusBadge');
         if (badge) { badge.textContent = 'Tidak Tersambung'; badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700'; }
+        showToast(error.message || 'Status maintenance tidak dapat dimuat.', 'error');
       });
   }
 
@@ -921,49 +1140,66 @@
   }
 
   function activateMaintenance() {
+    if (!confirm('Aktifkan halaman maintenance untuk semua pengunjung?')) {
+      loadMaintenanceStatus();
+      return;
+    }
     var msg = (document.getElementById('maintenanceMessage') || {}).value || 'Sedang dalam pemeliharaan sistem.';
-    var eta = (document.getElementById('maintenanceEta') || {}).value || '';
+    var etaInput = (document.getElementById('maintenanceEta') || {}).value || '';
+    var eta = '';
+    if (etaInput) {
+      var etaDate = new Date(etaInput);
+      if (Number.isNaN(etaDate.getTime())) {
+        showToast('Format estimasi selesai tidak valid.', 'error');
+        loadMaintenanceStatus();
+        return;
+      }
+      eta = etaDate.toISOString();
+    }
     showToast('Mengaktifkan mode maintenance...', 'info');
     fetch('../../api/maintenance.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'enable', message: msg, eta: eta })
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) { return r.json().then(function(data) { if (!r.ok) throw new Error(data.error || 'Gagal mengaktifkan maintenance.'); return data; }); })
     .then(function(res) {
       if (res.success) {
         showToast('Mode maintenance AKTIF. Pengunjung kini diarahkan ke halaman maintenance.', 'warning');
         loadMaintenanceStatus();
       } else {
-        showToast('Gagal mengaktifkan maintenance.', 'error');
+        throw new Error(res.error || 'Gagal mengaktifkan maintenance.');
       }
     })
-    .catch(function() { showToast('Gagal menghubungi API maintenance.', 'error'); });
+    .catch(function(error) { showToast(error.message || 'Gagal menghubungi API maintenance.', 'error'); loadMaintenanceStatus(); });
   }
 
   function deactivateMaintenance() {
+    if (!confirm('Nonaktifkan halaman maintenance dan buka kembali situs untuk pengunjung?')) {
+      loadMaintenanceStatus();
+      return;
+    }
     showToast('Menonaktifkan mode maintenance...', 'info');
     fetch('../../api/maintenance.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'disable' })
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) { return r.json().then(function(data) { if (!r.ok) throw new Error(data.error || 'Gagal menonaktifkan maintenance.'); return data; }); })
     .then(function(res) {
       if (res.success) {
         showToast('Mode maintenance dinonaktifkan. Situs kembali normal.', 'success');
         loadMaintenanceStatus();
       } else {
-        showToast('Gagal menonaktifkan maintenance.', 'error');
+        throw new Error(res.error || 'Gagal menonaktifkan maintenance.');
       }
     })
-    .catch(function() { showToast('Gagal menghubungi API maintenance.', 'error'); });
+    .catch(function(error) { showToast(error.message || 'Gagal menghubungi API maintenance.', 'error'); loadMaintenanceStatus(); });
   }
 
   function vacuumDb() { showToast('VACUUM hanya bisa dijalankan via psql langsung ke Neon.', 'info'); }
   function approvePhoto(btn, id) { btn.closest('.border').style.borderColor = '#059669'; btn.closest('.border').style.background = '#f0fdf4'; showToast('Foto profil disetujui.', 'success'); }
   function rejectPhoto(btn, id) { btn.closest('.border').remove(); showToast('Foto profil ditolak.', 'error'); }
-  function suspendUser(username) { if(confirm('Suspend akun ' + username + '?')) showToast('Akun ' + username + ' disuspend.', 'warning'); }
 
   // ── Init ──────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function() {

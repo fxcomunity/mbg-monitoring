@@ -12,7 +12,7 @@ const CORS = {
   'Content-Type': 'application/json'
 };
 
-const SESSION_TTL = 259200; // 3 days (72 hours)
+const SESSION_TTL = 30 * 24 * 60 * 60;
 const RATE_MAX    = 5;
 const RATE_WINDOW = 900;
 
@@ -238,5 +238,84 @@ export default {
     }
 
     return json({ status: 'error', message: 'Method tidak diizinkan.' }, 405);
+  },
+
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(purgeExpiredData(env).catch(error => {
+      console.error('[CRON] Pembersihan akun/laporan gagal:', error);
+      throw error;
+    }));
   }
 };
+
+async function purgeExpiredData(env) {
+  if (!env.DATABASE_URL) throw new Error('DATABASE_URL tidak dikonfigurasi untuk pembersihan akun terjadwal.');
+  const sql = neon(env.DATABASE_URL);
+  const deletedAccounts = await sql`
+    DELETE FROM users
+    WHERE deleted_at IS NOT NULL AND deleted_at <= NOW() - INTERVAL '7 days'
+      AND LOWER(email) <> '19250779@bsi.ac.id'
+    RETURNING id
+  `;
+  console.log(`[CRON] Akun sementara yang dihapus permanen: ${deletedAccounts.length}`);
+
+  let deletedReports = 0;
+  for (let batchNumber = 0; batchNumber < 10; batchNumber++) {
+    const expiredReports = env.TIKET_PHOTOS ? await sql`
+      SELECT id, photo_path
+      FROM laporan_aduan
+      WHERE created_at <= NOW() - INTERVAL '30 days'
+        AND (photo_path IS NULL OR photo_path LIKE '/api/tiket?photo=%')
+      ORDER BY created_at ASC
+      LIMIT 100
+    ` : await sql`
+      SELECT id, photo_path
+      FROM laporan_aduan
+      WHERE created_at <= NOW() - INTERVAL '30 days'
+        AND (photo_path IS NULL OR photo_path LIKE '/api/tiket?photo=TKT-BGN-%')
+      ORDER BY created_at ASC
+      LIMIT 100
+    `;
+    if (!expiredReports.length) break;
+
+    for (const report of expiredReports) {
+      const photoKey = cloudflarePhotoKey(report.photo_path);
+      if (photoKey) {
+        await env.TIKET_PHOTOS.delete(photoKey);
+      }
+      const removed = await sql`
+        DELETE FROM laporan_aduan
+        WHERE id = ${report.id} AND created_at <= NOW() - INTERVAL '30 days'
+        RETURNING id
+      `;
+      deletedReports += removed.length;
+    }
+    if (expiredReports.length < 100) break;
+  }
+  console.log(`[CRON] Laporan berumur lebih dari 30 hari yang dihapus: ${deletedReports}`);
+  if (!env.TIKET_PHOTOS) {
+    const legacy = await sql`
+      SELECT COUNT(*)::integer AS count
+      FROM laporan_aduan
+      WHERE created_at <= NOW() - INTERVAL '30 days'
+        AND photo_path LIKE '/api/tiket?photo=aduan%'
+    `;
+    if (Number(legacy[0]?.count) > 0) {
+      console.warn(`[CRON] ${legacy[0].count} laporan legacy memakai foto R2 dan belum dapat dipurge; pasang binding TIKET_PHOTOS untuk bucket lama.`);
+    }
+  }
+}
+
+function cloudflarePhotoKey(photoPath) {
+  if (photoPath == null) return null;
+  const url = new URL(String(photoPath), 'https://mbg-monitoring.invalid');
+  if (url.pathname !== '/api/tiket') {
+    throw new Error('Path foto laporan lama tidak dikenali; data tidak dihapus.');
+  }
+  const photoKey = url.searchParams.get('photo');
+  if (photoKey && /^TKT-BGN-\d{8}-[A-F0-9]{32,64}$/i.test(photoKey)) return null;
+  if (!photoKey || !/^aduan\/[a-f0-9-]{36}\.jpg$/i.test(photoKey)) {
+    throw new Error('Kunci foto laporan lama tidak valid; data tidak dihapus.');
+  }
+  return photoKey;
+}

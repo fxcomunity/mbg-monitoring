@@ -11,6 +11,59 @@ require_once __DIR__ . '/../database/security.php';
 header('Content-Type: application/json; charset=UTF-8');
 header('X-Content-Type-Options: nosniff');
 
+function handleMenuBackup(string $action): void {
+    require_once __DIR__ . '/../database/auth.php';
+    Auth::requireApiRole('admin');
+
+    try {
+        $pdo = getDB();
+        if ($action === 'backup_run') {
+            $row = $pdo->query('SELECT * FROM archive_yesterday_menu()')->fetch(PDO::FETCH_ASSOC) ?: [];
+            echo json_encode([
+                'status' => 'success',
+                'archived_count' => (int)($row['archived_count'] ?? 0),
+                'archive_date' => $row['archive_date'] ?? null,
+                'executed_at' => gmdate(DATE_ATOM),
+            ], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+
+        if ($action === 'backup_list') {
+            $rows = $pdo->query('SELECT * FROM menu_backup_summary LIMIT 90')->fetchAll(PDO::FETCH_ASSOC);
+        } elseif ($action === 'backup_export') {
+            $date = trim($_GET['date'] ?? '');
+            if ($date !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date)) {
+                http_response_code(400);
+                echo json_encode(['status' => 'error', 'message' => 'Format tanggal backup tidak valid.']);
+                return;
+            }
+            if ($date !== '') {
+                $stmt = $pdo->prepare('SELECT * FROM menu_backup WHERE menu_date = ? ORDER BY sppg_name, school_target LIMIT 10000');
+                $stmt->execute([$date]);
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $rows = $pdo->query('SELECT * FROM menu_backup ORDER BY menu_date DESC, sppg_name, school_target LIMIT 20000')->fetchAll(PDO::FETCH_ASSOC);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(['status' => 'error', 'message' => 'Aksi backup tidak dikenal.']);
+            return;
+        }
+
+        echo json_encode(['status' => 'success', 'data' => $rows], JSON_UNESCAPED_UNICODE);
+    } catch (Throwable $e) {
+        Security::logFailure('menu_backup', $e);
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Operasi backup menu gagal. Periksa konfigurasi database.']);
+    }
+}
+
+$backupAction = $_GET['backup_action'] ?? $_POST['backup_action'] ?? '';
+if (in_array($backupAction, ['backup_list', 'backup_export', 'backup_run'], true)) {
+    handleMenuBackup($backupAction);
+    exit;
+}
+
 $pdo = null;
 
 $schoolKey    = trim($_GET['school_key'] ?? '');

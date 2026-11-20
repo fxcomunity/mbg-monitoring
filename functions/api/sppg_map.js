@@ -15,17 +15,28 @@ export async function onRequest(context) {
 
   try {
     const params = [];
-    let query = `SELECT id, nama, provinsi, kabupaten_kota, alamat, nama_yayasan,
-                        status, data_bulan, latitude, longitude
-                 FROM sppg`;
+    let where = 'TRUE';
     if (provinsi) {
-      query += ' WHERE provinsi ILIKE $1';
+      where = 'provinsi ILIKE $1';
       params.push(provinsi);
     }
-    query += ` ORDER BY id LIMIT ${limit}`;
 
-    const result = await dbQuery(env.DATABASE_URL, query, params);
-    const rows = result.rows || [];
+    const gpsResult = await dbQuery(env.DATABASE_URL,
+      `SELECT id, nama, provinsi, kabupaten_kota, alamat, nama_yayasan,
+              status, data_bulan, latitude, longitude
+       FROM sppg
+       WHERE ${where} AND latitude IS NOT NULL AND longitude IS NOT NULL
+       ORDER BY id LIMIT ${limit}`,
+      params
+    );
+    const approximateResult = await dbQuery(env.DATABASE_URL,
+      `SELECT provinsi, kabupaten_kota, COUNT(*)::int AS sppg_count
+       FROM sppg
+       WHERE ${where} AND (latitude IS NULL OR longitude IS NULL)
+       GROUP BY provinsi, kabupaten_kota
+       ORDER BY provinsi, kabupaten_kota LIMIT ${limit}`,
+      params
+    );
 
     let centroidData = { provinces: [], cities: [] };
     const assetUrl = new URL('/database/data/indonesia-city-centroids.json', request.url);
@@ -61,38 +72,9 @@ export async function onRequest(context) {
     let gpsCount = 0;
     let unmapped = 0;
 
-    for (const row of rows) {
-      let latitude = row.latitude == null ? null : Number(row.latitude);
-      let longitude = row.longitude == null ? null : Number(row.longitude);
-      let estimated = false;
-      let locationLabel = 'Koordinat GPS terdaftar';
-      let provinceKey = '';
-      let cityKey = '';
-
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-        cityKey = normalize(row.kabupaten_kota);
-        provinceKey = normalize(row.provinsi);
-        provinceKey = provinceAliases[provinceKey] || provinceKey;
-        let centroid = provinceCities[`${provinceKey}|${cityKey}`] || null;
-        if (!centroid && cities[cityKey]?.length === 1) centroid = cities[cityKey][0];
-
-        if (centroid) {
-          latitude = Number(centroid.latitude);
-          longitude = Number(centroid.longitude);
-          locationLabel = 'Perkiraan pusat kabupaten/kota';
-        } else {
-          centroid = provinces[provinceKey] || null;
-          if (!centroid) {
-            unmapped++;
-            continue;
-          }
-          latitude = Number(centroid.latitude);
-          longitude = Number(centroid.longitude);
-          locationLabel = 'Perkiraan pusat provinsi';
-        }
-        estimated = true;
-      }
-
+    for (const row of gpsResult.rows || []) {
+      const latitude = Number(row.latitude);
+      const longitude = Number(row.longitude);
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
           latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
         unmapped++;
@@ -101,53 +83,78 @@ export async function onRequest(context) {
       if (bbox && (latitude < bbox[0] || latitude > bbox[2] || longitude < bbox[1] || longitude > bbox[3])) continue;
 
       mappedCount++;
-      if (estimated) {
-        approximateCount++;
-        const key = `${provinceKey}|${cityKey}|${latitude.toFixed(6)}|${longitude.toFixed(6)}`;
-        if (!(key in indexes)) {
-          indexes[key] = features.length;
-          features.push({
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [longitude, latitude] },
-            properties: {
-              id: Number(row.id),
-              nama: row.kabupaten_kota || `Wilayah ${row.provinsi || 'SPPG'}`,
-              provinsi: row.provinsi,
-              kabupaten_kota: row.kabupaten_kota,
-              alamat: row.alamat,
-              nama_yayasan: row.nama_yayasan,
-              status: row.status,
-              data_bulan: row.data_bulan,
-              location_accuracy: 'approximate',
-              location_label: locationLabel,
-              sppg_count: 0,
-              sample_names: []
-            }
-          });
+      gpsCount++;
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [longitude, latitude] },
+        properties: {
+          id: Number(row.id),
+          nama: row.nama,
+          provinsi: row.provinsi,
+          kabupaten_kota: row.kabupaten_kota,
+          alamat: row.alamat,
+          nama_yayasan: row.nama_yayasan,
+          status: row.status,
+          data_bulan: row.data_bulan,
+          location_accuracy: 'gps',
+          location_label: 'Koordinat GPS terdaftar',
+          sppg_count: 1
         }
-        const properties = features[indexes[key]].properties;
-        properties.sppg_count++;
-        if (properties.sample_names.length < 3 && row.nama) properties.sample_names.push(row.nama);
-      } else {
-        gpsCount++;
+      });
+    }
+
+    for (const row of approximateResult.rows || []) {
+      const groupCount = Number(row.sppg_count) || 0;
+      let cityKey = normalize(row.kabupaten_kota);
+      let provinceKey = normalize(row.provinsi);
+      provinceKey = provinceAliases[provinceKey] || provinceKey;
+      let centroid = provinceCities[`${provinceKey}|${cityKey}`] || null;
+      if (!centroid && cities[cityKey]?.length === 1) centroid = cities[cityKey][0];
+
+      let locationLabel = 'Perkiraan pusat kabupaten/kota';
+      if (!centroid) {
+        centroid = provinces[provinceKey] || null;
+        locationLabel = 'Perkiraan pusat provinsi';
+      }
+      if (!centroid) {
+        unmapped += groupCount;
+        continue;
+      }
+
+      const latitude = Number(centroid.latitude);
+      const longitude = Number(centroid.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+          latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        unmapped += groupCount;
+        continue;
+      }
+      if (bbox && (latitude < bbox[0] || latitude > bbox[2] || longitude < bbox[1] || longitude > bbox[3])) continue;
+
+      mappedCount += groupCount;
+      approximateCount += groupCount;
+      const key = `${provinceKey}|${cityKey}|${latitude.toFixed(6)}|${longitude.toFixed(6)}`;
+      if (!(key in indexes)) {
+        indexes[key] = features.length;
         features.push({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [longitude, latitude] },
           properties: {
-            id: Number(row.id),
-            nama: row.nama,
+            id: null,
+            nama: row.kabupaten_kota || `Wilayah ${row.provinsi || 'SPPG'}`,
             provinsi: row.provinsi,
             kabupaten_kota: row.kabupaten_kota,
-            alamat: row.alamat,
-            nama_yayasan: row.nama_yayasan,
-            status: row.status,
-            data_bulan: row.data_bulan,
-            location_accuracy: 'gps',
+            alamat: null,
+            nama_yayasan: null,
+            status: null,
+            data_bulan: null,
+            location_accuracy: 'approximate',
             location_label: locationLabel,
-            sppg_count: 1
+            sppg_count: 0,
+            sample_names: []
           }
         });
       }
+      features[indexes[key]].properties.sppg_count += groupCount;
     }
 
     return json({

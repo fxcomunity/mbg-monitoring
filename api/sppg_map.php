@@ -30,18 +30,28 @@ try {
         $bounds = null;
     }
 
-    $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+    $baseWhere = $where ? implode(' AND ', $where) : 'TRUE';
+    $gpsStmt = $pdo->prepare("
+        SELECT id, nama, provinsi, kabupaten_kota, alamat, nama_yayasan,
+               status, data_bulan, latitude, longitude
+        FROM sppg
+        WHERE {$baseWhere} AND latitude IS NOT NULL AND longitude IS NOT NULL
+        ORDER BY id
+        LIMIT {$limit}
+    ");
+    $gpsStmt->execute($params);
+    $gpsRows = $gpsStmt->fetchAll();
 
-    $sql = "SELECT id, nama, provinsi, kabupaten_kota, alamat, nama_yayasan,
-                   status, data_bulan, latitude, longitude
-            FROM sppg
-            {$whereClause}
-            ORDER BY id
-            LIMIT {$limit}";
-
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $rows = $stmt->fetchAll();
+    $approximateStmt = $pdo->prepare("
+        SELECT provinsi, kabupaten_kota, COUNT(*) AS sppg_count
+        FROM sppg
+        WHERE {$baseWhere} AND (latitude IS NULL OR longitude IS NULL)
+        GROUP BY provinsi, kabupaten_kota
+        ORDER BY provinsi, kabupaten_kota
+        LIMIT {$limit}
+    ");
+    $approximateStmt->execute($params);
+    $approximateRows = $approximateStmt->fetchAll();
 
     $centroidFile = __DIR__ . '/../database/data/indonesia-city-centroids.json';
     $centroidJson = file_get_contents($centroidFile);
@@ -83,91 +93,15 @@ try {
     $approximateCount = 0;
     $gpsCount = 0;
     $unmapped = 0;
-    foreach ($rows as $r) {
-        $latitude = $r['latitude'] !== null ? (float)$r['latitude'] : null;
-        $longitude = $r['longitude'] !== null ? (float)$r['longitude'] : null;
-        $estimated = false;
-        $locationLabel = 'Koordinat GPS terdaftar';
-
-        if ($latitude === null || $longitude === null) {
-            $cityKey = $normalizeName($r['kabupaten_kota'] ?? '');
-            $provinceName = $normalizeName($r['provinsi'] ?? '');
-            $provinceKey = $provinceAliases[$provinceName] ?? $provinceName;
-            $centroid = $centroidsByProvinceCity[$provinceKey . '|' . $cityKey] ?? null;
-
-            if ($centroid === null && count($centroidsByCity[$cityKey] ?? []) === 1) {
-                $centroid = $centroidsByCity[$cityKey][0];
-            }
-            if ($centroid !== null) {
-                $latitude = (float)$centroid['latitude'];
-                $longitude = (float)$centroid['longitude'];
-                $locationLabel = 'Perkiraan pusat kabupaten/kota';
-            } else {
-                $centroid = $centroidsByProvince[$provinceKey] ?? null;
-                if ($centroid === null) {
-                    $unmapped++;
-                    continue;
-                }
-                $latitude = (float)$centroid['latitude'];
-                $longitude = (float)$centroid['longitude'];
-                $locationLabel = 'Perkiraan pusat provinsi';
-            }
-            $estimated = true;
-        }
-
+    foreach ($gpsRows as $r) {
+        $latitude = (float)$r['latitude'];
+        $longitude = (float)$r['longitude'];
         if ($bounds !== null && (
             $latitude < $bounds[0] || $latitude > $bounds[2] ||
             $longitude < $bounds[1] || $longitude > $bounds[3]
-        )) {
-            continue;
-        }
+        )) continue;
 
         $mappedCount++;
-        $properties = [
-            'id'             => (int)$r['id'],
-            'nama'           => $estimated
-                ? ($r['kabupaten_kota'] ?: 'Wilayah ' . ($r['provinsi'] ?: 'SPPG'))
-                : $r['nama'],
-            'provinsi'       => $r['provinsi'],
-            'kabupaten_kota' => $r['kabupaten_kota'],
-            'alamat'         => $r['alamat'],
-            'nama_yayasan'   => $r['nama_yayasan'],
-            'status'         => $r['status'],
-            'data_bulan'     => $r['data_bulan'],
-            'location_accuracy' => $estimated ? 'approximate' : 'gps',
-            'location_label' => $locationLabel,
-            'sppg_count'     => 1,
-        ];
-
-        if ($estimated) {
-            $approximateCount++;
-            $featureKey = implode('|', [
-                $provinceKey,
-                $cityKey,
-                number_format($latitude, 6, '.', ''),
-                number_format($longitude, 6, '.', ''),
-            ]);
-            if (!isset($approximateFeatureIndexes[$featureKey])) {
-                $approximateFeatureIndexes[$featureKey] = count($features);
-                $properties['sppg_count'] = 0;
-                $features[] = [
-                    'type' => 'Feature',
-                    'geometry' => [
-                        'type' => 'Point',
-                        'coordinates' => [$longitude, $latitude],
-                    ],
-                    'properties' => $properties + ['sample_names' => []],
-                ];
-            }
-
-            $featureIndex = $approximateFeatureIndexes[$featureKey];
-            $features[$featureIndex]['properties']['sppg_count']++;
-            if (count($features[$featureIndex]['properties']['sample_names']) < 3) {
-                $features[$featureIndex]['properties']['sample_names'][] = $r['nama'];
-            }
-            continue;
-        }
-
         $gpsCount++;
         $features[] = [
             'type' => 'Feature',
@@ -175,8 +109,83 @@ try {
                 'type' => 'Point',
                 'coordinates' => [$longitude, $latitude],
             ],
-            'properties' => $properties,
+            'properties' => [
+                'id' => (int)$r['id'],
+                'nama' => $r['nama'],
+                'provinsi' => $r['provinsi'],
+                'kabupaten_kota' => $r['kabupaten_kota'],
+                'alamat' => $r['alamat'],
+                'nama_yayasan' => $r['nama_yayasan'],
+                'status' => $r['status'],
+                'data_bulan' => $r['data_bulan'],
+                'location_accuracy' => 'gps',
+                'location_label' => 'Koordinat GPS terdaftar',
+                'sppg_count' => 1,
+            ],
         ];
+    }
+
+    foreach ($approximateRows as $r) {
+        $groupCount = (int)$r['sppg_count'];
+        $cityKey = $normalizeName($r['kabupaten_kota'] ?? '');
+        $provinceName = $normalizeName($r['provinsi'] ?? '');
+        $provinceKey = $provinceAliases[$provinceName] ?? $provinceName;
+        $centroid = $centroidsByProvinceCity[$provinceKey . '|' . $cityKey] ?? null;
+
+        if ($centroid === null && count($centroidsByCity[$cityKey] ?? []) === 1) {
+            $centroid = $centroidsByCity[$cityKey][0];
+        }
+        $locationLabel = 'Perkiraan pusat kabupaten/kota';
+        if ($centroid === null) {
+            $centroid = $centroidsByProvince[$provinceKey] ?? null;
+            $locationLabel = 'Perkiraan pusat provinsi';
+        }
+        if ($centroid === null) {
+            $unmapped += $groupCount;
+            continue;
+        }
+
+        $latitude = (float)$centroid['latitude'];
+        $longitude = (float)$centroid['longitude'];
+        if ($bounds !== null && (
+            $latitude < $bounds[0] || $latitude > $bounds[2] ||
+            $longitude < $bounds[1] || $longitude > $bounds[3]
+        )) continue;
+
+        $mappedCount += $groupCount;
+        $approximateCount += $groupCount;
+        $featureKey = implode('|', [
+            $provinceKey,
+            $cityKey,
+            number_format($latitude, 6, '.', ''),
+            number_format($longitude, 6, '.', ''),
+        ]);
+        if (!isset($approximateFeatureIndexes[$featureKey])) {
+            $approximateFeatureIndexes[$featureKey] = count($features);
+            $features[] = [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [$longitude, $latitude],
+                ],
+                'properties' => [
+                    'id' => null,
+                    'nama' => $r['kabupaten_kota'] ?: 'Wilayah ' . ($r['provinsi'] ?: 'SPPG'),
+                    'provinsi' => $r['provinsi'],
+                    'kabupaten_kota' => $r['kabupaten_kota'],
+                    'alamat' => null,
+                    'nama_yayasan' => null,
+                    'status' => null,
+                    'data_bulan' => null,
+                    'location_accuracy' => 'approximate',
+                    'location_label' => $locationLabel,
+                    'sppg_count' => 0,
+                    'sample_names' => [],
+                ],
+            ];
+        }
+        $featureIndex = $approximateFeatureIndexes[$featureKey];
+        $features[$featureIndex]['properties']['sppg_count'] += $groupCount;
     }
 
     echo json_encode([

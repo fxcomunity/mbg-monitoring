@@ -2,6 +2,101 @@
 // api/tiket.php – Tracking Tiket Laporan Aduan Publik BGN
 require_once __DIR__ . '/../database/api_bootstrap.php';
 
+function normalizeReportPhoto(string $sourcePath, string $targetPath, string $sourceMime): bool {
+    if (!function_exists('imagecreatefromstring') || !function_exists('imagejpeg')) {
+        return false;
+    }
+
+    $imageInfo = @getimagesize($sourcePath);
+    if (!$imageInfo || ($imageInfo['mime'] ?? '') !== $sourceMime) {
+        return false;
+    }
+    $width = (int)$imageInfo[0];
+    $height = (int)$imageInfo[1];
+    if ($width < 1 || $height < 1 || $width > 8000 || $height > 8000 || $width * $height > 12000000) {
+        return false;
+    }
+
+    $sourceBytes = file_get_contents($sourcePath);
+    if ($sourceBytes === false) {
+        return false;
+    }
+    $sourceImage = @imagecreatefromstring($sourceBytes);
+    unset($sourceBytes);
+    if ($sourceImage === false) {
+        return false;
+    }
+
+    $cleanImage = imagecreatetruecolor($width, $height);
+    if ($cleanImage === false) {
+        imagedestroy($sourceImage);
+        return false;
+    }
+    $background = imagecolorallocate($cleanImage, 255, 255, 255);
+    imagefill($cleanImage, 0, 0, $background);
+    imagecopy($cleanImage, $sourceImage, 0, 0, 0, 0, $width, $height);
+    $saved = imagejpeg($cleanImage, $targetPath, 88);
+    imagedestroy($sourceImage);
+    imagedestroy($cleanImage);
+    return $saved;
+}
+
+function removeTemporaryReportPhoto(?string $path): void {
+    if ($path !== null && is_file($path) && !unlink($path)) {
+        error_log('[Report] Uploaded photo temp file could not be removed.');
+    }
+}
+
+function cleanupExpiredLocalReports(): void {
+    $pdo = getDB();
+    $directory = __DIR__ . '/../uploads/laporan';
+    $pdo->beginTransaction();
+    try {
+        $expired = $pdo->query(
+            "SELECT id, photo_path
+             FROM laporan_aduan
+             WHERE created_at <= NOW() - INTERVAL '30 days'
+               AND (photo_path IS NULL OR photo_path LIKE '/api/tiket.php?photo=%')
+             ORDER BY created_at ASC
+             LIMIT 100
+             FOR UPDATE"
+        )->fetchAll();
+        if (!$expired) {
+            $pdo->commit();
+            return;
+        }
+        $delete = $pdo->prepare(
+            "DELETE FROM laporan_aduan
+             WHERE id = ? AND created_at <= NOW() - INTERVAL '30 days'"
+        );
+        foreach ($expired as $report) {
+            $photoPath = $report['photo_path'] ?? null;
+            if ($photoPath !== null) {
+                parse_str((string)parse_url($photoPath, PHP_URL_QUERY), $query);
+                $filename = is_string($query['photo'] ?? null) ? $query['photo'] : '';
+                if (preg_match('/^TKT-BGN-\d{8}-[A-F0-9]{32,64}$/i', $filename)) {
+                    $filename = '';
+                } elseif (!preg_match('/^[a-f0-9]{32}\.(jpg|png|webp)$/i', $filename)) {
+                    throw new RuntimeException('Path lampiran laporan lama tidak valid.');
+                }
+                if ($filename !== '') {
+                    $photoFile = $directory . DIRECTORY_SEPARATOR . $filename;
+                    if (is_file($photoFile) && !unlink($photoFile)) {
+                        throw new RuntimeException('Lampiran laporan lama tidak dapat dihapus.');
+                    }
+                }
+            }
+            $delete->execute([(int)$report['id']]);
+        }
+        $pdo->commit();
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        throw $error;
+    }
+}
+
+cleanupExpiredLocalReports();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=UTF-8');
 
@@ -32,6 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    $ticketCode = 'TKT-BGN-' . str_replace('-', '', $incidentDate) . '-' . strtoupper(bin2hex(random_bytes(16)));
+
     if (isset($_FILES['photo']) && $_FILES['photo']['error'] !== UPLOAD_ERR_NO_FILE) {
         $photo = $_FILES['photo'];
         $finfo = new finfo(FILEINFO_MIME_TYPE);
@@ -43,46 +140,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $directory = __DIR__ . '/../uploads/laporan';
-        if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
+        $savedPhoto = tempnam(sys_get_temp_dir(), 'mbg-report-');
+        if ($savedPhoto === false) {
             http_response_code(500);
-            echo json_encode(['status' => 'error', 'message' => 'Penyimpanan foto tidak tersedia.'], JSON_UNESCAPED_UNICODE);
+            echo json_encode(['status' => 'error', 'message' => 'Penyimpanan sementara foto tidak tersedia.'], JSON_UNESCAPED_UNICODE);
             exit;
         }
-        $filename = bin2hex(random_bytes(16)) . '.' . $extensions[$mime];
-        $savedPhoto = $directory . DIRECTORY_SEPARATOR . $filename;
-        if (!move_uploaded_file($photo['tmp_name'], $savedPhoto)) {
+        if (!normalizeReportPhoto($photo['tmp_name'], $savedPhoto, $mime)) {
+            removeTemporaryReportPhoto($savedPhoto);
             http_response_code(500);
-            echo json_encode(['status' => 'error', 'message' => 'Foto gagal disimpan. Coba lagi.'], JSON_UNESCAPED_UNICODE);
+            echo json_encode(['status' => 'error', 'message' => 'Foto tidak dapat diverifikasi atau diproses dengan aman. Pilih file JPG, PNG, atau WEBP yang valid.'], JSON_UNESCAPED_UNICODE);
             exit;
         }
-        $photoPath = '/api/tiket.php?photo=' . rawurlencode($filename);
+        $photoPath = '/api/tiket.php?photo=' . rawurlencode($ticketCode);
         $photoName = basename($photo['name']);
     }
 
     try {
         $pdo = getDB();
-        $ticketCode = 'TKT-BGN-' . str_replace('-', '', $incidentDate) . '-' . strtoupper(bin2hex(random_bytes(4)));
+        $photoBytes = $savedPhoto ? file_get_contents($savedPhoto) : null;
+        if ($savedPhoto && $photoBytes === false) {
+            throw new RuntimeException('Foto sementara tidak dapat dibaca untuk disimpan ke database.');
+        }
+        $photoBase64 = is_string($photoBytes) ? base64_encode($photoBytes) : null;
         $stmt = $pdo->prepare(
             "INSERT INTO laporan_aduan (
                 ticket_code, reporter_name, reporter_phone, reporter_role,
                 issue_category, school_target, incident_date, description,
-                photo_path, photo_original_name, status, priority, ip_address, user_agent
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'masuk', 'sedang', ?, ?)
+                photo_path, photo_original_name, photo_data, status, priority, ip_address, user_agent
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, decode(?, 'base64'), 'masuk', 'sedang', ?, ?)
             RETURNING ticket_code"
         );
         $stmt->execute([
             $ticketCode, $name, $phone, $role, $category, $school, $incidentDate, $description,
-            $photoPath, $photoName, $_SERVER['REMOTE_ADDR'] ?? null,
+            $photoPath, $photoName, $photoBase64, $_SERVER['REMOTE_ADDR'] ?? null,
             substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)
         ]);
+        removeTemporaryReportPhoto($savedPhoto);
         echo json_encode([
             'status' => 'success',
             'ticket_code' => $stmt->fetchColumn(),
             'message' => 'Laporan berhasil disimpan.'
         ], JSON_UNESCAPED_UNICODE);
     } catch (Throwable $e) {
-        if ($savedPhoto && is_file($savedPhoto)) unlink($savedPhoto);
+        removeTemporaryReportPhoto($savedPhoto);
         Security::logFailure('tiket_submit', $e);
         http_response_code(500);
         echo json_encode(['status' => 'error', 'message' => 'Laporan gagal disimpan. Coba lagi beberapa saat.'], JSON_UNESCAPED_UNICODE);
@@ -93,11 +194,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if (isset($_GET['photo'])) {
     require_once __DIR__ . '/../database/auth.php';
     $currentUser = Auth::check() ? Auth::user() : null;
-    $filename = basename((string)$_GET['photo']);
     if (($currentUser['role'] ?? '') !== 'admin') {
         http_response_code(403);
         exit('Akses lampiran hanya untuk Admin Satgas.');
     }
+    $photoReference = (string)$_GET['photo'];
+    if (preg_match('/^TKT-BGN-\d{8}-[A-F0-9]{32,64}$/i', $photoReference)) {
+        $stmt = getDB()->prepare(
+            "SELECT replace(encode(photo_data, 'base64'), E'\\n', '') AS photo_base64
+             FROM laporan_aduan
+             WHERE ticket_code = ? AND photo_data IS NOT NULL
+             LIMIT 1"
+        );
+        $stmt->execute([$photoReference]);
+        $photoBase64 = $stmt->fetchColumn();
+        $photoBytes = is_string($photoBase64) ? base64_decode($photoBase64, true) : false;
+        if ($photoBytes === false) {
+            http_response_code(404);
+            exit('Lampiran tidak ditemukan.');
+        }
+        header('Content-Type: image/jpeg');
+        header('Content-Disposition: inline');
+        header('Cache-Control: private, no-store');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Length: ' . strlen($photoBytes));
+        echo $photoBytes;
+        exit;
+    }
+
+    $filename = basename($photoReference);
     if (!preg_match('/^[a-f0-9]{32}\.(jpg|png|webp)$/', $filename)) {
         http_response_code(404);
         exit('Lampiran tidak ditemukan.');
@@ -131,7 +256,7 @@ if ($tiket === '') {
 
 try {
     $pdo = getDB();
-    $stmt = $pdo->prepare('SELECT id, ticket_code, reporter_name, reporter_role, issue_category, school_target, incident_date, description, status, priority, satgas_notes, created_at FROM laporan_aduan WHERE ticket_code = ?');
+    $stmt = $pdo->prepare('SELECT ticket_code, status, created_at FROM laporan_aduan WHERE ticket_code = ?');
     $stmt->execute([$tiket]);
     $row = $stmt->fetch();
 
@@ -140,14 +265,8 @@ try {
             'status' => 'success',
             'data'   => [
                 'nomor_tiket'     => $row['ticket_code'],
-                'kategori'        => $row['issue_category'],
-                'target_sekolah'  => htmlspecialchars($row['school_target'], ENT_QUOTES, 'UTF-8'),
                 'status'          => $row['status'],
-                'priority'        => $row['priority'],
-                'tanggal_lapor'   => $row['created_at'],
-                'nama_pelapor'    => htmlspecialchars($row['reporter_name'], ENT_QUOTES, 'UTF-8'),
-                'deskripsi'       => htmlspecialchars($row['description'], ENT_QUOTES, 'UTF-8'),
-                'catatan_satgas'  => htmlspecialchars($row['satgas_notes'] ?? 'Dalam proses peninjauan Satgas BGN', ENT_QUOTES, 'UTF-8')
+                'tanggal_lapor'   => $row['created_at']
             ]
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     } else {

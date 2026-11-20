@@ -251,40 +251,32 @@
 <div>
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-secondary text-[22px]">public</span>
-<h2 class="text-headline-lg font-headline-lg text-primary">Peta Spasial Klaster SPPG &amp; Sekolah Binaan</h2>
+<h2 class="text-headline-lg font-headline-lg text-primary">Peta Lokasi SPPG</h2>
 </div>
 <p class="text-body-sm font-body-sm text-on-surface-variant mt-1">
-            Visualisasi radius termal 4 km menjamin makanan tersaji hangat (&gt;60°C) saat tiba di satuan pendidikan.
+            Titik lokasi ditampilkan dari database SPPG. Titik perkiraan wilayah dibedakan dari koordinat GPS terdaftar.
           </p>
 </div>
 <!-- Filter Controls -->
 <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-<a id="btnFilterMapLink" href="https://www.google.com/maps/search/?api=1&query=Dapur+SPPG+Badan+Gizi+Nasional+DKI+Jakarta" target="_blank" class="px-3.5 py-2 bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md rounded-xl transition-colors flex items-center gap-1.5 shadow-sm">
+<a id="btnFilterMapLink" href="https://www.google.com/maps/search/?api=1&query=SPPG+Indonesia" target="_blank" rel="noopener" class="px-3.5 py-2 bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md rounded-xl transition-colors flex items-center gap-1.5 shadow-sm">
   <span class="material-symbols-outlined text-[16px]">map</span>
   <span id="btnFilterMapLinkText">Buka Wilayah di Google Maps</span>
   <span class="material-symbols-outlined text-[14px]">open_in_new</span>
 </a>
-<select class="px-3 py-2 bg-surface-container-low text-on-surface font-label-md text-label-md rounded-xl focus:outline-none focus:ring-2 focus:ring-border-focus" id="filter-provinsi">
-<option value="all">Semua Provinsi (38)</option>
-<option selected="" value="dki">DKI Jakarta</option>
-<option value="bali">Bali (Bangli - Landih)</option>
-<option value="jabar">Jawa Barat</option>
-<option value="jateng">Jawa Tengah</option>
-<option value="jatim">Jawa Timur</option>
-<option value="banten">Banten</option>
+<select class="px-3 py-2 bg-surface-container-low text-on-surface font-label-md text-label-md rounded-xl focus:outline-none focus:ring-2 focus:ring-border-focus" id="filter-provinsi" aria-label="Filter provinsi">
+<option value="all">Memuat provinsi...</option>
 </select>
-<select class="px-3 py-2 bg-surface-container-low text-on-surface font-label-md text-label-md rounded-xl focus:outline-none focus:ring-2 focus:ring-border-focus" id="filter-status">
+<select class="px-3 py-2 bg-surface-container-low text-on-surface font-label-md text-label-md rounded-xl focus:outline-none focus:ring-2 focus:ring-border-focus" id="filter-status" aria-label="Filter status SPPG">
 <option value="all">Semua Status</option>
-<option value="active">Beroperasi Penuh (Katering Siang)</option>
-<option value="transit">Armada Sedang Bergerak</option>
-<option value="standby">Siaga Persiapan Shift 2</option>
 </select>
 <button class="px-3 py-2 bg-surface-container text-secondary font-label-md text-label-md rounded-xl hover:bg-surface-container-high transition-colors flex items-center gap-1.5" id="toggle-layer">
 <span class="material-symbols-outlined text-[16px]">layers</span>
-<span>Layer Radius Termal</span>
+<span>Titik perkiraan wilayah</span>
 </button>
 </div>
 </div>
+<p id="sppgMapStatus" class="text-xs text-on-surface-variant" role="status" aria-live="polite">Memuat lokasi dari database...</p>
 
 <!-- Map Display Container with Leaflet, OpenStreetMap, OSRM & Browser Geolocation -->
 <div class="relative w-full h-[520px] lg:h-[600px] rounded-3xl overflow-hidden shadow-inner border border-slate-200">
@@ -300,10 +292,10 @@
         <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-600"></span>
       </span>
       <span class="material-symbols-outlined text-sm text-blue-600 group-hover:scale-110 transition-transform">my_location</span>
-      <span id="btnDetectGPSText">Deteksi Lokasi Saya (GPS)</span>
+      <span id="btnDetectGPSText">Lokasi Saya &amp; Estimasi Rute</span>
     </button>
     <div id="gpsStatusCard" class="hidden px-3.5 py-2 rounded-2xl bg-[#001026]/90 text-white backdrop-blur-md text-[11px] font-medium shadow-md">
-      <span id="gpsStatusText">Mencari koordinat GPS Anda...</span>
+      <span id="gpsStatusText">Lokasi GPS hanya dipakai untuk mencari rute dan estimasi waktu tempuh.</span>
     </div>
   </div>
 
@@ -314,7 +306,7 @@
         <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
           <span class="material-symbols-outlined text-[16px]">alt_route</span>
         </span>
-        <span class="font-bold text-slate-900 text-[11px]">Rute Jalan OSRM Realtime</span>
+        <span class="font-bold text-slate-900 text-[11px]">Estimasi Perjalanan</span>
       </div>
       <span id="osrmBadge" class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Rute Aktif</span>
     </div>
@@ -338,32 +330,32 @@
   <div class="absolute bottom-16 right-4 z-[400] max-w-sm w-[90%] sm:w-full bg-surface-card/95 backdrop-blur-md p-4 rounded-3xl shadow-xl space-y-3 pointer-events-auto border border-slate-200">
     <div class="flex items-start justify-between">
       <div>
-        <span id="pinnedSppgCode" class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary-fixed text-label-sm font-label-sm">SPPG-JKTSEL-008</span>
-        <h3 id="pinnedSppgTitle" class="text-headline-sm font-headline-sm text-primary mt-1">SPPG Pasar Minggu Sentral</h3>
-        <span id="pinnedSppgAddress" class="text-xs text-on-surface-variant block mt-0.5">Jl. Raya Ragunan No. 12, Pasar Minggu, Jakarta Selatan</span>
+        <span id="pinnedSppgCode" class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary-fixed text-label-sm font-label-sm">Pilih lokasi</span>
+        <h3 id="pinnedSppgTitle" class="text-headline-sm font-headline-sm text-primary mt-1">Data SPPG</h3>
+        <span id="pinnedSppgAddress" class="text-xs text-on-surface-variant block mt-0.5">Lokasi akan dimuat dari database.</span>
       </div>
       <span class="material-symbols-outlined text-status-success text-[24px]">verified</span>
     </div>
     <div class="text-body-sm font-body-sm text-on-surface-variant space-y-1">
       <div class="flex justify-between">
-        <span>Radius Pelayanan:</span>
-        <span id="pinnedSppgRadius" class="font-semibold text-primary">2.9 km (6 Sekolah)</span>
+        <span>Akurasi lokasi:</span>
+        <span id="pinnedSppgRadius" class="font-semibold text-primary">—</span>
       </div>
       <div class="flex justify-between">
-        <span>Suhu Wadah Termal:</span>
-        <span id="pinnedSppgTemp" class="font-semibold text-status-success">68.4°C (Optimal)</span>
+        <span>Status database:</span>
+        <span id="pinnedSppgTemp" class="font-semibold text-status-success">—</span>
       </div>
       <div class="flex justify-between">
-        <span>Pengawas Gizi:</span>
-        <span id="pinnedSppgDietitian" class="font-semibold text-primary">Nurul Aisyah, S.Gz (STR-GZ)</span>
+        <span>Yayasan:</span>
+        <span id="pinnedSppgDietitian" class="font-semibold text-primary">—</span>
       </div>
     </div>
     <div class="flex gap-2">
       <button type="button" id="btnRouteToSppg" onclick="routeToCurrentSppg()" class="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm">
         <span class="material-symbols-outlined text-[16px]">directions</span>
-        <span>Buat Rute Jalan OSRM</span>
+        <span>Rute &amp; Waktu Tempuh</span>
       </button>
-      <a id="pinnedSppgMapLink" href="https://www.google.com/maps/search/?api=1&query=SPPG+Pasar+Minggu+Sentral" target="_blank" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-label-sm text-label-sm font-semibold flex items-center justify-center transition-all" title="Buka Google Maps">
+      <a id="pinnedSppgMapLink" href="#" target="_blank" rel="noopener" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-label-sm text-label-sm font-semibold flex items-center justify-center transition-all" title="Buka Google Maps">
         <span class="material-symbols-outlined text-[16px]">open_in_new</span>
       </a>
     </div>
@@ -373,21 +365,22 @@
   <div class="absolute bottom-4 left-4 z-[400] pointer-events-auto bg-surface-card/90 backdrop-blur-md p-3 rounded-2xl shadow-md space-y-1.5 text-label-sm font-label-sm border border-slate-200 hidden sm:block">
     <div class="flex items-center gap-2 text-on-surface">
       <span class="w-3 h-3 rounded-full bg-status-success"></span>
-      <span>Dapur SPPG Terakreditasi BGN</span>
+      <span>Koordinat GPS terdaftar</span>
     </div>
     <div class="flex items-center gap-2 text-on-surface">
       <span class="w-3 h-3 rounded-full bg-blue-600"></span>
       <span>Lokasi GPS Pengguna</span>
     </div>
     <div class="flex items-center gap-2 text-on-surface">
-      <span class="w-5 h-1 bg-blue-600 rounded"></span>
-      <span>Rute Jalan Nyata (OSRM)</span>
+      <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+      <span>Perkiraan pusat wilayah</span>
     </div>
   </div>
 </div>
 <div class="flex items-center gap-2 text-on-surface">
-<span class="w-3 h-3 rounded-full bg-secondary"></span>
-<span>Armada Van Termal Bergerak</span>
+<span class="material-symbols-outlined text-secondary text-[18px]">local_shipping</span>
+<span>Armada Van Termal</span>
+<span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[9px] font-black tracking-wide">SIMULASI</span>
 </div>
 <div class="flex items-center gap-2 text-on-surface">
 <span class="w-3 h-3 rounded-full bg-status-warning"></span>
@@ -823,7 +816,34 @@
       }
     });
   </script>
-</div></main><footer class="w-full bg-surface-container-lowest border-t border-border-subtle mt-space-xl">
+</div></main>
+<div id="mapTutorial" class="hidden fixed inset-0 z-[10000] items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="mapTutorialTitle">
+  <div class="w-full max-w-lg overflow-hidden rounded-3xl border border-white/40 bg-white shadow-2xl">
+    <div class="flex items-start justify-between gap-4 bg-gradient-to-r from-[#001026] to-[#134074] p-6 text-white">
+      <div>
+        <span class="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-200">
+          <span class="material-symbols-outlined text-sm">explore</span> Panduan Peta
+        </span>
+        <h2 id="mapTutorialTitle" class="mt-3 text-xl font-extrabold">Mau lihat cara pakainya?</h2>
+        <p id="mapTutorialText" class="mt-2 text-sm leading-relaxed text-slate-200">Panduan singkat ini membantu mencari lokasi SPPG, memilih titik tujuan, dan melihat estimasi rute.</p>
+      </div>
+      <span class="material-symbols-outlined text-3xl text-emerald-300" aria-hidden="true">map</span>
+    </div>
+    <div class="p-6">
+      <div class="mb-5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div id="mapTutorialProgress" class="h-full w-0 rounded-full bg-emerald-500 transition-all"></div>
+      </div>
+      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <button id="mapTutorialSkip" type="button" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800">Lewati, jangan tampilkan lagi</button>
+        <div class="flex justify-end gap-2">
+          <button id="mapTutorialBack" type="button" class="hidden rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Kembali</button>
+          <button id="mapTutorialNext" type="button" class="rounded-xl bg-[#001026] px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#134074]">Mulai tutorial</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="w-full bg-surface-container-lowest border-t border-border-subtle mt-space-xl">
   <div class="w-full px-space-lg py-space-xl">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-xl mb-space-xl">
       <div class="flex flex-col gap-space-sm">
@@ -928,96 +948,174 @@
   // =========================================================================
   // SISTEM PETA TELEMETRI GIS SPPG (Leaflet + OpenStreetMap + OSRM + GPS)
   // =========================================================================
-  const SPPG_DATA = {
-    "dki": {
-      code: "SPPG-JKTSEL-008",
-      name: "SPPG Pasar Minggu Sentral",
-      addr: "Jl. Raya Ragunan No. 12, Pasar Minggu, Jakarta Selatan",
-      lat: -6.2842,
-      lng: 106.8441,
-      radius: 4000,
-      temp: "68.4°C",
-      dietitian: "Nurul Aisyah, S.Gz (STR-GZ)",
-      capacity: 3000,
-      delivered: 2550,
-      regionName: "DKI Jakarta"
-    },
-    "bali": {
-      code: "C54XQES5",
-      name: "SPPG BANGLI BANGLI LANDIH",
-      addr: "Jln. Raya Penaga Landih, Bangli, Bali",
-      lat: -8.2389,
-      lng: 115.3556,
-      radius: 5000,
-      temp: "66.8°C",
-      dietitian: "dr. Andini Saraswati, Sp.GK",
-      capacity: 2500,
-      delivered: 2480,
-      regionName: "Bali (Bangli - Landih)"
-    },
-    "jabar": {
-      code: "SPPG-JBRBDG-003",
-      name: "SPPG Sukajadi Bandung Sentral",
-      addr: "Jl. Sukajadi No. 188, Sukajadi, Kota Bandung, Jawa Barat",
-      lat: -6.8905,
-      lng: 107.5982,
-      radius: 4500,
-      temp: "67.1°C",
-      dietitian: "dr. Hendra Kusuma, Sp.GK",
-      capacity: 4500,
-      delivered: 4100,
-      regionName: "Jawa Barat"
-    },
-    "jateng": {
-      code: "SPPG-JTGSMG-005",
-      name: "SPPG Semarang Tengah",
-      addr: "Jl. Pemuda No. 70, Semarang Tengah, Kota Semarang, Jawa Tengah",
-      lat: -6.9818,
-      lng: 110.4167,
-      radius: 4200,
-      temp: "66.5°C",
-      dietitian: "dr. Maya W., Sp.GK",
-      capacity: 3500,
-      delivered: 3200,
-      regionName: "Jawa Tengah"
-    },
-    "jatim": {
-      code: "SPPG-JTMSBY-002",
-      name: "SPPG Surabaya Rungkut Sentral",
-      addr: "Kawasan Industri SIER No. 12, Rungkut, Kota Surabaya, Jawa Timur",
-      lat: -7.3245,
-      lng: 112.7601,
-      radius: 4800,
-      temp: "67.8°C",
-      dietitian: "dr. Aditya Nugraha, Sp.GK",
-      capacity: 4200,
-      delivered: 3950,
-      regionName: "Jawa Timur"
-    },
-    "banten": {
-      code: "SPPG-BTNTGR-004",
-      name: "SPPG Cipocok Jaya Serang",
-      addr: "Jl. Raya Pandeglang No. 45, Cipocok Jaya, Kota Serang, Banten",
-      lat: -6.1311,
-      lng: 106.1602,
-      radius: 4000,
-      temp: "66.0°C",
-      dietitian: "Rina Oktaviani, S.Tr.Gz",
-      capacity: 2800,
-      delivered: 2600,
-      regionName: "Banten"
-    }
-  };
-
+  let sppgData = [];
   let mapDistribusi = null;
   let sppgMarkersLayer = null;
-  let sppgCirclesLayer = null;
   let userGpsMarker = null;
   let userGpsCircle = null;
   let activeRouteLine = null;
   let currentUserCoords = null; // [lat, lng]
-  let currentSelectedKey = 'dki';
-  let showThermalLayers = true;
+  let currentSelectedSppg = null;
+  let showApproximateLocations = true;
+  let indonesiaPolygons = [];
+  let indonesiaBoundaryLayer = null;
+  let simulationLayer = null;
+  const simulationTimers = [];
+
+  const mapTutorialKey = 'mbg-map-tutorial-v1';
+  const mapTutorialSteps = [
+    {
+      title: 'Saring lokasi dengan cepat',
+      text: 'Pilih provinsi atau status untuk mempersempit daftar. Tombol titik perkiraan membantu menampilkan atau menyembunyikan lokasi yang belum memiliki koordinat GPS kantor.'
+    },
+    {
+      title: 'Pilih titik SPPG',
+      text: 'Ketuk marker untuk melihat data lokasi dan memulai rute. Marker oranye adalah perkiraan pusat wilayah, bukan alamat kantor yang terverifikasi.'
+    },
+    {
+      title: 'Lihat rute dan estimasi',
+      text: 'Izinkan akses lokasi saat diminta. Jarak dan waktu dihitung melalui layanan rute eksternal; koordinat GPS Anda dikirim untuk perhitungan ini.'
+    }
+  ];
+  let mapTutorialSeen = false;
+  let mapTutorialStarted = false;
+  let mapTutorialStep = 0;
+
+  function rememberMapTutorial() {
+    mapTutorialSeen = true;
+    try { localStorage.setItem(mapTutorialKey, 'done'); } catch (error) {
+      console.warn('Preferensi tutorial peta tidak dapat disimpan di browser.', error);
+    }
+  }
+
+  function closeMapTutorial() {
+    const overlay = document.getElementById('mapTutorial');
+    if (overlay) {
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+    }
+    rememberMapTutorial();
+  }
+
+  function renderMapTutorialStep() {
+    const title = document.getElementById('mapTutorialTitle');
+    const text = document.getElementById('mapTutorialText');
+    const progress = document.getElementById('mapTutorialProgress');
+    const next = document.getElementById('mapTutorialNext');
+    const back = document.getElementById('mapTutorialBack');
+    const step = mapTutorialSteps[mapTutorialStep];
+    if (!step || !title || !text || !progress || !next || !back) return;
+    title.textContent = step.title;
+    text.textContent = step.text;
+    progress.style.width = `${((mapTutorialStep + 1) / mapTutorialSteps.length) * 100}%`;
+    back.classList.toggle('hidden', mapTutorialStep === 0);
+    next.textContent = mapTutorialStep === mapTutorialSteps.length - 1 ? 'Selesai' : 'Lanjut';
+  }
+
+  function initializeMapTutorial() {
+    const overlay = document.getElementById('mapTutorial');
+    const title = document.getElementById('mapTutorialTitle');
+    const text = document.getElementById('mapTutorialText');
+    const progress = document.getElementById('mapTutorialProgress');
+    const next = document.getElementById('mapTutorialNext');
+    const back = document.getElementById('mapTutorialBack');
+    const skip = document.getElementById('mapTutorialSkip');
+    if (!overlay || !title || !text || !progress || !next || !back || !skip) return;
+
+    try { mapTutorialSeen = localStorage.getItem(mapTutorialKey) === 'done'; } catch (error) {
+      mapTutorialSeen = false;
+      console.warn('Preferensi tutorial peta tidak dapat dibaca dari browser.', error);
+    }
+    if (mapTutorialSeen) return;
+
+    const begin = () => {
+      mapTutorialStarted = true;
+      mapTutorialStep = 0;
+      renderMapTutorialStep();
+    };
+    const dismiss = () => {
+      if (mapTutorialSeen) return;
+      closeMapTutorial();
+    };
+    next.addEventListener('click', () => {
+      if (!mapTutorialStarted) {
+        begin();
+        return;
+      }
+      if (mapTutorialStep === mapTutorialSteps.length - 1) {
+        dismiss();
+        return;
+      }
+      mapTutorialStep++;
+      renderMapTutorialStep();
+    });
+    back.addEventListener('click', () => {
+      if (!mapTutorialStarted || mapTutorialStep === 0) return;
+      mapTutorialStep--;
+      renderMapTutorialStep();
+    });
+    skip.addEventListener('click', dismiss);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !overlay.classList.contains('hidden')) dismiss();
+    });
+    document.addEventListener('click', event => {
+      if (!mapTutorialStarted && event.target instanceof Element && event.target.closest(
+        '#filter-provinsi, #filter-status, #toggle-layer, #btnDetectGPS, #btnRouteToSppg, .sppg-custom-pin, .route-to-sppg'
+      )) dismiss();
+    }, true);
+
+    setTimeout(() => {
+      if (mapTutorialSeen) return;
+      title.textContent = 'Mau lihat cara pakainya?';
+      text.textContent = 'Panduan singkat ini membantu mencari lokasi SPPG, memilih titik tujuan, dan melihat estimasi rute.';
+      progress.style.width = '0%';
+      next.textContent = 'Mulai tutorial';
+      back.classList.add('hidden');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      next.focus();
+    }, 900);
+  }
+
+  function isPointInRing(longitude, latitude, ring) {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if ((yi > latitude) !== (yj > latitude) &&
+          longitude < ((xj - xi) * (latitude - yi)) / (yj - yi) + xi) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+
+  function isCoordinateInIndonesia(latitude, longitude) {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
+        latitude < -11.5 || latitude > 6.5 || longitude < 94.5 || longitude > 141.5) {
+      return false;
+    }
+    return indonesiaPolygons.some(polygon =>
+      Array.isArray(polygon) && polygon.length > 0 &&
+      isPointInRing(longitude, latitude, polygon[0]) &&
+      !polygon.slice(1).some(hole => isPointInRing(longitude, latitude, hole))
+    );
+  }
+
+  function escapeMapHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char]));
+  }
+
+  function setSppgMapStatus(message) {
+    const status = document.getElementById('sppgMapStatus');
+    if (status) status.textContent = message;
+  }
 
   // 1. Inisialisasi Peta Leaflet & OpenStreetMap Tiles
   function initDistribusiLeafletMap() {
@@ -1025,8 +1123,11 @@
     if (!mapContainer || typeof L === 'undefined') return;
 
     mapDistribusi = L.map('distribusiLeafletMap', {
-      center: [SPPG_DATA.dki.lat, SPPG_DATA.dki.lng],
-      zoom: 12,
+      center: [-2.5, 118],
+      zoom: 4,
+      minZoom: 4,
+      maxBounds: [[-11.8, 94], [6.8, 142]],
+      maxBoundsViscosity: 1,
       zoomControl: true,
       scrollWheelZoom: true,
       attributionControl: true
@@ -1039,40 +1140,76 @@
     }).addTo(mapDistribusi);
 
     sppgMarkersLayer = L.layerGroup().addTo(mapDistribusi);
-    sppgCirclesLayer = L.layerGroup().addTo(mapDistribusi);
+    indonesiaBoundaryLayer = L.layerGroup().addTo(mapDistribusi);
+    simulationLayer = L.layerGroup().addTo(mapDistribusi);
+    mapDistribusi.on('click', () => {
+      if (!mapTutorialStarted && !mapTutorialSeen) closeMapTutorial();
+    });
+    loadIndonesiaMapBoundary().then(loaded => {
+      if (loaded) loadSppgLocations();
+    });
+  }
 
-    renderAllSppgPoints();
+  async function loadIndonesiaMapBoundary() {
+    try {
+      const response = await fetch('../assets/data/indonesia-boundary.geojson', { cache: 'force-cache' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const boundary = await response.json();
+      const geometry = boundary && boundary.geometry;
+      if (geometry?.type !== 'MultiPolygon' || !Array.isArray(geometry.coordinates) || !geometry.coordinates.length) {
+        throw new Error('Format batas Indonesia tidak valid');
+      }
+      indonesiaPolygons = geometry.coordinates;
+      const countryRings = indonesiaPolygons.flatMap(polygon =>
+        polygon.filter(ring => Array.isArray(ring) && ring.length >= 4)
+          .map(ring => ring.map(([longitude, latitude]) => [latitude, longitude]))
+      );
+      if (!countryRings.length) throw new Error('Batas Indonesia kosong');
 
-    // Coba deteksi lokasi GPS secara halus di awal
-    if (navigator.geolocation) {
-      detectUserLocationRealtime(false);
+      const outsideRing = [[7, 92], [7, 143], [-12, 143], [-12, 92], [7, 92]];
+      L.polygon([outsideRing, ...countryRings], {
+        stroke: false,
+        fillColor: '#c9e6ed',
+        fillOpacity: 1,
+        fillRule: 'evenodd',
+        interactive: false
+      }).addTo(indonesiaBoundaryLayer);
+      L.polyline(countryRings, {
+        color: '#0f766e',
+        opacity: 0.9,
+        weight: 1,
+        interactive: false
+      }).addTo(indonesiaBoundaryLayer);
+      mapDistribusi.fitBounds([[-11.2, 94.5], [6.2, 141.2]], { padding: [12, 12], maxZoom: 5 });
+      return true;
+    } catch (error) {
+      console.error('Gagal memuat batas Indonesia:', error);
+      setSppgMapStatus('Batas peta Indonesia gagal dimuat. Lokasi disembunyikan demi memastikan peta tetap khusus Indonesia.');
+      mapDistribusi.eachLayer(layer => {
+        if (layer instanceof L.TileLayer) mapDistribusi.removeLayer(layer);
+      });
+      return false;
     }
   }
 
-  // 2. Render Marker & Radius Termal SPPG di Peta
+  // 2. Render database SPPG dan titik perkiraan wilayah di peta
   function renderAllSppgPoints() {
     if (!mapDistribusi) return;
     sppgMarkersLayer.clearLayers();
-    sppgCirclesLayer.clearLayers();
+    const province = document.getElementById('filter-provinsi')?.value || 'all';
+    const status = document.getElementById('filter-status')?.value || 'all';
+    const visibleLocations = sppgData.filter(sppg =>
+      (province === 'all' || sppg.provinsi === province) &&
+      (status === 'all' || sppg.status === status) &&
+      (showApproximateLocations || sppg.location_accuracy !== 'approximate')
+    );
 
-    Object.entries(SPPG_DATA).forEach(([key, sppg]) => {
-      // Circle Radius Termal 4-5 KM (>60°C Hot Chain)
-      if (showThermalLayers) {
-        const circle = L.circle([sppg.lat, sppg.lng], {
-          radius: sppg.radius,
-          color: '#059669',
-          fillColor: '#10B981',
-          fillOpacity: 0.12,
-          weight: 1.5,
-          dashArray: '4, 4'
-        }).addTo(sppgCirclesLayer);
-      }
-
+    visibleLocations.forEach(sppg => {
       // Icon Marker SPPG
       const icon = L.divIcon({
         className: 'sppg-custom-pin',
         html: `
-          <div style="background:#059669; color:#fff; width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(5,150,105,0.4); border:2px solid #fff; cursor:pointer;" title="${sppg.name}">
+          <div style="background:${sppg.location_accuracy === 'approximate' ? '#d97706' : '#059669'}; color:#fff; width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(5,150,105,0.4); border:2px solid #fff; cursor:pointer;" title="${escapeMapHtml(sppg.nama)}">
             <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
           </div>
         `,
@@ -1080,31 +1217,202 @@
         iconAnchor: [17, 17]
       });
 
-      const marker = L.marker([sppg.lat, sppg.lng], { icon: icon }).addTo(sppgMarkersLayer);
+      const marker = L.marker([sppg.latitude, sppg.longitude], { icon }).addTo(sppgMarkersLayer);
+      const address = sppg.alamat ? `<p style="margin:0 0 6px 0;font-size:11px;color:#64748b;">${escapeMapHtml(sppg.alamat)}</p>` : '';
+      const locationCount = sppg.sppg_count > 1
+        ? `<div style="font-size:11px;color:#334155;margin:4px 0;">${sppg.sppg_count.toLocaleString('id-ID')} dapur di titik perkiraan wilayah</div>`
+        : '';
+      const samples = sppg.sample_names.length
+        ? `<div style="font-size:10px;color:#64748b;margin-bottom:3px;">Contoh: ${escapeMapHtml(sppg.sample_names.join(', '))}</div>`
+        : '';
+      const accuracy = sppg.location_accuracy === 'approximate'
+        ? `<div style="font-size:10px;color:#92400e;background:#fffbeb;padding:4px 6px;border-radius:6px;margin-top:4px;">${escapeMapHtml(sppg.location_label || 'Titik perkiraan wilayah')}, bukan lokasi dapur terverifikasi.</div>`
+        : '<div style="font-size:10px;color:#059669;margin-top:4px;">Koordinat GPS terdaftar</div>';
       marker.bindPopup(`
         <div style="font-family:'Plus Jakarta Sans',sans-serif; min-width:200px; padding:2px;">
-          <span style="font-size:10px; font-weight:700; color:#059669; text-transform:uppercase;">Dapur SPPG BGN</span>
-          <h4 style="margin:2px 0 4px 0; font-size:13px; font-weight:700; color:#0f172a;">${sppg.name}</h4>
-          <p style="margin:0 0 6px 0; font-size:11px; color:#64748b;">${sppg.addr}</p>
+          <span style="font-size:10px;font-weight:700;color:#059669;text-transform:uppercase;">Data SPPG · ID ${escapeMapHtml(sppg.id || '—')}</span>
+          <h4 style="margin:2px 0 4px 0;font-size:13px;font-weight:700;color:#0f172a;">${escapeMapHtml(sppg.nama)}</h4>
+          <div style="font-size:11px;color:#059669;margin-bottom:4px;font-weight:600;">${escapeMapHtml(sppg.provinsi)}${sppg.kabupaten_kota ? ' — ' + escapeMapHtml(sppg.kabupaten_kota) : ''}</div>
+          ${address}
+          ${sppg.nama_yayasan ? `<div style="font-size:10px;color:#64748b;margin-bottom:3px;">Yayasan: ${escapeMapHtml(sppg.nama_yayasan)}</div>` : ''}
+          ${locationCount}${samples}${accuracy}
           <div style="font-size:11px; color:#334155; line-height:1.5; border-top:1px solid #f1f5f9; padding-top:4px;">
-            <div>Suhu Hot Chain: <strong style="color:#059669;">${sppg.temp}</strong></div>
-            <div>Kapasitas: <strong>${sppg.capacity} porsi</strong></div>
-            <div>Penanggung Jawab: <strong>${sppg.dietitian}</strong></div>
+            <div>Status: <strong>${escapeMapHtml(sppg.status || '—')}</strong></div>
+            <div>Data: ${escapeMapHtml(sppg.data_bulan || '—')}</div>
           </div>
-          <button type="button" onclick="selectAndRouteSppg('${key}')" style="margin-top:8px; width:100%; padding:6px 8px; border-radius:8px; background:#2563EB; color:#fff; font-size:11px; font-weight:700; border:none; cursor:pointer;">
-            Buat Rute OSRM ke Sini
+          <button type="button" class="route-to-sppg" style="margin-top:8px;width:100%;padding:6px 8px;border-radius:8px;background:#2563EB;color:#fff;font-size:11px;font-weight:700;border:none;cursor:pointer;">
+            ${sppg.location_accuracy === 'approximate' ? 'Rute ke pusat wilayah (perkiraan)' : 'Lihat rute & estimasi waktu'}
           </button>
         </div>
       `);
 
       marker.on('click', () => {
-        updatePinnedCard(key);
+        updatePinnedCard(sppg);
+        routeToCurrentSppg(sppg);
       });
+      marker.on('popupopen', event => {
+        const routeButton = event.popup.getElement()?.querySelector('.route-to-sppg');
+        if (routeButton) {
+          routeButton.addEventListener('click', () => {
+            updatePinnedCard(sppg);
+            routeToCurrentSppg(sppg);
+          });
+        }
+      });
+    });
+
+    setSppgMapStatus(`${visibleLocations.reduce((sum, item) => sum + item.sppg_count, 0).toLocaleString('id-ID')} SPPG ditampilkan dari database · ${visibleLocations.length.toLocaleString('id-ID')} titik peta`);
+  }
+
+  function renderSimulatedFleet() {
+    if (!simulationLayer || !sppgData.length || simulationTimers.length) return;
+    const candidates = sppgData.slice(0, 4);
+    const meals = [
+      'Nasi, ayam panggang, tumis bayam-wortel, pepaya',
+      'Nasi merah, telur, tempe, capcay, pisang',
+      'Nasi, ikan, tahu, sayur bening, jeruk',
+      'Nasi, ayam, kacang panjang, jagung, semangka'
+    ];
+    const offsets = [
+      [0.8, 0], [-0.8, 0], [0, 0.8], [0, -0.8],
+      [0.4, 0], [-0.4, 0], [0, 0.4], [0, -0.4],
+      [0.2, 0], [-0.2, 0], [0, 0.2], [0, -0.2],
+      [0.1, 0], [-0.1, 0], [0, 0.1], [0, -0.1]
+    ];
+
+    candidates.forEach((sppg, index) => {
+      const origin = [Number(sppg.latitude), Number(sppg.longitude)];
+      if (!isCoordinateInIndonesia(origin[0], origin[1])) return;
+      const destination = offsets
+        .map(([latOffset, lngOffset]) => [origin[0] + latOffset, origin[1] + lngOffset])
+        .find(([latitude, longitude]) => isCoordinateInIndonesia(latitude, longitude));
+      if (!destination) return;
+
+      const simulationId = `SIM-VAN-${Date.now().toString(36).toUpperCase()}-${index + 1}`;
+      const region = sppg.kabupaten_kota || sppg.provinsi || 'Indonesia';
+      const schoolName = `Sekolah Simulasi ${region}`;
+      const meal = meals[index % meals.length];
+      L.polyline([origin, destination], {
+        color: '#f59e0b',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '7 8',
+        interactive: false
+      }).addTo(simulationLayer);
+
+      const vanIcon = L.divIcon({
+        className: 'simulation-van-icon',
+        html: `<div style="width:82px;display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:auto;">
+          <span style="padding:2px 6px;border-radius:999px;background:#78350f;color:#fff;font:800 9px/1.3 Arial,sans-serif;letter-spacing:.08em;box-shadow:0 2px 5px #0004;">SIMULASI</span>
+          <span style="display:grid;place-items:center;width:34px;height:30px;border:2px solid #fff;border-radius:10px;background:#f59e0b;color:#422006;box-shadow:0 3px 8px #0005;">
+            <svg width="23" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z"/><circle cx="7.5" cy="18" r="1.7" fill="currentColor"/><circle cx="18" cy="18" r="1.7" fill="currentColor"/></svg>
+          </span>
+        </div>`,
+        iconSize: [82, 58],
+        iconAnchor: [41, 47],
+        popupAnchor: [0, -45]
+      });
+      const van = L.marker(origin, { icon: vanIcon, title: `Van ${simulationId} — simulasi` }).addTo(simulationLayer);
+      van.bindPopup(`<div style="min-width:210px;font:12px/1.5 Arial,sans-serif;color:#0f172a;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.1em;color:#b45309;">SIMULASI ARMADA</div>
+        <strong>ID Sistem: ${escapeMapHtml(simulationId)}</strong>
+        <div style="margin-top:5px;">Rute: ${escapeMapHtml(sppg.nama)} ⇄ ${escapeMapHtml(schoolName)}</div>
+        <div style="margin-top:5px;"><strong>Menu bergizi:</strong> ${escapeMapHtml(meal)}</div>
+        <div style="margin-top:5px;color:#64748b;font-size:10px;">Titik sekolah dan pergerakan ini hanya simulasi, bukan pelacakan armada nyata.</div>
+      </div>`);
+
+      const startedAt = Date.now();
+      const travelDuration = 18000 + index * 1500;
+      const timer = setInterval(() => {
+        const cycleProgress = ((Date.now() - startedAt) % (travelDuration * 2)) / travelDuration;
+        const outbound = cycleProgress <= 1;
+        const progress = outbound ? cycleProgress : 2 - cycleProgress;
+        const start = outbound ? origin : destination;
+        const end = outbound ? destination : origin;
+        van.setLatLng([
+          start[0] + (end[0] - start[0]) * progress,
+          start[1] + (end[1] - start[1]) * progress
+        ]);
+      }, 1000);
+      simulationTimers.push(timer);
     });
   }
 
+  function populateSppgFilters() {
+    const provinceFilter = document.getElementById('filter-provinsi');
+    const statusFilter = document.getElementById('filter-status');
+    if (provinceFilter) {
+      const provinces = Array.from(new Set(sppgData.map(item => item.provinsi).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'id'));
+      provinceFilter.innerHTML = '<option value="all">Semua Provinsi (' + provinces.length.toLocaleString('id-ID') + ')</option>' +
+        provinces.map(name => `<option value="${escapeMapHtml(name)}">${escapeMapHtml(name)}</option>`).join('');
+    }
+    if (statusFilter) {
+      const statuses = Array.from(new Set(sppgData.map(item => item.status).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'id'));
+      statusFilter.innerHTML = '<option value="all">Semua Status</option>' +
+        statuses.map(name => `<option value="${escapeMapHtml(name)}">${escapeMapHtml(name)}</option>`).join('');
+    }
+  }
+
+  async function loadSppgLocations() {
+    setSppgMapStatus('Memuat lokasi dari database...');
+    try {
+      const response = await fetch('../api/sppg_map.php?limit=50000', { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const result = await response.json();
+      if (result.type !== 'FeatureCollection' || !Array.isArray(result.features)) {
+        throw new Error('Format data GeoJSON SPPG tidak valid');
+      }
+
+      const mappedLocations = result.features.map(feature => {
+        const coordinates = feature.geometry && feature.geometry.coordinates;
+        if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
+        const properties = feature.properties || {};
+        const longitude = Number(coordinates[0]);
+        const latitude = Number(coordinates[1]);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+        return {
+          id: properties.id,
+          nama: properties.nama || 'SPPG tanpa nama',
+          provinsi: properties.provinsi || '',
+          kabupaten_kota: properties.kabupaten_kota || '',
+          alamat: properties.alamat || '',
+          nama_yayasan: properties.nama_yayasan || '',
+          status: properties.status || '',
+          data_bulan: properties.data_bulan || '',
+          location_accuracy: properties.location_accuracy || 'gps',
+          location_label: properties.location_label || '',
+          sppg_count: Math.max(1, Number(properties.sppg_count) || 1),
+          sample_names: Array.isArray(properties.sample_names) ? properties.sample_names : [],
+          latitude,
+          longitude
+        };
+      }).filter(Boolean);
+      sppgData = mappedLocations.filter(sppg =>
+        isCoordinateInIndonesia(sppg.latitude, sppg.longitude)
+      );
+      const outsideCount = mappedLocations.length - sppgData.length;
+
+      populateSppgFilters();
+      renderAllSppgPoints();
+      if (!sppgData.length) {
+        setSppgMapStatus('Belum ada lokasi SPPG yang valid di wilayah Indonesia.');
+        return;
+      }
+      const bounds = L.latLngBounds(sppgData.map(item => [item.latitude, item.longitude]));
+      if (bounds.isValid()) mapDistribusi.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
+      updatePinnedCard(sppgData[0]);
+      renderSimulatedFleet();
+      if (outsideCount) {
+        setSppgMapStatus(`${sppgData.length.toLocaleString('id-ID')} lokasi dalam wilayah Indonesia ditampilkan; ${outsideCount.toLocaleString('id-ID')} koordinat di luar batas disembunyikan.`);
+      }
+    } catch (error) {
+      console.error('Gagal memuat data lokasi SPPG:', error);
+      setSppgMapStatus('Data lokasi SPPG gagal dimuat. Silakan muat ulang halaman atau periksa koneksi API.');
+    }
+  }
+
   // 3. Geolocation Browser: Membaca Lokasi Pengguna dengan Izin GPS
-  function detectUserLocationRealtime(userInitiated = false) {
+  function detectUserLocationRealtime(userInitiated = false, destination = null) {
     if (!navigator.geolocation) {
       if (userInitiated) alert('Peramban Anda tidak mendukung sensor Geolocation GPS.');
       return;
@@ -1123,6 +1431,12 @@
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         const acc = Math.round(pos.coords.accuracy || 20);
+        if (!isCoordinateInIndonesia(lat, lng)) {
+          if (statusText) statusText.textContent = 'Lokasi GPS berada di luar wilayah Indonesia; rute tidak dibuat.';
+          if (btnText) btnText.textContent = 'Lokasi Saya & Estimasi Rute';
+          currentUserCoords = null;
+          return;
+        }
         currentUserCoords = [lat, lng];
 
         if (statusText) statusText.textContent = `GPS Terkunci: ${lat.toFixed(4)}, ${lng.toFixed(4)} (±${acc}m)`;
@@ -1166,10 +1480,13 @@
         }
 
         // Cari SPPG terdekat & buat rute OSRM
-        const nearestKey = findNearestSppgKey(lat, lng);
-        if (nearestKey) {
-          updatePinnedCard(nearestKey);
-          calculateAndDrawOsrmRoute(lat, lng, SPPG_DATA[nearestKey].lat, SPPG_DATA[nearestKey].lng, SPPG_DATA[nearestKey].name);
+        const targetSppg = destination || findNearestSppg(lat, lng) || findNearestSppg(lat, lng, true);
+        if (targetSppg && isCoordinateInIndonesia(targetSppg.latitude, targetSppg.longitude)) {
+          updatePinnedCard(targetSppg);
+          const targetName = targetSppg.location_accuracy === 'approximate'
+            ? `${targetSppg.nama} — pusat wilayah (perkiraan)`
+            : targetSppg.nama;
+          calculateAndDrawOsrmRoute(lat, lng, targetSppg.latitude, targetSppg.longitude, targetName);
         } else {
           mapDistribusi.setView([lat, lng], 13);
         }
@@ -1185,19 +1502,19 @@
   }
 
   // 4. Hitung Jarak Terdekat SPPG dari User (Haversine Formula)
-  function findNearestSppgKey(lat, lng) {
-    let nearestKey = null;
+  function findNearestSppg(lat, lng, includeApproximate = false) {
+    let nearestSppg = null;
     let minDistance = Infinity;
 
-    Object.entries(SPPG_DATA).forEach(([key, s]) => {
-      const d = getHaversineKm(lat, lng, s.lat, s.lng);
+    sppgData.filter(item => includeApproximate || item.location_accuracy === 'gps').forEach(sppg => {
+      const d = getHaversineKm(lat, lng, sppg.latitude, sppg.longitude);
       if (d < minDistance) {
         minDistance = d;
-        nearestKey = key;
+        nearestSppg = sppg;
       }
     });
 
-    return nearestKey;
+    return nearestSppg;
   }
 
   function getHaversineKm(lat1, lon1, lat2, lon2) {
@@ -1217,6 +1534,10 @@
     const distEl = document.getElementById('osrmDistance');
     const durEl = document.getElementById('osrmDuration');
     const targetEl = document.getElementById('osrmTargetSppg');
+    if (hud) hud.classList.remove('hidden');
+    if (distEl) distEl.textContent = 'Menghitung...';
+    if (durEl) durEl.textContent = 'Menghitung...';
+    if (targetEl) targetEl.textContent = targetName;
 
     try {
       const res = await fetch(url);
@@ -1225,6 +1546,11 @@
         const route = data.routes[0];
         // Konversi GeoJSON [lng, lat] ke Leaflet [lat, lng]
         const latLngs = route.geometry.coordinates.map(pt => [pt[1], pt[0]]);
+        if (latLngs.some(([latitude, longitude]) =>
+          latitude < -11.8 || latitude > 6.8 || longitude < 94 || longitude > 142
+        )) {
+          throw new Error('Rute yang diterima keluar dari batas Indonesia');
+        }
 
         // Bersihkan polyline lama
         if (activeRouteLine) {
@@ -1248,35 +1574,45 @@
         if (distEl) distEl.textContent = `${km} KM`;
         if (durEl) durEl.textContent = `${mins} Menit`;
         if (targetEl) targetEl.textContent = targetName;
+      } else {
+        if (distEl) distEl.textContent = '—';
+        if (durEl) durEl.textContent = 'Rute tidak tersedia';
+        setSppgMapStatus('Rute jalan tidak ditemukan untuk lokasi ini.');
       }
     } catch (e) {
       console.warn('Gagal menghitung rute OSRM:', e);
+      if (distEl) distEl.textContent = '—';
+      if (durEl) durEl.textContent = 'Gagal menghitung';
+      setSppgMapStatus('Estimasi rute gagal dimuat. Lokasi peta tetap dibatasi di Indonesia.');
     }
   }
 
   // 6. Action: Buat Rute ke SPPG Terpilih
-  function routeToCurrentSppg() {
-    const sppg = SPPG_DATA[currentSelectedKey];
+  function routeToCurrentSppg(sppg = currentSelectedSppg) {
     if (!sppg) return;
+    if (!isCoordinateInIndonesia(sppg.latitude, sppg.longitude)) {
+      setSppgMapStatus('Rute ditolak karena tujuan berada di luar wilayah Indonesia.');
+      return;
+    }
+
+    const targetName = sppg.location_accuracy === 'approximate'
+      ? `${sppg.nama} — pusat wilayah (perkiraan)`
+      : sppg.nama;
+    if (sppg.location_accuracy === 'approximate') {
+      setSppgMapStatus('Koordinat kantor belum tersedia; rute dan waktu tempuh menuju pusat wilayah perkiraan.');
+    }
 
     if (currentUserCoords) {
-      calculateAndDrawOsrmRoute(currentUserCoords[0], currentUserCoords[1], sppg.lat, sppg.lng, sppg.name);
+      calculateAndDrawOsrmRoute(currentUserCoords[0], currentUserCoords[1], sppg.latitude, sppg.longitude, targetName);
     } else {
-      // Jika GPS belum diaktifkan, tawarkan deteksi GPS
-      detectUserLocationRealtime(true);
+      detectUserLocationRealtime(true, sppg);
     }
   }
 
-  function selectAndRouteSppg(key) {
-    updatePinnedCard(key);
-    routeToCurrentSppg();
-  }
-
   // 7. Sinkronisasi UI Pinned Card
-  function updatePinnedCard(key) {
-    const sppg = SPPG_DATA[key];
+  function updatePinnedCard(sppg) {
     if (!sppg) return;
-    currentSelectedKey = key;
+    currentSelectedSppg = sppg;
 
     const pinnedCode = document.getElementById('pinnedSppgCode');
     const pinnedTitle = document.getElementById('pinnedSppgTitle');
@@ -1287,39 +1623,72 @@
     const pinnedLink = document.getElementById('pinnedSppgMapLink');
     const filterMapLink = document.getElementById('btnFilterMapLink');
     const filterMapText = document.getElementById('btnFilterMapLinkText');
-    const provFilter = document.getElementById('filter-provinsi');
+    const routeButton = document.getElementById('btnRouteToSppg');
+    const coordinates = `${sppg.latitude},${sppg.longitude}`;
+    const locationLabel = sppg.location_accuracy === 'approximate'
+      ? (sppg.location_label || 'Perkiraan pusat wilayah')
+      : 'Koordinat GPS terdaftar';
 
-    if (pinnedCode) pinnedCode.textContent = sppg.code;
-    if (pinnedTitle) pinnedTitle.textContent = sppg.name;
-    if (pinnedAddr) pinnedAddr.textContent = sppg.addr;
-    if (pinnedRadius) pinnedRadius.textContent = `${(sppg.radius/1000).toFixed(1)} km Radius Distribusi`;
-    if (pinnedTemp) pinnedTemp.textContent = `${sppg.temp} (Optimal)`;
-    if (pinnedDietitian) pinnedDietitian.textContent = sppg.dietitian;
-    if (pinnedLink) pinnedLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(sppg.name + ' ' + sppg.addr);
-    if (filterMapLink) filterMapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(sppg.name + ' ' + sppg.addr);
-    if (filterMapText) filterMapText.textContent = 'Buka ' + sppg.regionName + ' di Maps';
-    if (provFilter && provFilter.value !== key && key in SPPG_DATA) provFilter.value = key;
+    if (pinnedCode) pinnedCode.textContent = `ID Database: ${sppg.id || '—'}`;
+    if (pinnedTitle) pinnedTitle.textContent = sppg.nama;
+    if (pinnedAddr) pinnedAddr.textContent = [sppg.alamat, sppg.kabupaten_kota, sppg.provinsi].filter(Boolean).join(', ') || 'Alamat belum tersedia';
+    if (pinnedRadius) pinnedRadius.textContent = locationLabel;
+    if (pinnedTemp) pinnedTemp.textContent = sppg.status || 'Tidak tersedia';
+    if (pinnedDietitian) pinnedDietitian.textContent = sppg.nama_yayasan || 'Tidak tersedia';
+    if (pinnedLink) pinnedLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(coordinates);
+    if (filterMapLink) filterMapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(sppg.provinsi || coordinates);
+    if (filterMapText) filterMapText.textContent = 'Buka ' + (sppg.provinsi || 'lokasi') + ' di Maps';
+    if (routeButton) {
+      routeButton.disabled = false;
+      routeButton.title = sppg.location_accuracy === 'approximate'
+        ? 'Koordinat kantor belum terdaftar; rute menuju pusat wilayah sebagai perkiraan'
+        : 'Buat rute ke lokasi ini';
+      routeButton.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
   }
 
   // 8. Event Listener
   document.addEventListener('DOMContentLoaded', () => {
     initDistribusiLeafletMap();
+    initializeMapTutorial();
 
     const provFilter = document.getElementById('filter-provinsi');
     if (provFilter) {
       provFilter.addEventListener('change', () => {
-        const val = provFilter.value;
-        if (SPPG_DATA[val]) {
-          updatePinnedCard(val);
-          const s = SPPG_DATA[val];
-          if (mapDistribusi) {
-            mapDistribusi.flyTo([s.lat, s.lng], 13, { duration: 1.2 });
-          }
-          if (currentUserCoords) {
-            calculateAndDrawOsrmRoute(currentUserCoords[0], currentUserCoords[1], s.lat, s.lng, s.name);
-          }
-        } else if (val === 'all') {
-          if (mapDistribusi) mapDistribusi.flyTo([-2.5, 118], 5, { duration: 1.2 });
+        renderAllSppgPoints();
+        const firstVisible = sppgData.find(sppg =>
+          (provFilter.value === 'all' || sppg.provinsi === provFilter.value) &&
+          (document.getElementById('filter-status')?.value === 'all' || sppg.status === document.getElementById('filter-status')?.value) &&
+          (showApproximateLocations || sppg.location_accuracy !== 'approximate')
+        );
+        if (firstVisible) updatePinnedCard(firstVisible);
+        const visible = sppgData.filter(sppg =>
+          (provFilter.value === 'all' || sppg.provinsi === provFilter.value) &&
+          (document.getElementById('filter-status')?.value === 'all' || sppg.status === document.getElementById('filter-status')?.value) &&
+          (showApproximateLocations || sppg.location_accuracy !== 'approximate')
+        );
+        if (visible.length) {
+          mapDistribusi.fitBounds(L.latLngBounds(visible.map(item => [item.latitude, item.longitude])), { padding: [40, 40], maxZoom: 12 });
+        } else {
+          setSppgMapStatus('Tidak ada lokasi yang sesuai dengan filter.');
+        }
+      });
+    }
+
+    const statusFilter = document.getElementById('filter-status');
+    if (statusFilter) {
+      statusFilter.addEventListener('change', () => {
+        renderAllSppgPoints();
+        const visible = sppgData.filter(sppg =>
+          (provFilter?.value === 'all' || sppg.provinsi === provFilter?.value) &&
+          (statusFilter.value === 'all' || sppg.status === statusFilter.value) &&
+          (showApproximateLocations || sppg.location_accuracy !== 'approximate')
+        );
+        if (visible.length) {
+          updatePinnedCard(visible[0]);
+          mapDistribusi.fitBounds(L.latLngBounds(visible.map(item => [item.latitude, item.longitude])), { padding: [40, 40], maxZoom: 12 });
+        } else {
+          setSppgMapStatus('Tidak ada lokasi yang sesuai dengan filter.');
         }
       });
     }
@@ -1327,20 +1696,15 @@
     const toggleLayerBtn = document.getElementById('toggle-layer');
     if (toggleLayerBtn) {
       toggleLayerBtn.addEventListener('click', () => {
-        showThermalLayers = !showThermalLayers;
-        if (showThermalLayers) {
-          sppgCirclesLayer.addTo(mapDistribusi);
-          toggleLayerBtn.classList.remove('opacity-60');
-        } else {
-          mapDistribusi.removeLayer(sppgCirclesLayer);
-          toggleLayerBtn.classList.add('opacity-60');
-        }
+        showApproximateLocations = !showApproximateLocations;
+        toggleLayerBtn.classList.toggle('opacity-60', !showApproximateLocations);
+        renderAllSppgPoints();
       });
     }
   });
 </script>
 <script src="../assets/js/security.js"></script>
 <script src="../assets/js/api.js"></script>
-<script src="../assets/js/script.js"></script>
+<script src="../assets/js/script.js?v=maintenance-links-1"></script>
 <script src="../assets/js/live_chat.js"></script>
 </body></html>

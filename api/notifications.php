@@ -14,10 +14,8 @@ header('Access-Control-Allow-Origin: *');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 
 // Bell dipakai publik: hanya ringkasan agregat yang boleh tanpa login.
-if (Auth::check()) {
-    Auth::requireApiRole();
-}
-$isAdmin = Auth::check() && Auth::user()['role'] === 'admin';
+$sessionUser = Auth::currentApiUser();
+$isAdmin = $sessionUser !== null && $sessionUser['role'] === 'admin';
 
 try {
     $pdo = getDB();

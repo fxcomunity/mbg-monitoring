@@ -39,6 +39,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
   <style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}}::-webkit-scrollbar{display:none;}</style>
+  <style>
+    #complaintForm input:not([type="file"]), #complaintForm select, #complaintForm textarea {
+      width: 100%; border-radius: 14px; border-color: #d7e1ef; background: #f7faff;
+      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    #complaintForm input:not([type="file"]), #complaintForm select { min-height: 48px; }
+    #complaintForm textarea { min-height: 132px; resize: vertical; }
+    #complaintForm input:focus, #complaintForm select:focus, #complaintForm textarea:focus {
+      border-color: #395f95; background: #fff; box-shadow: 0 0 0 3px rgba(57,95,149,.14); outline: none;
+    }
+    #uploadDropzone:focus-visible { outline: 3px solid rgba(57,95,149,.35); outline-offset: 3px; }
+    #uploadDropzone.is-dragging { border-color: #395f95; background: #e5eeff; }
+  </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "background": "#f8f9ff", "on-tertiary-fixed-variant": "#005236", "surface": "#f8f9ff", "surface-container-lowest": "#ffffff", "surface-container": "#e5eeff", "border-subtle": "#E2E8F0", "on-error": "#ffffff", "primary": "#001026", "on-primary-container": "#778db2", "tertiary-fixed": "#6ffbbe", "tertiary-container": "#002b1b", "on-secondary": "#ffffff", "on-primary-fixed": "#001c3b", "on-error-container": "#93000a", "inverse-on-surface": "#eaf1ff", "border-focus": "#134074", "status-error": "#EF4444", "surface-container-low": "#eff4ff", "on-tertiary-container": "#009f6e", "secondary-fixed": "#d5e3ff", "inverse-surface": "#213145", "inverse-primary": "#b1c7f0", "on-tertiary-fixed": "#002113", "on-secondary-fixed": "#001c3b", "surface-tint": "#495f82", "outline-variant": "#c4c6cf", "on-primary": "#ffffff", "secondary-fixed-dim": "#a7c8ff", "on-background": "#0b1c30", "status-success": "#059669", "tertiary": "#00130a", "surface-card": "#FFFFFF", "surface-canvas": "#F8FAFC", "surface-variant": "#d3e4fe", "on-primary-fixed-variant": "#314769", "primary-fixed-dim": "#b1c7f0", "surface-container-high": "#dce9ff", "outline": "#74777f", "on-secondary-container": "#274f84", "on-surface": "#0b1c30", "error-container": "#ffdad6", "surface-dim": "#cbdbf5", "tertiary-fixed-dim": "#4edea3", "surface-bright": "#f8f9ff", "on-surface-variant": "#44474e", "surface-container-highest": "#d3e4fe", "on-secondary-fixed-variant": "#1d477c", "status-warning": "#F59E0B", "secondary-container": "#9dc3ff", "primary-container": "#0b2545", "secondary": "#395f95", "on-tertiary": "#ffffff", "error": "#ba1a1a", "primary-fixed": "#d5e3ff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "margin": "2rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "gutter-sm": "1rem", "gutter": "1.5rem", "margin-sm": "1rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-xl-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"] } } } };</script>
 <link rel="stylesheet" href="../assets/css/style.css"/>
@@ -184,7 +197,7 @@
     <section class="w-full px-space-md sm:px-space-lg py-space-xl max-w-7xl mx-auto">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
         <!-- Form Aduan (7 Cols) -->
-        <div class="lg:col-span-7 bg-surface-card p-space-lg sm:p-space-xl rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
+        <div class="lg:col-span-7 bg-surface-card p-space-lg sm:p-space-xl rounded-3xl shadow-lg shadow-slate-900/5 border border-border-subtle flex flex-col gap-space-md">
           <div class="flex items-center justify-between pb-space-sm border-b border-border-subtle">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-primary-container text-tertiary-fixed flex items-center justify-center">
@@ -197,16 +210,21 @@
             </div>
             <span class="px-2.5 py-1 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm font-semibold">Tersandikan SSL</span>
           </div>
+          <div class="grid grid-cols-3 gap-2 rounded-2xl bg-surface-container-low p-3" aria-label="Tahapan pengisian laporan">
+            <div class="flex items-center gap-2 text-[11px] font-semibold text-primary"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">1</span>Identitas</div>
+            <div class="flex items-center gap-2 text-[11px] font-semibold text-primary"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">2</span>Kejadian</div>
+            <div class="flex items-center gap-2 text-[11px] font-semibold text-primary"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">3</span>Bukti &amp; kirim</div>
+          </div>
 
-          <form id="complaintForm" class="flex flex-col gap-space-md">
+          <form id="complaintForm" class="flex flex-col gap-space-md" enctype="multipart/form-data">
             <!-- 1. Kategori Pelapor -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
               <div class="flex flex-col gap-1.5">
-                <label class="font-label-md text-label-md text-primary font-semibold">Nama Lengkap / Inisial</label>
+                <label for="reporterName" class="font-label-md text-label-md text-primary font-semibold">Nama Lengkap / Inisial <span class="text-red-600">*</span></label>
                 <input required id="reporterName" name="reporter_name" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none" placeholder="Contoh: Budi Santoso (Bisa Inisial)" type="text"/>
               </div>
               <div class="flex flex-col gap-1.5">
-                <label class="font-label-md text-label-md text-primary font-semibold">Nomor WhatsApp Aktif</label>
+                <label for="reporterPhone" class="font-label-md text-label-md text-primary font-semibold">Nomor WhatsApp Aktif <span class="text-red-600">*</span></label>
                 <input required id="reporterPhone" name="reporter_phone" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none" placeholder="08xxxxxxxxxx (Untuk kirim status)" type="tel"/>
               </div>
             </div>
@@ -214,8 +232,8 @@
             <!-- 2. Peran & Kategori Aduan -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
               <div class="flex flex-col gap-1.5">
-                <label class="font-label-md text-label-md text-primary font-semibold">Status / Peran Pelapor</label>
-                <select id="reporterRole" name="reporter_role" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none">
+                <label for="reporterRole" class="font-label-md text-label-md text-primary font-semibold">Status / Peran Pelapor <span class="text-red-600">*</span></label>
+                <select required id="reporterRole" name="reporter_role" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none">
                   <option value="wali">Orang Tua / Wali Murid</option>
                   <option value="guru">Guru / Tenaga Pendidik</option>
                   <option value="komite">Komite Sekolah</option>
@@ -224,8 +242,8 @@
                 </select>
               </div>
               <div class="flex flex-col gap-1.5">
-                <label class="font-label-md text-label-md text-primary font-semibold">Kategori Permasalahan</label>
-                <select id="issueCategory" name="issue_category" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none">
+                <label for="issueCategory" class="font-label-md text-label-md text-primary font-semibold">Kategori Permasalahan <span class="text-red-600">*</span></label>
+                <select required id="issueCategory" name="issue_category" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none">
                   <option value="waktu">Keterlambatan Jam Pengantaran (&gt;30 mnt)</option>
                   <option value="menu">Ketidaksesuaian Menu / Porsi Kurang</option>
                   <option value="suhu">Makanan Dingin / Rantai Termal Rusak (&lt;60°C)</option>
@@ -239,30 +257,37 @@
             <!-- 3. Sekolah & Tanggal -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
               <div class="flex flex-col gap-1.5">
-                <label class="font-label-md text-label-md text-primary font-semibold">Nama Sekolah / Lembaga</label>
+                <label for="schoolTarget" class="font-label-md text-label-md text-primary font-semibold">Nama Sekolah / Lembaga <span class="text-red-600">*</span></label>
                 <input required id="schoolTarget" name="school_target" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none" placeholder="Misal: SDN 01 Senayan Jakarta" type="text"/>
               </div>
               <div class="flex flex-col gap-1.5">
-                <label class="font-label-md text-label-md text-primary font-semibold">Tanggal Kejadian</label>
+                <label for="incidentDate" class="font-label-md text-label-md text-primary font-semibold">Tanggal Kejadian <span class="text-red-600">*</span></label>
                 <input required id="incidentDate" name="incident_date" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none" type="date"/>
               </div>
             </div>
 
             <!-- 4. Deskripsi Laporan -->
             <div class="flex flex-col gap-1.5">
-              <label class="font-label-md text-label-md text-primary font-semibold">Deskripsi Rinci Laporan</label>
+              <label for="reportDescription" class="font-label-md text-label-md text-primary font-semibold">Deskripsi Rinci Laporan <span class="text-red-600">*</span></label>
               <textarea required id="reportDescription" name="description" rows="4" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none" placeholder="Ceritakan kronologi, kondisi sajian, atau foto bukti nomor batch wadah..."></textarea>
             </div>
 
             <!-- 5. Upload File / Foto -->
-            <div class="p-space-md rounded-2xl bg-surface-container-low border-2 border-dashed border-border-subtle flex flex-col items-center justify-center text-center gap-2 cursor-pointer hover:bg-surface-container transition-colors" id="uploadDropzone">
+            <div class="p-5 sm:p-6 rounded-2xl bg-surface-container-low border-2 border-dashed border-border-subtle flex flex-col items-center justify-center text-center gap-2 cursor-pointer hover:bg-surface-container transition-colors focus-visible:ring-2 focus-visible:ring-border-focus" id="uploadDropzone" role="button" tabindex="0" aria-label="Pilih foto bukti makanan">
               <span class="material-symbols-outlined text-[32px] text-secondary">add_a_photo</span>
               <div class="flex flex-col">
                 <span class="font-label-md text-label-md text-primary font-semibold">Unggah Foto Makanan / Label Wadah SPPG</span>
                 <span class="font-body-sm text-body-sm text-on-surface-variant">Format JPG, PNG, atau WEBP (Maksimal 10 MB)</span>
+                <span class="mt-1 text-[11px] text-slate-500">Foto akan diperiksa dan disimpan ulang sebagai gambar bersih.</span>
               </div>
-              <input type="file" id="photoInput" name="photo" class="hidden" accept="image/*"/>
+              <input type="file" id="photoInput" name="photo" class="hidden" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"/>
               <span id="fileChosenLabel" class="text-xs text-status-success font-semibold hidden"></span>
+              <div id="photoPreviewWrap" class="hidden relative mt-2 max-w-full" aria-live="polite">
+                <img id="photoPreview" class="hidden max-h-48 max-w-full rounded-xl border border-slate-200 object-contain shadow-sm" alt="Pratinjau foto bukti yang telah dibersihkan"/>
+                <button type="button" id="removePhotoButton" class="mt-2 inline-flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm border border-red-100 hover:bg-red-50">
+                  <span class="material-symbols-outlined text-sm">delete</span> Hapus foto
+                </button>
+              </div>
             </div>
 
             <div id="submitAlertContainer" class="hidden"></div>
@@ -370,18 +395,129 @@
     const dateInput = document.getElementById('incidentDate');
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-    // Dropzone upload simulation
+    // Validate, preview, and re-encode evidence images before they leave the browser.
     const dropzone = document.getElementById('uploadDropzone');
     const photoInput = document.getElementById('photoInput');
     const fileLabel = document.getElementById('fileChosenLabel');
+    const photoPreviewWrap = document.getElementById('photoPreviewWrap');
+    const photoPreview = document.getElementById('photoPreview');
+    const removePhotoButton = document.getElementById('removePhotoButton');
+    const alertBox = document.getElementById('submitAlertContainer');
+    const allowedPhotoTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+    let sanitizedPhotoFile = null;
+    let photoPreviewUrl = null;
+    let photoProcessing = Promise.resolve();
+
+    function showSubmitAlert(message, success = false) {
+      if (!alertBox) return;
+      alertBox.className = success
+        ? 'flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800'
+        : 'flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700';
+      alertBox.replaceChildren();
+      const icon = document.createElement('span');
+      icon.className = 'material-symbols-outlined mt-0.5 text-base';
+      icon.textContent = success ? 'check_circle' : 'error';
+      const text = document.createElement('p');
+      text.className = 'leading-relaxed';
+      text.textContent = message;
+      alertBox.append(icon, text);
+      alertBox.setAttribute('role', 'alert');
+      alertBox.setAttribute('aria-live', 'assertive');
+    }
+
+    function clearPhotoPreview() {
+      sanitizedPhotoFile = null;
+      if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+      photoPreviewUrl = null;
+      photoPreview.src = '';
+      photoPreview.classList.add('hidden');
+      photoPreviewWrap.classList.add('hidden');
+      fileLabel.textContent = '';
+      fileLabel.classList.add('hidden');
+    }
+
+    async function processPhoto(file) {
+      clearPhotoPreview();
+      if (!file) return;
+      if (!allowedPhotoTypes.has(file.type) || file.size > 10 * 1024 * 1024) {
+        photoInput.value = '';
+        showSubmitAlert('Pilih file gambar JPG, PNG, atau WEBP yang valid dengan ukuran maksimal 10 MB.');
+        return;
+      }
+
+      try {
+        if (typeof createImageBitmap !== 'function') {
+          throw new Error('Browser tidak mendukung pemeriksaan gambar.');
+        }
+        const bitmap = await createImageBitmap(file);
+        if (bitmap.width < 1 || bitmap.height < 1 || bitmap.width > 8000 ||
+            bitmap.height > 8000 || bitmap.width * bitmap.height > 12000000) {
+          bitmap.close();
+          throw new Error('Ukuran atau dimensi gambar melebihi batas aman.');
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const context = canvas.getContext('2d', { alpha: false });
+        if (!context) {
+          bitmap.close();
+          throw new Error('Gambar tidak dapat diproses di browser.');
+        }
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(bitmap, 0, 0);
+        bitmap.close();
+
+        const cleanBlob = await new Promise((resolve, reject) => {
+          canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Gambar gagal dikonversi.')), 'image/jpeg', 0.88);
+        });
+        canvas.width = 0;
+        canvas.height = 0;
+        if (cleanBlob.size > 10 * 1024 * 1024) {
+          throw new Error('Ukuran foto setelah diproses melebihi 10 MB.');
+        }
+        const safeName = (file.name.replace(/\.[^.]+$/, '').replace(/[^a-z0-9_-]/gi, '_').slice(0, 80) || 'bukti-makanan') + '.jpg';
+        sanitizedPhotoFile = new File([cleanBlob], safeName, { type: 'image/jpeg' });
+        photoPreviewUrl = URL.createObjectURL(cleanBlob);
+        photoPreview.src = photoPreviewUrl;
+        photoPreview.classList.remove('hidden');
+        photoPreviewWrap.classList.remove('hidden');
+        fileLabel.textContent = `Foto siap diunggah: ${safeName} · ${(cleanBlob.size / 1024 / 1024).toFixed(2)} MB`;
+        fileLabel.classList.remove('hidden');
+      } catch (error) {
+        clearPhotoPreview();
+        photoInput.value = '';
+        showSubmitAlert(error instanceof Error ? error.message : 'File tidak dapat dipastikan sebagai gambar yang aman.');
+      }
+    }
 
     if (dropzone && photoInput) {
-      dropzone.addEventListener('click', () => photoInput.click());
-      photoInput.addEventListener('change', () => {
-        if (photoInput.files.length > 0) {
-          fileLabel.innerText = 'Foto terpilih: ' + photoInput.files[0].name;
-          fileLabel.classList.remove('hidden');
+      dropzone.addEventListener('click', event => {
+        if (!event.target.closest('button')) photoInput.click();
+      });
+      dropzone.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          photoInput.click();
         }
+      });
+      photoInput.addEventListener('change', () => {
+        photoProcessing = processPhoto(photoInput.files[0]);
+      });
+      dropzone.addEventListener('dragover', event => {
+        event.preventDefault();
+        dropzone.classList.add('is-dragging');
+      });
+      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('is-dragging'));
+      dropzone.addEventListener('drop', event => {
+        event.preventDefault();
+        dropzone.classList.remove('is-dragging');
+        photoProcessing = processPhoto(event.dataTransfer.files[0]);
+      });
+      removePhotoButton.addEventListener('click', event => {
+        event.stopPropagation();
+        photoInput.value = '';
+        clearPhotoPreview();
       });
     }
 
@@ -396,19 +532,20 @@
         e.preventDefault();
         const btnSubmit = document.getElementById('btnSubmitComplaint');
         const btnText = document.getElementById('btnSubmitText');
-        const alertBox = document.getElementById('submitAlertContainer');
-
-        if (alertBox) {
-          alertBox.className = 'hidden';
-          alertBox.innerHTML = '';
-        }
+        if (alertBox) alertBox.className = 'hidden';
 
         // UI Loading
         btnSubmit.disabled = true;
-        btnText.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Mengirim laporan ke Database Satgas BGN...';
+        btnText.textContent = 'Memeriksa foto dan mengirim laporan...';
 
         try {
+          await photoProcessing;
+          if (photoInput.files.length && !sanitizedPhotoFile) {
+            showSubmitAlert('Foto belum lolos pemeriksaan. Pilih file gambar JPG, PNG, atau WEBP yang valid.');
+            return;
+          }
           const formData = new FormData(form);
+          if (sanitizedPhotoFile) formData.set('photo', sanitizedPhotoFile, sanitizedPhotoFile.name);
           const response = await fetch('../api/tiket.php', {
             method: 'POST',
             body: formData
@@ -421,24 +558,14 @@
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             form.reset();
-            if (fileLabel) fileLabel.classList.add('hidden');
+            clearPhotoPreview();
             if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
           } else {
-            const errorMsg = res.errors ? res.errors.join('<br>') : (res.message || 'Gagal menyimpan laporan.');
-            if (alertBox) {
-              alertBox.className = 'p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2';
-              alertBox.innerHTML = '<span class="material-symbols-outlined text-base text-red-600 mt-0.5">error</span><div><strong>Pengiriman Gagal:</strong><br>' + errorMsg + '</div>';
-            } else {
-              alert('Gagal mengirim laporan: ' + errorMsg);
-            }
+            showSubmitAlert(res.message || 'Laporan gagal disimpan. Periksa kembali isian dan coba lagi.');
           }
         } catch (err) {
-          if (alertBox) {
-            alertBox.className = 'p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2';
-            alertBox.innerHTML = '<span class="material-symbols-outlined text-base text-red-600 mt-0.5">error</span><div><strong>Pengiriman Gagal:</strong><br>Server tidak dapat dijangkau. Periksa koneksi lalu coba lagi.</div>';
-          } else {
-            alert('Server tidak dapat dijangkau. Periksa koneksi lalu coba lagi.');
-          }
+          console.error('Gagal mengirim laporan:', err);
+          showSubmitAlert('Server tidak dapat dijangkau. Periksa koneksi lalu coba lagi.');
         } finally {
           btnSubmit.disabled = false;
           btnText.innerText = 'Kirimkan Aduan Resmi ke Satgas BGN';
@@ -557,7 +684,7 @@
 </script>
 <script src="../assets/js/security.js"></script>
 <script src="../assets/js/api.js"></script>
-<script src="../assets/js/script.js"></script>
+<script src="../assets/js/script.js?v=maintenance-links-1"></script>
 <script src="../assets/js/live_chat.js"></script>
 </body>
 </html>

@@ -1,7 +1,13 @@
 import { getSession, json, dbQuery } from './_shared.js';
 
 export async function onRequestGet({ request, env }) {
-  const session = await getSession(request, env);
+  let session;
+  try {
+    session = await getSession(request, env);
+  } catch (error) {
+    console.error('Security threat session verification failed:', error);
+    return json({ status: 'error', message: 'Status autentikasi tidak tersedia.' }, 503);
+  }
   if (!session || session.role !== 'admin' || typeof session.username !== 'string' || !session.username) {
     return json({ status: 'error', message: 'Akses ditolak.' }, 403);
   }
@@ -11,13 +17,6 @@ export async function onRequestGet({ request, env }) {
   }
 
   try {
-    // A stale admin session must not retain access after deactivation/demotion.
-    const users = await dbQuery(env.DATABASE_URL, `
-      SELECT role FROM users WHERE username = $1 AND is_active = TRUE LIMIT 1
-    `, [session.username]);
-    if (users[0]?.role !== 'admin') {
-      return json({ status: 'error', message: 'Akses ditolak.' }, 403);
-    }
     const data = await dbQuery(env.DATABASE_URL, `
       SELECT
         t.id,

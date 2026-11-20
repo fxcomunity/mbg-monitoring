@@ -467,20 +467,15 @@ body.font-body-md > header nav a {
     height: 2.5rem;
   }
 
-  #headerNotifContainer,
   body.font-body-md > header > div:first-child > div > a[href="fitur/menu-hari-ini.html"] {
     display: none;
   }
 
   #navBtnLogin {
-    width: 2.5rem;
+    width: auto;
     height: 2.5rem;
     justify-content: center;
-    padding: 0;
-  }
-
-  #navBtnLogin > span:last-child {
-    display: none;
+    padding-inline: 0.75rem;
   }
 
   #btnMobileNavToggle,
@@ -490,6 +485,16 @@ body.font-body-md > header nav a {
 }
 
 @media (min-width: 900px) and (max-width: 1050px) {
+  #headerNotifContainer,
+  #navBtnLogin > span:last-child {
+    display: none;
+  }
+
+  #navBtnLogin {
+    width: 2.5rem;
+    padding-inline: 0;
+  }
+
   body.font-body-md > header nav a {
     padding-inline: 0.38rem;
     font-size: 0.62rem;
@@ -501,6 +506,13 @@ body.font-body-md > header nav a {
 
   body.font-body-md > header > div:first-child > a img {
     height: 2.25rem;
+  }
+}
+
+@media (min-width: 900px) {
+  #btnMobileNavToggle,
+  #mobileNavMenu {
+    display: none !important;
   }
 }
 

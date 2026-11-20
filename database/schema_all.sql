@@ -38,25 +38,66 @@ CREATE TABLE IF NOT EXISTS users (
                        CHECK (role IN ('admin', 'sppg', 'user')),
   sppg_name          VARCHAR(150),
   sppg_code          VARCHAR(50),
+  nib                VARCHAR(40),
+  no_slhs            VARCHAR(60),
+  dokumen_legalitas_url VARCHAR(500),
+  nama_dietisien     VARCHAR(120),
+  alamat_dapur       VARCHAR(255),
+  kapasitas_porsi    INTEGER NOT NULL DEFAULT 500,
+  status_verifikasi  VARCHAR(30) NOT NULL DEFAULT 'approved',
   phone              VARCHAR(25),
   avatar_url         VARCHAR(500),
   avatar_pending_url VARCHAR(500),
   avatar_status      VARCHAR(20) NOT NULL DEFAULT 'approved'
                        CHECK (avatar_status IN ('approved', 'pending_approval', 'rejected')),
   is_active          BOOLEAN NOT NULL DEFAULT TRUE,
+  deleted_at         TIMESTAMPTZ,
+  deleted_by         BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  deleted_was_active BOOLEAN,
   session_version    INTEGER NOT NULL DEFAULT 0,
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_by BIGINT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_was_active BOOLEAN;
+
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_role     ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_sppg     ON users(sppg_code);
+CREATE INDEX IF NOT EXISTS idx_users_deleted_at ON users(deleted_at) WHERE deleted_at IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS user_deletion_requests (
+  id              BIGSERIAL PRIMARY KEY,
+  target_user_id  BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  requested_by    BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  status          VARCHAR(20) NOT NULL DEFAULT 'pending'
+                    CHECK (status IN ('pending', 'approved', 'rejected')),
+  request_note    VARCHAR(500),
+  requested_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  reviewed_by     BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at     TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_deletion_pending_target
+  ON user_deletion_requests(target_user_id) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_user_deletion_requests_status
+  ON user_deletion_requests(status, requested_at);
 
 DROP TRIGGER IF EXISTS trg_users_updated_at ON users;
 CREATE TRIGGER trg_users_updated_at
   BEFORE UPDATE ON users
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS system_maintenance (
+  id          BOOLEAN PRIMARY KEY DEFAULT TRUE CHECK (id = TRUE),
+  active      BOOLEAN NOT NULL DEFAULT FALSE,
+  message     VARCHAR(1000) NOT NULL DEFAULT 'Sedang dalam pemeliharaan sistem.',
+  eta         TIMESTAMPTZ,
+  updated_by  BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+INSERT INTO system_maintenance (id) VALUES (TRUE) ON CONFLICT (id) DO NOTHING;
 
 -- ------------------------------------------------------------------------------
 -- 3. TABEL: telemetri_nasional (KPI Pemantauan Realtime BGN)
@@ -162,7 +203,7 @@ CREATE INDEX IF NOT EXISTS idx_menu_prov   ON menu_sppg(province_code);
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS laporan_aduan (
   id                  BIGSERIAL PRIMARY KEY,
-  ticket_code         VARCHAR(30)  NOT NULL UNIQUE,
+  ticket_code         VARCHAR(60)  NOT NULL UNIQUE,
   reporter_name       VARCHAR(120) NOT NULL,
   reporter_phone      VARCHAR(20)  NOT NULL,
   reporter_role       VARCHAR(20)  NOT NULL DEFAULT 'masyarakat'
@@ -172,6 +213,7 @@ CREATE TABLE IF NOT EXISTS laporan_aduan (
   school_target       VARCHAR(200) NOT NULL,
   incident_date       DATE         NOT NULL,
   description         TEXT         NOT NULL,
+  photo_data          BYTEA,
   photo_path          VARCHAR(500),
   photo_original_name VARCHAR(255),
   status              VARCHAR(20)  NOT NULL DEFAULT 'masuk'
@@ -184,6 +226,9 @@ CREATE TABLE IF NOT EXISTS laporan_aduan (
   created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE laporan_aduan ALTER COLUMN ticket_code TYPE VARCHAR(60);
+ALTER TABLE laporan_aduan ADD COLUMN IF NOT EXISTS photo_data BYTEA;
 
 CREATE INDEX IF NOT EXISTS idx_laporan_ticket        ON laporan_aduan(ticket_code);
 CREATE INDEX IF NOT EXISTS idx_laporan_status        ON laporan_aduan(status);

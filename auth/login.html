@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -59,44 +59,74 @@
       background-size: 400% 400%;
       animation: bgShift 8s ease infinite;
     }
-    #login-bg-fallback {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, #001026, #0b2545, #001a3d, #001026);
-      background-size: 300% 300%;
-      animation: bgShift 8s ease infinite;
-      z-index: 0;
+    @media (prefers-reduced-motion: reduce) {
+      .video-bg-fallback {
+        animation: none;
+      }
     }
   </style>
   <!-- Auto-redirect: kalau sesi masih aktif, langsung ke dashboard sesuai role (admin / sppg / user) -->
   <script>
     (function () {
-      try {
-        var K = 'mbg_session';
-        function clr() { localStorage.removeItem(K); sessionStorage.removeItem(K); }
-        var q = new URLSearchParams(location.search);
-        if (q.has('logout') || q.has('switch')) { clr(); return; }
-        var s = JSON.parse(localStorage.getItem(K) || sessionStorage.getItem(K) || 'null');
-        if (!s) return;
-        if (s.exp && s.exp < Date.now()) { clr(); return; }
-        if (['admin', 'sppg', 'user'].indexOf(s.role) >= 0) {
-          document.documentElement.style.visibility = 'hidden';
-          location.replace('../dashboard/' + s.role + '/');
+      var sessionKey = 'mbg_session';
+      var query = new URLSearchParams(location.search);
+      if (query.has('logout') || query.has('switch')) {
+        localStorage.removeItem(sessionKey);
+        sessionStorage.removeItem(sessionKey);
+        if (query.has('logout')) {
+          var localPhp = /^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname);
+          var logoutEndpoint = localPhp ? '../api/auth_user.php?action=logout' : '../api/auth_user?action=logout';
+          fetch(logoutEndpoint, {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            keepalive: true
+          }).then(function (response) {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+          }).catch(function (error) {
+            console.error('Sesi login tidak dapat diakhiri:', error);
+          });
         }
-      } catch (e) {}
+        return;
+      }
+
+      var localPhp = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+      var authEndpoint = localPhp ? '../api/auth_user.php' : '../api/auth_user';
+      fetch(authEndpoint, {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { Accept: 'application/json' }
+      }).then(function (response) {
+        if (!response.ok) return null;
+        return response.json();
+      }).then(function (result) {
+        var role = result && result.logged_in === true && result.user && result.user.role;
+        if (['admin', 'sppg', 'user'].indexOf(role) < 0) return;
+        document.documentElement.style.visibility = 'hidden';
+        location.replace('../dashboard/' + role + '/');
+      }).catch(function () {
+        console.error('Sesi login tidak dapat diverifikasi; formulir login tetap tersedia.');
+      });
     })();
   </script>
 </head>
 <body class="relative bg-[#001026] font-sans text-primary min-h-screen flex flex-col justify-between selection:bg-[#6ffbbe] selection:text-[#001026] overflow-x-hidden">
 
-  <!-- Fullscreen Video Background -->
-  <div class="fixed inset-0 overflow-hidden pointer-events-none -z-20">
-    <video autoplay muted loop playsinline preload="metadata" fetchpriority="high" class="w-full h-full object-cover"
-           onerror="this.style.display='none';document.getElementById('login-bg-fallback').style.display='block'">
-      <source src="https://res.cloudinary.com/dgenxagit/video/upload/v1791923878/gemini_generated_video_22b0321d.mp4" type="video/mp4">
-    </video>
-    <div id="login-bg-fallback" class="fixed inset-0 -z-20 video-bg-fallback" style="display:none"></div>
-  </div>
+  <div id="login-bg-fallback" class="fixed inset-0 -z-20 video-bg-fallback pointer-events-none" aria-hidden="true"></div>
+  <video
+    id="login-bg-video"
+    class="fixed inset-0 -z-20 h-full w-full object-cover pointer-events-none"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="metadata"
+    fetchpriority="high"
+    aria-hidden="true"
+    tabindex="-1"
+    onerror="this.style.display='none'"
+  >
+    <source src="https://res.cloudinary.com/dgenxagit/video/upload/v1791923878/gemini_generated_video_22b0321d.mp4" type="video/mp4"/>
+  </video>
   <!-- High Contrast Dark Glass Overlay -->
   <div class="fixed inset-0 bg-gradient-to-b from-[#001026]/85 via-[#001026]/75 to-[#001026]/90 backdrop-blur-[2px] pointer-events-none -z-10"></div>
 
@@ -138,20 +168,23 @@
 
         <!-- HEADER TITLE -->
         <div class="text-center mb-6 pt-1">
-          <div class="inline-flex p-3 rounded-2xl bg-gradient-to-br from-[#001026] to-[#0b2545] text-[#6ffbbe] shadow-lg shadow-slate-900/20 mb-3">
-            <span class="material-symbols-outlined text-2xl">shield_person</span>
+          <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-1.5 shadow-lg shadow-slate-900/20 mb-3">
+            <img src="../assets/images/ic_launcher.png" alt="Logo Badan Gizi Nasional" class="h-full w-full object-contain" onerror="this.onerror=null;this.src='../assets/images/favicon.webp'">
           </div>
           <h1 class="text-xl sm:text-2xl font-extrabold text-primary tracking-tight">Portal Akses Radar MBG</h1>
           <p class="text-xs sm:text-sm text-slate-500 mt-1">Satu pintu pemantauan Makan Bergizi Gratis Nasional</p>
         </div>
 
         <!-- NOTIFICATION ALERTS -->
-        <div id="authAlert" class="hidden mb-5 p-3.5 rounded-2xl text-xs flex items-start gap-2.5 shadow-sm">
-          <span id="authAlertIcon" class="material-symbols-outlined text-lg shrink-0 mt-0.5">info</span>
-          <div class="flex-1">
-            <span id="authAlertTitle" class="font-bold"></span>
-            <span id="authAlertMsg"></span>
+        <div id="authAlert" class="hidden mb-5 p-4 rounded-2xl text-sm flex items-start gap-3 shadow-lg border-l-4" role="alert" aria-live="assertive" aria-atomic="true">
+          <span id="authAlertIcon" class="material-symbols-outlined text-xl shrink-0 mt-0.5">info</span>
+          <div class="flex-1 min-w-0">
+            <p id="authAlertTitle" class="font-extrabold tracking-tight"></p>
+            <p id="authAlertMsg" class="mt-1 leading-relaxed"></p>
           </div>
+          <button type="button" id="authAlertClose" class="shrink-0 rounded-lg p-1 opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-current" aria-label="Tutup pemberitahuan">
+            <span class="material-symbols-outlined text-lg leading-none">close</span>
+          </button>
         </div>
 
         <!-- TABS SWITCHER: MASUK vs DAFTAR -->
@@ -185,7 +218,13 @@
                 </div>
                 <input type="text" id="loginUsername" name="username" required autocomplete="username" maxlength="254"
                        placeholder="Masukkan username atau email"
+                       aria-describedby="loginUsernameHelp loginUsernameWarning"
                        class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] focus:border-transparent transition-all shadow-sm">
+              </div>
+              <p id="loginUsernameHelp" class="mt-1.5 text-[10px] text-slate-500">Gunakan username atau email terdaftar. Input berisi pola SQL berbahaya akan ditolak.</p>
+              <div id="loginUsernameWarning" class="hidden mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] leading-relaxed text-red-700" role="alert" aria-live="polite">
+                <span class="font-bold">Input ditolak.</span>
+                <span>Pola yang tidak diizinkan terdeteksi pada username/email. Percobaan login tidak akan dikirim.</span>
               </div>
             </div>
 
@@ -418,19 +457,64 @@
       const titleEl = document.getElementById('authAlertTitle');
       const msgEl = document.getElementById('authAlertMsg');
 
-      alert.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'border-red-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+      alert.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'border-red-500', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-500');
       if (type === 'error') {
-        alert.classList.add('bg-red-50', 'text-red-700', 'border', 'border-red-200');
+        alert.classList.add('bg-red-50', 'text-red-800', 'border-red-500');
         icon.textContent = 'error';
-        icon.className = 'material-symbols-outlined text-lg text-red-600 shrink-0 mt-0.5';
+        icon.className = 'material-symbols-outlined text-xl text-red-600 shrink-0 mt-0.5';
       } else {
-        alert.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+        alert.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-500');
         icon.textContent = 'check_circle';
-        icon.className = 'material-symbols-outlined text-lg text-emerald-600 shrink-0 mt-0.5';
+        icon.className = 'material-symbols-outlined text-xl text-emerald-600 shrink-0 mt-0.5';
       }
-      titleEl.textContent = title + ': ';
+      titleEl.textContent = title;
       msgEl.textContent = msg;
     }
+
+    document.getElementById('authAlertClose').addEventListener('click', () => {
+      document.getElementById('authAlert').classList.add('hidden');
+    });
+
+    function isLocalPhp() {
+      return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+    }
+
+    function isStrongPassword(password) {
+      if (password.length < 12 || password.length > 1024 || /[\u0000-\u001f\u007f]/.test(password)) return false;
+      let kinds = 0;
+      if (/[a-z]/.test(password)) kinds++;
+      if (/[A-Z]/.test(password)) kinds++;
+      if (/[0-9]/.test(password)) kinds++;
+      if (/[^A-Za-z0-9]/.test(password)) kinds++;
+      return kinds >= 3;
+    }
+
+    const dashboardByRole = Object.freeze({
+      admin: '../dashboard/admin/',
+      sppg: '../dashboard/sppg/',
+      user: '../dashboard/user/'
+    });
+
+    const loginUsernameInput = document.getElementById('loginUsername');
+    const loginUsernameWarning = document.getElementById('loginUsernameWarning');
+    const loginInjectionPattern = /(?:['"`;]|--|\/\*|\*\/|\b(?:union|select|insert|update|delete|drop|truncate)\b|\b(?:or|and)\s+\d+\s*=\s*\d)/i;
+    const loginUsernamePattern = /^[a-z0-9][a-z0-9_.-]{2,59}$/i;
+    const loginEmailPattern = /^[a-z0-9.!#$%&*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+
+    function validateLoginUsername(showFormatWarning = false) {
+      const username = loginUsernameInput.value.trim();
+      const injectionDetected = loginInjectionPattern.test(username);
+      const validIdentity = loginUsernamePattern.test(username) || loginEmailPattern.test(username);
+      const shouldWarn = injectionDetected || (showFormatWarning && username !== '' && !validIdentity);
+
+      loginUsernameWarning.classList.toggle('hidden', !shouldWarn);
+      loginUsernameInput.setAttribute('aria-invalid', String(shouldWarn));
+      loginUsernameInput.classList.toggle('border-red-500', shouldWarn);
+      loginUsernameInput.classList.toggle('focus:ring-red-500', shouldWarn);
+      return username !== '' && username.length <= 254 && validIdentity && !injectionDetected;
+    }
+
+    loginUsernameInput.addEventListener('input', () => validateLoginUsername());
 
     // Static / Fetch Login Handler
     async function handleStaticLogin(e) {
@@ -438,6 +522,16 @@
       const u = document.getElementById('loginUsername').value.trim();
       const p = document.getElementById('loginPassword').value;
       const btn = document.getElementById('btnSubmitLogin');
+      if (!validateLoginUsername(true)) {
+        if (loginInjectionPattern.test(u)) {
+          const message = 'Username atau email mengandung pola SQL yang tidak diizinkan. Permintaan tidak dikirim.';
+          showAlert('error', 'Login diblokir', message);
+        } else {
+          showAlert('error', 'Gagal', 'Masukkan username atau alamat email yang valid.');
+        }
+        loginUsernameInput.focus();
+        return;
+      }
       if (!u || u.length > 254 || /[\u0000-\u001f\u007f]/.test(u)) {
         showAlert('error', 'Gagal', 'Masukkan username atau alamat email yang valid.');
         return;
@@ -456,20 +550,26 @@
         const res = await fetch(apiUrl, { method: 'POST', body: fd, credentials: 'same-origin', headers: { Accept: 'application/json' } });
         const json = await res.json();
         if (json.status === 'success' && json.user) {
-          showAlert('success', 'Berhasil', 'Login sukses, mengarahkan ke dashboard...');
-          const role = json.user.role;
-          setTimeout(() => {
-            if (role === 'admin') window.location.href = '../dashboard/admin/';
-            else if (role === 'sppg') window.location.href = '../dashboard/sppg/';
-            else window.location.href = '../dashboard/user/';
-          }, 600);
+          const dashboardUrl = dashboardByRole[json.user.role];
+          if (!dashboardUrl) {
+            showAlert('error', 'Role akun tidak dikenali', 'Hubungi administrator untuk memeriksa role akun di database.');
+            btn.disabled = false;
+            btn.innerHTML = '<span>Masuk ke Dashboard</span><span class="material-symbols-outlined text-[18px]">arrow_forward</span>';
+            return;
+          }
+          window.location.replace(dashboardUrl);
         } else {
-          showAlert('error', 'Gagal', json.message || 'Username atau kata sandi tidak cocok.');
+          const alertTitle = res.status >= 500 ? 'Layanan login tidak tersedia' : 'Gagal login';
+          showAlert('error', alertTitle, json.message || 'Username atau kata sandi tidak cocok.');
           btn.disabled = false;
           btn.innerHTML = '<span>Masuk ke Dashboard</span><span class="material-symbols-outlined text-[18px]">arrow_forward</span>';
         }
-      } catch (_) {
-        showAlert('error', 'Gagal', 'Layanan autentikasi tidak dapat dihubungi. Login tidak dilakukan.');
+      } catch (error) {
+        console.error('Login request failed:', error);
+        const message = isLocalPhp()
+          ? 'Tidak dapat menghubungi API login lokal. Pastikan Laragon Apache/PHP aktif, lalu coba lagi.'
+          : 'Tidak dapat terhubung ke layanan login. Periksa koneksi internet, lalu coba lagi.';
+        showAlert('error', 'Layanan login tidak tersedia', message);
         btn.disabled = false;
         btn.innerHTML = '<span>Masuk ke Dashboard</span><span class="material-symbols-outlined text-[18px]">arrow_forward</span>';
       }
@@ -537,19 +637,6 @@
           showAlert('error', 'Gagal', json.message || 'Pendaftaran gagal.');
         }
 
-        function isLocalPhp() {
-          return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
-        }
-
-        function isStrongPassword(password) {
-          if (password.length < 12 || password.length > 1024 || /[\u0000-\u001f\u007f]/.test(password)) return false;
-          let kinds = 0;
-          if (/[a-z]/.test(password)) kinds++;
-          if (/[A-Z]/.test(password)) kinds++;
-          if (/[0-9]/.test(password)) kinds++;
-          if (/[^A-Za-z0-9]/.test(password)) kinds++;
-          return kinds >= 3;
-        }
       } catch (_) {
         showAlert('error', 'Gagal', 'Layanan pendaftaran tidak dapat dihubungi. Akun belum dibuat.');
       } finally {

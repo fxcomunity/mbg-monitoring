@@ -6,17 +6,32 @@
 
 import { CORS, json, dbQuery, getSession } from './_shared.js';
 
-async function isSupportedImage(file) {
-  const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
-  if (file.type === 'image/jpeg') return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-  if (file.type === 'image/png') {
-    return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+async function getSupportedImageBytes(file) {
+  if (file.type !== 'image/jpeg' || !/\.jpe?g$/i.test(file.name)) return null;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8 ||
+      bytes[bytes.length - 2] !== 0xff || bytes[bytes.length - 1] !== 0xd9) {
+    return null;
   }
-  if (file.type === 'image/webp') {
-    return String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF'
-      && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP';
+  const content = new TextDecoder('latin1').decode(bytes).toLowerCase();
+  return /<\?php\b|<\?=|<\s*script\b|javascript\s*:|\bon[a-z]+\s*=|\beval\s*\(/i.test(content)
+    ? null
+    : bytes;
+}
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
   }
-  return false;
+  return btoa(binary);
+}
+
+function base64ToBytes(value) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
 }
 
 export async function onRequestPost(context) {
@@ -49,48 +64,30 @@ export async function onRequestPost(context) {
     return json({ status: 'error', message: 'Periksa kembali data wajib laporan.' }, 422);
   }
 
+  const dateStamp = incidentDate.replaceAll('-', '');
+  const ticketCode = `TKT-BGN-${dateStamp}-${crypto.randomUUID().replaceAll('-', '').toUpperCase()}`;
   let photoPath = null;
   let photoOriginalName = null;
-  let photoKey = null;
+  let photoBase64 = null;
   const uploadedPhoto = photo instanceof File && photo.size > 0 ? photo : null;
   if (uploadedPhoto) {
-    if (uploadedPhoto.size > 10 * 1024 * 1024
-      || !await isSupportedImage(uploadedPhoto)) {
-      return json({ status: 'error', message: 'Foto harus JPG, PNG, atau WEBP dan maksimal 10 MB.' }, 422);
+    if (uploadedPhoto.size > 10 * 1024 * 1024) {
+      return json({ status: 'error', message: 'Foto harus berupa JPG yang valid dan sudah diproses aman, maksimal 10 MB.' }, 422);
     }
-    if (!env.TIKET_PHOTOS) {
-      return json({ status: 'error', message: 'Penyimpanan foto belum dikonfigurasi. Hapus lampiran atau hubungi administrator.' }, 503);
-    }
-    try {
-      const extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[uploadedPhoto.type];
-      photoKey = `aduan/${crypto.randomUUID()}.${extension}`;
-      await env.TIKET_PHOTOS.put(photoKey, uploadedPhoto.stream(), {
-        httpMetadata: { contentType: uploadedPhoto.type }
-      });
-      photoPath = `/api/tiket?photo=${encodeURIComponent(photoKey)}`;
-      photoOriginalName = uploadedPhoto.name.slice(0, 255);
-    } catch {
-      if (photoKey) {
-        try {
-          await env.TIKET_PHOTOS.delete(photoKey);
-        } catch {
-          return json({ status: 'error', message: 'Foto gagal diunggah dan tidak dapat dibersihkan. Hubungi administrator.' }, 500);
-        }
-      }
-      return json({ status: 'error', message: 'Foto gagal diunggah. Coba lagi atau kirim laporan tanpa foto.' }, 502);
-    }
+    const photoBytes = await getSupportedImageBytes(uploadedPhoto);
+    if (!photoBytes) return json({ status: 'error', message: 'Foto harus berupa JPG yang valid dan sudah diproses aman.' }, 422);
+    photoBase64 = bytesToBase64(photoBytes);
+    photoPath = `/api/tiket?photo=${encodeURIComponent(ticketCode)}`;
+    photoOriginalName = uploadedPhoto.name.slice(0, 255);
   }
-
-  const dateStamp = incidentDate.replaceAll('-', '');
-  const ticketCode = `TKT-BGN-${dateStamp}-${crypto.randomUUID().replaceAll('-', '').slice(0, 8).toUpperCase()}`;
 
   try {
     const result = await dbQuery(env.DATABASE_URL,
       `INSERT INTO laporan_aduan (
          ticket_code, reporter_name, reporter_phone, reporter_role,
          issue_category, school_target, incident_date, description,
-         photo_path, photo_original_name, status, priority, ip_address, user_agent
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'masuk','sedang',$11,$12)
+         photo_path, photo_original_name, photo_data, status, priority, ip_address, user_agent
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,decode($11, 'base64'),'masuk','sedang',$12,$13)
        RETURNING ticket_code`,
       [
         ticketCode,
@@ -103,6 +100,7 @@ export async function onRequestPost(context) {
         description,
         photoPath,
         photoOriginalName,
+        photoBase64,
         request.headers.get('CF-Connecting-IP') || null,
         request.headers.get('User-Agent')?.slice(0, 500) || null
       ]
@@ -111,14 +109,8 @@ export async function onRequestPost(context) {
     const savedTicket = result.rows?.[0]?.ticket_code;
     if (!savedTicket) return json({ status: 'error', message: 'Laporan belum berhasil disimpan.' }, 500);
     return json({ status: 'success', ticket_code: savedTicket, message: 'Laporan berhasil disimpan.' });
-  } catch {
-    if (photoKey && env.TIKET_PHOTOS) {
-      try {
-        await env.TIKET_PHOTOS.delete(photoKey);
-      } catch {
-        return json({ status: 'error', message: 'Laporan gagal disimpan dan lampiran tidak dapat dibersihkan. Hubungi administrator.' }, 500);
-      }
-    }
+  } catch (error) {
+    console.error('Report insertion failed:', error);
     return json({ status: 'error', message: 'Laporan gagal disimpan. Coba lagi beberapa saat.' }, 500);
   }
 }
@@ -132,6 +124,27 @@ export async function onRequestGet(context) {
     const session = await getSession(request, env);
     if (!session || session.role !== 'admin') {
       return json({ status: 'error', message: 'Akses lampiran hanya untuk Admin Satgas.' }, 403);
+    }
+    if (/^TKT-BGN-\d{8}-[A-F0-9]{32,64}$/i.test(photoKey)) {
+      try {
+        const reports = await dbQuery(env.DATABASE_URL,
+          `SELECT replace(encode(photo_data, 'base64'), E'\\n', '') AS photo_base64
+           FROM laporan_aduan
+           WHERE ticket_code = $1 AND photo_data IS NOT NULL
+           LIMIT 1`,
+          [photoKey]
+        );
+        if (!reports[0]?.photo_base64) return json({ status: 'error', message: 'Lampiran tidak ditemukan.' }, 404);
+        const headers = new Headers(CORS);
+        headers.set('Content-Type', 'image/jpeg');
+        headers.set('Content-Disposition', 'inline');
+        headers.set('Cache-Control', 'private, no-store');
+        headers.set('X-Content-Type-Options', 'nosniff');
+        return new Response(base64ToBytes(reports[0].photo_base64), { headers });
+      } catch (error) {
+        console.error('Report attachment read failed:', error);
+        return json({ status: 'error', message: 'Lampiran tidak dapat dimuat.' }, 500);
+      }
     }
     if (!env.TIKET_PHOTOS || !/^aduan\/[a-f0-9-]+\.(jpg|png|webp)$/.test(photoKey)) {
       return json({ status: 'error', message: 'Lampiran tidak ditemukan.' }, 404);
@@ -152,9 +165,7 @@ export async function onRequestGet(context) {
 
   try {
     const result = await dbQuery(env.DATABASE_URL,
-      `SELECT id, ticket_code, reporter_name, reporter_role, issue_category,
-              school_target, incident_date, description, status, priority,
-              satgas_notes, created_at
+      `SELECT ticket_code, status, created_at
        FROM laporan_aduan WHERE ticket_code = $1`,
       [tiket]
     );
@@ -166,14 +177,8 @@ export async function onRequestGet(context) {
       status: 'success',
       data: {
         nomor_tiket:    row.ticket_code,
-        kategori:       row.issue_category,
-        target_sekolah: row.school_target,
         status:         row.status,
-        priority:       row.priority,
-        tanggal_lapor:  row.created_at,
-        nama_pelapor:   row.reporter_name,
-        deskripsi:      row.description,
-        catatan_satgas: row.satgas_notes || 'Dalam proses peninjauan Satgas BGN'
+        tanggal_lapor:  row.created_at
       }
     });
   } catch (err) {

@@ -80,7 +80,15 @@
     try {
       var K = 'mbg_session';
       var s = JSON.parse(sessionStorage.getItem(K) || localStorage.getItem(K) || 'null');
-      if (!s) return;
+      var accountLinks =
+        '<nav class="flex flex-wrap gap-2" aria-label="Pengaturan akun">' +
+          '<a href="../account/profile.html" class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50"><span class="material-symbols-outlined text-base text-indigo-600">account_circle</span>Atur profil</a>' +
+          '<a href="../account/password.html" class="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-50"><span class="material-symbols-outlined text-base text-amber-600">key</span>Ganti kata sandi</a>' +
+        '</nav>';
+      if (!s) {
+        card.innerHTML = accountLinks;
+        return;
+      }
       var roleLabel = { admin: 'Admin Satgas BGN', sppg: 'Mitra Dapur SPPG', user: 'Wali Murid / Publik' };
       var roleBg = { admin: 'bg-red-100 text-red-800', sppg: 'bg-blue-100 text-blue-800', user: 'bg-emerald-100 text-emerald-800' };
       var role = ['admin', 'sppg', 'user'].indexOf(s.role) >= 0 ? s.role : null;
@@ -97,7 +105,8 @@
             '</span>' +
           '</div>' +
           '<div id="mbgDashClock" class="ml-auto text-right text-xs text-slate-600 shrink-0 leading-tight"></div>' +
-        '</div>';
+        '</div>' +
+        accountLinks;
       startClock('mbgDashClock');
     } catch (e) {}
   }
@@ -275,75 +284,52 @@
   // ── Download XLSX ─────────────────────────────────────────────────────────
   // dateStr: 'YYYY-MM-DD' untuk satu hari, undefined untuk semua
   window.downloadMenuBackupXLSX = function (dateStr) {
-    loadXLSX(function () {
+    loadXLSX(async function () {
       try {
-        var allKeys = [];
-        for (var i = 0; i < localStorage.length; i++) {
-          var k = localStorage.key(i);
-          if (k && k.startsWith('mbg_menu_backup_')) {
-            if (!dateStr || k === 'mbg_menu_backup_' + dateStr) allKeys.push(k);
-          }
-        }
-        allKeys.sort();
+        var localPhp = /^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname);
+        var endpoint = localPhp
+          ? '../../api/menu.php?backup_action=backup_export'
+          : '/api/menu/backup?export=1';
+        if (dateStr) endpoint += (endpoint.includes('?') ? '&' : '?') + 'date=' + encodeURIComponent(dateStr);
 
-        if (allKeys.length === 0) {
+        var response = await fetch(endpoint, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        var result = await response.json();
+        if (!response.ok || result.status !== 'success') {
+          throw new Error(result.message || 'Server menolak permintaan backup.');
+        }
+        var allRows = Array.isArray(result.data) ? result.data : [];
+        if (!allRows.length) {
           showBackupToast('Tidak ada data backup untuk tanggal tersebut.', 'error');
           return;
         }
 
-        // Kumpulkan semua baris dari semua keys
-        var allRows = [];
-        allKeys.forEach(function (k) {
-          var entries = JSON.parse(localStorage.getItem(k) || '[]');
-          entries.forEach(function (e) { allRows.push(e); });
-        });
-
-        if (allRows.length === 0) {
-          showBackupToast('Data backup kosong.', 'error');
-          return;
-        }
-
-        // Bangun headers dari union semua keys, dengan label Indonesia
         var headerKeys = [];
         allRows.forEach(function (row) {
-          Object.keys(row).forEach(function (k) {
-            if (headerKeys.indexOf(k) === -1) headerKeys.push(k);
+          Object.keys(row).forEach(function (key) {
+            if (headerKeys.indexOf(key) === -1) headerKeys.push(key);
           });
         });
-        // Urutkan: field data dulu, metadata (_ts, _submitted_*) di akhir
         headerKeys.sort(function (a, b) {
-          var aM = a.startsWith('_'), bM = b.startsWith('_');
-          if (aM && !bM) return 1;
-          if (!aM && bM) return -1;
-          return 0;
+          var aMetadata = a.startsWith('_');
+          var bMetadata = b.startsWith('_');
+          return aMetadata === bMetadata ? 0 : (aMetadata ? 1 : -1);
         });
 
-        // Baris header (label Indonesia kalau ada, fallback ke nama field)
-        var headerRow = headerKeys.map(function (k) {
-          return COLUMN_LABELS[k] || k.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        var headerRow = headerKeys.map(function (key) {
+          return COLUMN_LABELS[key] || key.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
         });
-
-        // Baris data
         var dataRows = allRows.map(function (row) {
-          return headerKeys.map(function (k) { return row[k] !== undefined ? row[k] : ''; });
+          return headerKeys.map(function (key) { return row[key] == null ? '' : row[key]; });
         });
-
-        // Buat worksheet
-        var wsData = [headerRow].concat(dataRows);
-        var ws = window.XLSX.utils.aoa_to_sheet(wsData);
-
-        // Style: lebar kolom otomatis
-        var colWidths = headerRow.map(function (h, i) {
-          var max = h.length;
-          dataRows.forEach(function (r) {
-            var v = String(r[i] || '');
-            if (v.length > max) max = v.length;
+        var ws = window.XLSX.utils.aoa_to_sheet([headerRow].concat(dataRows));
+        ws['!cols'] = headerRow.map(function (header, index) {
+          var max = header.length;
+          dataRows.forEach(function (row) {
+            max = Math.max(max, String(row[index] || '').length);
           });
           return { wch: Math.min(max + 2, 40) };
         });
-        ws['!cols'] = colWidths;
 
-        // Buat workbook dengan metadata sheet ringkasan
         var wb = window.XLSX.utils.book_new();
         wb.Props = {
           Title: 'Backup Menu MBG',
@@ -351,27 +337,26 @@
           Author: 'Radar MBG — Badan Gizi Nasional RI',
           CreatedDate: new Date()
         };
-
         window.XLSX.utils.book_append_sheet(wb, ws, 'Data Menu');
 
-        // Sheet ringkasan per tanggal
-        var summaryData = [['Tanggal', 'Jumlah Entry', 'Kota (contoh)']];
-        allKeys.forEach(function (k) {
-          var entries = JSON.parse(localStorage.getItem(k) || '[]');
-          var contohKota = entries.length > 0 ? (entries[0].city || entries[0].kota || '—') : '—';
-          summaryData.push([k.replace('mbg_menu_backup_', ''), entries.length, contohKota]);
+        var grouped = Object.create(null);
+        allRows.forEach(function (row) {
+          var date = String(row.menu_date || '').slice(0, 10);
+          if (!date) return;
+          if (!grouped[date]) grouped[date] = { count: 0, city: row.city || '—' };
+          grouped[date].count++;
         });
-        var wsSummary = window.XLSX.utils.aoa_to_sheet(summaryData);
-        wsSummary['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 24 }];
-        window.XLSX.utils.book_append_sheet(wb, wsSummary, 'Ringkasan');
+        var summaryData = [['Tanggal', 'Jumlah Entry', 'Kota (contoh)']];
+        Object.keys(grouped).sort().reverse().forEach(function (date) {
+          summaryData.push([date, grouped[date].count, grouped[date].city]);
+        });
+        window.XLSX.utils.book_append_sheet(wb, window.XLSX.utils.aoa_to_sheet(summaryData), 'Ringkasan');
 
-        // Nama file
         var filename = 'backup-menu-mbg-' + (dateStr || 'semua-' + new Date().toISOString().slice(0, 10)) + '.xlsx';
         window.XLSX.writeFile(wb, filename);
-
         showBackupToast('File Excel berhasil diunduh: ' + filename, 'success');
       } catch (err) {
-        showBackupToast('Gagal membuat file Excel: ' + err.message, 'error');
+        showBackupToast('Gagal mengunduh backup dari database: ' + err.message, 'error');
       }
     });
   };

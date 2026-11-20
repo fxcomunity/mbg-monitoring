@@ -8,7 +8,7 @@
 -- ----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS laporan_aduan (
   id                  BIGSERIAL PRIMARY KEY,
-  ticket_code         VARCHAR(30)  NOT NULL UNIQUE,
+  ticket_code         VARCHAR(60)  NOT NULL UNIQUE,
   reporter_name       VARCHAR(120) NOT NULL,
   reporter_phone      VARCHAR(20)  NOT NULL,
   reporter_role       VARCHAR(20)  NOT NULL DEFAULT 'masyarakat'
@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS laporan_aduan (
   school_target       VARCHAR(200) NOT NULL,
   incident_date       DATE         NOT NULL,
   description         TEXT         NOT NULL,
+  photo_data          BYTEA,
   photo_path          VARCHAR(500),
   photo_original_name VARCHAR(255),
   status              VARCHAR(20)  NOT NULL DEFAULT 'masuk'
@@ -30,6 +31,9 @@ CREATE TABLE IF NOT EXISTS laporan_aduan (
   created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE laporan_aduan ALTER COLUMN ticket_code TYPE VARCHAR(60);
+ALTER TABLE laporan_aduan ADD COLUMN IF NOT EXISTS photo_data BYTEA;
 
 CREATE INDEX IF NOT EXISTS idx_laporan_ticket        ON laporan_aduan (ticket_code);
 CREATE INDEX IF NOT EXISTS idx_laporan_status        ON laporan_aduan (status);

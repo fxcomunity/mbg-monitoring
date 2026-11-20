@@ -19,12 +19,217 @@ header('Cache-Control: no-cache, no-store, must-revalidate');
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method === 'POST') {
     $action = is_string($_POST['action'] ?? null) ? $_POST['action'] : '';
+    $accountActions = [
+        'list_users',
+        'list_deleted_users',
+        'list_deletion_requests',
+        'request_user_deletion',
+        'review_user_deletion',
+        'restore_user'
+    ];
+
+    if (in_array($action, $accountActions, true)) {
+        Auth::requireApiRole('admin');
+        $actor = Auth::user();
+        $pdo = getDB();
+        $actorQuery = $pdo->prepare('SELECT id, email FROM users WHERE id = ? AND is_active = TRUE AND deleted_at IS NULL');
+        $actorQuery->execute([(int)$actor['id']]);
+        $actorRow = $actorQuery->fetch();
+        if (!$actorRow) {
+            Security::rejectRequest(401, 'Sesi administrator tidak valid.');
+        }
+        $actorId = (int)$actorRow['id'];
+        $isSuperAdmin = strtolower((string)$actorRow['email']) === '19250779@bsi.ac.id';
+        $respond = static function (array $payload, int $status = 200): void {
+            http_response_code($status);
+            echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        };
+        $cleanupExpiredAccounts = static function () use ($pdo): void {
+            $pdo->exec(
+                "DELETE FROM users
+                 WHERE deleted_at IS NOT NULL AND deleted_at <= NOW() - INTERVAL '7 days'
+                   AND LOWER(email) <> '19250779@bsi.ac.id'"
+            );
+        };
+
+        if ($action === 'list_users') {
+            $cleanupExpiredAccounts();
+            $users = $pdo->query(
+                'SELECT id, username, full_name, email, role, sppg_name, avatar_status,
+                        is_active AS active, created_at
+                 FROM users WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 200'
+            )->fetchAll();
+            $respond(['status' => 'success', 'data' => $users, 'is_superadmin' => $isSuperAdmin, 'current_user_id' => $actorId]);
+        }
+
+        if ($action === 'list_deleted_users' || $action === 'list_deletion_requests') {
+            if (!$isSuperAdmin) {
+                Security::rejectRequest(403, 'Hanya superadmin yang dapat mengakses antrean penghapusan.');
+            }
+            $cleanupExpiredAccounts();
+            if ($action === 'list_deleted_users') {
+                $deleted = $pdo->query(
+                    "SELECT id, username, full_name, email, role, deleted_at
+                     FROM users
+                     WHERE deleted_at IS NOT NULL AND deleted_at > NOW() - INTERVAL '7 days'
+                     ORDER BY deleted_at DESC LIMIT 200"
+                )->fetchAll();
+                $respond(['status' => 'success', 'data' => $deleted]);
+            }
+            $requests = $pdo->query(
+                "SELECT r.id, r.target_user_id, r.request_note, r.requested_at,
+                        target.username, target.full_name, target.email, target.role,
+                        requester.username AS requested_by_username
+                 FROM user_deletion_requests r
+                 JOIN users target ON target.id = r.target_user_id
+                 LEFT JOIN users requester ON requester.id = r.requested_by
+                 WHERE r.status = 'pending'
+                 ORDER BY r.requested_at ASC LIMIT 200"
+            )->fetchAll();
+            $respond(['status' => 'success', 'data' => $requests]);
+        }
+
+        if ($action === 'request_user_deletion') {
+            $targetId = filter_var($_POST['user_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if (!$targetId) {
+                $respond(['status' => 'error', 'message' => 'ID akun tidak valid.'], 400);
+            }
+            $targetQuery = $pdo->prepare('SELECT id, email, is_active, deleted_at FROM users WHERE id = ?');
+            $targetQuery->execute([(int)$targetId]);
+            $target = $targetQuery->fetch();
+            if (!$target || $target['deleted_at'] !== null) {
+                $respond(['status' => 'error', 'message' => 'Akun tidak ditemukan atau sudah berada di penyimpanan sementara.'], 404);
+            }
+            if ((int)$target['id'] === $actorId || strtolower((string)$target['email']) === '19250779@bsi.ac.id') {
+                $respond(['status' => 'error', 'message' => 'Akun sendiri dan akun superadmin tidak dapat dihapus.'], 403);
+            }
+            if ($isSuperAdmin) {
+                $pdo->beginTransaction();
+                try {
+                    $delete = $pdo->prepare(
+                        'UPDATE users SET deleted_was_active = is_active, is_active = FALSE, deleted_at = NOW(), deleted_by = ?, session_version = session_version + 1
+                         WHERE id = ? AND deleted_at IS NULL RETURNING id'
+                    );
+                    $delete->execute([$actorId, (int)$targetId]);
+                    if (!$delete->fetch()) {
+                        $pdo->rollBack();
+                        $respond(['status' => 'error', 'message' => 'Akun berubah sebelum dapat dipindahkan ke sementara.'], 409);
+                    }
+                    $closePending = $pdo->prepare(
+                        "UPDATE user_deletion_requests
+                         SET status = 'approved', reviewed_by = ?, reviewed_at = NOW()
+                         WHERE target_user_id = ? AND status = 'pending'"
+                    );
+                    $closePending->execute([$actorId, (int)$targetId]);
+                    $pdo->commit();
+                } catch (Throwable $error) {
+                    if ($pdo->inTransaction()) $pdo->rollBack();
+                    throw $error;
+                }
+                $respond(['status' => 'success', 'message' => 'Akun dipindahkan ke penyimpanan sementara selama 7 hari.']);
+            }
+
+            try {
+                $request = $pdo->prepare(
+                    "INSERT INTO user_deletion_requests (target_user_id, requested_by, request_note)
+                     VALUES (?, ?, ?)
+                     RETURNING id"
+                );
+                $request->execute([(int)$targetId, $actorId, 'Permintaan penghapusan oleh administrator']);
+                $request->fetch();
+            } catch (PDOException $error) {
+                if ($error->getCode() === '23505') {
+                    $respond(['status' => 'error', 'message' => 'Permintaan penghapusan akun ini masih menunggu persetujuan.'], 409);
+                }
+                throw $error;
+            }
+            $respond(['status' => 'success', 'message' => 'Permintaan penghapusan dikirim ke superadmin untuk persetujuan.']);
+        }
+
+        if ($action === 'review_user_deletion') {
+            if (!$isSuperAdmin) {
+                Security::rejectRequest(403, 'Hanya superadmin yang dapat menyetujui penghapusan.');
+            }
+            $requestId = filter_var($_POST['request_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            $decision = is_string($_POST['decision'] ?? null) ? $_POST['decision'] : '';
+            if (!$requestId || !in_array($decision, ['approve', 'reject'], true)) {
+                $respond(['status' => 'error', 'message' => 'Permintaan atau keputusan tidak valid.'], 400);
+            }
+            $pdo->beginTransaction();
+            try {
+                $requestQuery = $pdo->prepare(
+                    "SELECT r.id, r.target_user_id, target.email
+                     FROM user_deletion_requests r
+                     JOIN users target ON target.id = r.target_user_id
+                     WHERE r.id = ? AND r.status = 'pending'
+                     FOR UPDATE OF r, target"
+                );
+                $requestQuery->execute([(int)$requestId]);
+                $requestRow = $requestQuery->fetch();
+                if (!$requestRow) {
+                    $pdo->rollBack();
+                    $respond(['status' => 'error', 'message' => 'Permintaan tidak ditemukan atau sudah diproses.'], 404);
+                }
+                if (strtolower((string)$requestRow['email']) === '19250779@bsi.ac.id') {
+                    $pdo->rollBack();
+                    $respond(['status' => 'error', 'message' => 'Akun superadmin tidak dapat dihapus.'], 403);
+                }
+                if ($decision === 'approve') {
+                    $delete = $pdo->prepare(
+                        'UPDATE users SET deleted_was_active = is_active, is_active = FALSE, deleted_at = NOW(), deleted_by = ?, session_version = session_version + 1
+                         WHERE id = ? AND deleted_at IS NULL'
+                    );
+                    $delete->execute([$actorId, (int)$requestRow['target_user_id']]);
+                    if ($delete->rowCount() !== 1) {
+                        $pdo->rollBack();
+                        $respond(['status' => 'error', 'message' => 'Akun sudah berada di penyimpanan sementara.'], 409);
+                    }
+                }
+                $review = $pdo->prepare(
+                    'UPDATE user_deletion_requests SET status = ?, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?'
+                );
+                $review->execute([$decision === 'approve' ? 'approved' : 'rejected', $actorId, (int)$requestId]);
+                $pdo->commit();
+            } catch (Throwable $error) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $error;
+            }
+            $respond([
+                'status' => 'success',
+                'message' => $decision === 'approve' ? 'Penghapusan disetujui; akun masuk penyimpanan sementara 7 hari.' : 'Permintaan penghapusan ditolak.'
+            ]);
+        }
+
+        if ($action === 'restore_user') {
+            if (!$isSuperAdmin) {
+                Security::rejectRequest(403, 'Hanya superadmin yang dapat memulihkan akun.');
+            }
+            $targetId = filter_var($_POST['user_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if (!$targetId) {
+                $respond(['status' => 'error', 'message' => 'ID akun tidak valid.'], 400);
+            }
+            $restore = $pdo->prepare(
+                "UPDATE users
+                 SET is_active = COALESCE(deleted_was_active, TRUE), deleted_at = NULL,
+                     deleted_by = NULL, deleted_was_active = NULL, session_version = session_version + 1
+                 WHERE id = ? AND deleted_at > NOW() - INTERVAL '7 days' RETURNING id"
+            );
+            $restore->execute([(int)$targetId]);
+            if (!$restore->fetch()) {
+                $respond(['status' => 'error', 'message' => 'Akun tidak ditemukan atau masa pemulihannya sudah berakhir.'], 404);
+            }
+            $respond(['status' => 'success', 'message' => 'Akun berhasil dipulihkan.']);
+        }
+    }
+
     if ($action === 'login') {
         $username = is_string($_POST['username'] ?? null) ? $_POST['username'] : '';
         $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
         $result = Auth::login($username, $password);
         if (!$result['status']) {
-            http_response_code(!empty($result['blocked']) ? 429 : 401);
+            $statusCode = !empty($result['blocked']) ? 429 : (!empty($result['unavailable']) ? 503 : 401);
+            http_response_code($statusCode);
             echo json_encode([
                 'status' => 'error',
                 'message' => $result['message'] ?? 'Username atau kata sandi tidak cocok.',
@@ -85,9 +290,8 @@ if ($method === 'GET' && ($_GET['action'] ?? '') === 'login_status') {
     exit;
 }
 
-if (Auth::check()) {
-    Auth::requireApiRole();
-    $u = Auth::user();
+$u = Auth::currentApiUser();
+if ($u !== null) {
     $role = $u['role'] ?? 'user';
     $roleLabels = [
         'admin' => 'Admin Satgas BGN',
