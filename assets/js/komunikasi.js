@@ -543,19 +543,27 @@
   }
 
   function appendAiMessage(role, text, pending = false) {
+    const container = document.getElementById('aiMessages');
     const message = document.createElement('article');
     message.className = `ai-message ${role}${pending ? ' is-pending' : ''}`;
     if (role === 'assistant') {
       const avatar = document.createElement('img');
       avatar.src = 'assets/images/communication-ai.png';
       avatar.alt = '';
+      avatar.width = 28; avatar.height = 28;
       message.append(avatar);
     }
-    const content = document.createElement('p');
-    content.textContent = text;
-    message.append(content);
-    $('#aiMessages').append(message);
-    $('#aiMessages').scrollTop = $('#aiMessages').scrollHeight;
+    if (pending) {
+      const dots = document.createElement('p');
+      dots.innerHTML = '<span class="ai-typing-dots"><span></span><span></span><span></span></span>';
+      message.append(dots);
+    } else {
+      const content = document.createElement('p');
+      content.textContent = text;
+      message.append(content);
+    }
+    container.append(message);
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     return message;
   }
 

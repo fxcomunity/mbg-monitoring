@@ -14,5 +14,5 @@ compatibility_flags = ["nodejs_compat"]
 [env.production.vars]
 ALLOWED_ORIGIN = "https://mbg.jack-ai.my.id"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-OPENROUTER_MODEL = "google/gemini-2.0-flash-001"
+OPENROUTER_MODEL = "google/gemma-3-27b-it:free"
 UPLOAD_MAX_MB = "10"

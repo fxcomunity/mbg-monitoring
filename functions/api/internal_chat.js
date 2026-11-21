@@ -305,43 +305,52 @@ export async function onRequest({ request, env }) {
         return json({ status: 'error', message: 'Asisten AI belum dikonfigurasi. Admin perlu mengatur secret OPENROUTER_API_KEY.' }, 503);
       }
       const baseUrl = String(env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, '');
-      const model = String(env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001');
-      let upstream;
-      try {
-        upstream = await fetch(`${baseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-            'HTTP-Referer': 'https://mbg.jack-ai.my.id',
-            'X-Title': 'Radar MBG Connect'
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              {
-                role: 'system',
-                content: 'Anda adalah AI internal MBG Connect. Jawab ringkas dan ramah dalam Bahasa Indonesia tentang penggunaan komunikasi internal, koordinasi MBG, dan informasi umum. Jangan mengarang informasi akun; pencarian Admin/SPPG dilakukan secara privat di perangkat pengguna. Jika pengguna meminta data akun, arahkan untuk memakai pencarian kontak lokal.'
-              },
-              ...history,
-              { role: 'user', content: message }
-            ],
-            max_tokens: 500,
-            temperature: 0.3
-          }),
-          signal: AbortSignal.timeout(20000)
-        });
-      } catch (error) {
-        console.error('OpenRouter communication AI request failed:', error);
+      const preferredModel = String(env.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free');
+      const fallbackModels = ['google/gemma-3-27b-it:free', 'openrouter/auto'];
+      const modelsToTry = [preferredModel, ...fallbackModels.filter(m => m !== preferredModel)];
+      let _upstream = null;
+      let _reply = null;
+      for (const model of modelsToTry) {
+        let res;
+        try {
+          res = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`,
+              'HTTP-Referer': 'https://mbg.jack-ai.my.id',
+              'X-Title': 'Radar MBG Connect'
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                {
+                  role: 'system',
+                  content: 'Anda adalah AI internal MBG Connect. Jawab ringkas dan ramah dalam Bahasa Indonesia tentang penggunaan komunikasi internal, koordinasi MBG, dan informasi umum. Jangan mengarang informasi akun; pencarian Admin/SPPG dilakukan secara privat di perangkat pengguna. Jika pengguna meminta data akun, arahkan untuk memakai pencarian kontak lokal.'
+                },
+                ...history,
+                { role: 'user', content: message }
+              ],
+              max_tokens: 500,
+              temperature: 0.3
+            }),
+            signal: AbortSignal.timeout(20000)
+          });
+        } catch (err) {
+          console.warn(`AI model ${model} unreachable:`, err.message);
+          continue;
+        }
+        const data = await res.json().catch(() => null);
+        const candidate = data?.choices?.[0]?.message?.content;
+        if (res.ok && typeof candidate === 'string' && candidate.trim()) {
+          _upstream = res; _reply = candidate.trim(); break;
+        }
+        console.warn(`AI model ${model} returned ${res.status}, trying next…`);
+      }
+      if (!_upstream || !_reply) {
         return json({ status: 'error', message: 'Asisten AI tidak dapat dihubungi. Coba lagi sebentar.' }, 502);
       }
-      const result = await upstream.json().catch(() => null);
-      const reply = result?.choices?.[0]?.message?.content;
-      if (!upstream.ok || typeof reply !== 'string' || !reply.trim()) {
-        console.error('OpenRouter communication AI returned an unsuccessful response:', upstream.status);
-        return json({ status: 'error', message: 'Asisten AI gagal menyusun jawaban. Coba lagi sebentar.' }, 502);
-      }
-      return json({ status: 'success', reply: reply.trim() });
+      return json({ status: 'success', reply: _reply });
     }
 
     if (body.action === 'archive' || body.action === 'unarchive') {

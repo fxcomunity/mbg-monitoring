@@ -43,7 +43,7 @@ export async function onRequest(context) {
     if (message.length > 500) return json({ status: 'error', message: 'Pesan terlalu panjang (maks 500 karakter).' }, 422);
 
     const apiKey  = env.OPENROUTER_API_KEY;
-    const model   = env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001';
+    const model   = env.OPENROUTER_MODEL || 'google/gemma-3-27b-it:free';
     const baseUrl = env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1';
 
     const systemPrompt = targetType === 'sppg'
