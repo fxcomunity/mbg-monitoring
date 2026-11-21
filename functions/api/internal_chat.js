@@ -133,6 +133,7 @@ export async function onRequest({ request, env }) {
 
       if (action === 'conversations') {
         const id = Number(identity.id);
+        const archived = url.searchParams.get('archived') === '1';
         const rows = await dbQuery(db,
           `SELECT c.id, c.kind, c.name, c.updated_at,
                   (SELECT u.id FROM internal_chat_members peer JOIN users u ON u.id = peer.user_id
@@ -160,7 +161,68 @@ export async function onRequest({ request, env }) {
                    WHERE members.conversation_id = c.id) AS member_count
            FROM internal_chat_conversations c
            JOIN internal_chat_members mine ON mine.conversation_id = c.id AND mine.user_id = $1
+           WHERE ($2::boolean AND EXISTS (
+                    SELECT 1 FROM internal_chat_archives a
+                    WHERE a.user_id = $1 AND a.conversation_id = c.id
+                 ))
+              OR (NOT $2::boolean AND NOT EXISTS (
+                    SELECT 1 FROM internal_chat_archives a
+                    WHERE a.user_id = $1 AND a.conversation_id = c.id
+                 ))
            ORDER BY c.updated_at DESC, c.id DESC LIMIT 300`,
+          [identity.id, archived]
+        );
+        return json({ status: 'success', data: rows });
+      }
+
+      if (action === 'call_history') {
+        const rows = await dbQuery(db,
+          `SELECT c.id, c.conversation_id, c.status, c.created_at, c.answered_at, c.ended_at,
+                  COALESCE(peer.sppg_name, peer.full_name) AS peer_name, peer.role AS peer_role
+           FROM internal_chat_calls c
+           JOIN users peer ON peer.id = CASE WHEN c.caller_id = $1 THEN c.callee_id ELSE c.caller_id END
+           WHERE c.caller_id = $1 OR c.callee_id = $1
+           ORDER BY c.created_at DESC LIMIT 100`,
+          [identity.id]
+        );
+        return json({ status: 'success', data: rows });
+      }
+
+      if (action === 'statuses') {
+        const rows = await dbQuery(db,
+          `SELECT s.id, s.author_id, s.conversation_id, s.message, s.created_at, s.expires_at,
+                  c.name AS group_name, COALESCE(u.sppg_name, u.full_name) AS author_name, u.role AS author_role
+           FROM internal_chat_statuses s
+           JOIN users u ON u.id = s.author_id
+           LEFT JOIN internal_chat_conversations c ON c.id = s.conversation_id
+           WHERE s.expires_at > NOW()
+             AND (s.author_id = $1 OR s.conversation_id IS NULL OR EXISTS (
+               SELECT 1 FROM internal_chat_members m
+               WHERE m.conversation_id = s.conversation_id AND m.user_id = $1
+             ))
+           ORDER BY s.created_at DESC LIMIT 200`,
+          [identity.id]
+        );
+        return json({ status: 'success', data: rows });
+      }
+
+      if (action === 'communities') {
+        const rows = await dbQuery(db,
+          `SELECT c.id, c.name, c.description, c.created_at,
+                  (SELECT COUNT(*) FROM internal_chat_community_members m WHERE m.community_id = c.id) AS member_count,
+                  COALESCE((
+                    SELECT json_agg(json_build_object('id', g.id, 'name', g.name) ORDER BY g.name)
+                    FROM internal_chat_community_groups cg
+                    JOIN internal_chat_conversations g ON g.id = cg.conversation_id
+                    WHERE cg.community_id = c.id
+                      AND EXISTS (
+                        SELECT 1 FROM internal_chat_members gm
+                        WHERE gm.conversation_id = g.id AND gm.user_id = $1
+                      )
+                  ), '[]'::json) AS groups
+           FROM internal_chat_communities c
+           JOIN internal_chat_community_members mine ON mine.community_id = c.id AND mine.user_id = $1
+           ORDER BY c.updated_at DESC LIMIT 100`,
           [identity.id]
         );
         return json({ status: 'success', data: rows });
@@ -211,6 +273,101 @@ export async function onRequest({ request, env }) {
     }
 
     if (body.action === 'presence') return json({ status: 'success' });
+
+    if (body.action === 'archive' || body.action === 'unarchive') {
+      const conversationId = Number(body.conversation_id);
+      if (!isValidId(conversationId) || !await isMember(db, conversationId, Number(identity.id))) {
+        return json({ status: 'error', message: 'Percakapan tidak ditemukan.' }, 404);
+      }
+      if (body.action === 'archive') {
+        await dbQuery(db,
+          `INSERT INTO internal_chat_archives (user_id, conversation_id)
+           VALUES ($1, $2) ON CONFLICT (user_id, conversation_id) DO NOTHING`,
+          [identity.id, conversationId]
+        );
+      } else {
+        await dbQuery(db, 'DELETE FROM internal_chat_archives WHERE user_id = $1 AND conversation_id = $2',
+          [identity.id, conversationId]
+        );
+      }
+      return json({ status: 'success' });
+    }
+
+    if (body.action === 'status_create') {
+      const message = typeof body.message === 'string' ? body.message.trim() : '';
+      const conversationId = body.conversation_id == null || body.conversation_id === ''
+        ? null : Number(body.conversation_id);
+      if (!message || message.length > 500 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(message)) {
+        return json({ status: 'error', message: 'Status wajib diisi dan maksimal 500 karakter.' }, 400);
+      }
+      if (conversationId !== null) {
+        if (!isValidId(conversationId)) return json({ status: 'error', message: 'Grup status tidak valid.' }, 400);
+        const group = await dbQuery(db,
+          `SELECT 1 FROM internal_chat_conversations c
+           JOIN internal_chat_members m ON m.conversation_id = c.id AND m.user_id = $1
+           WHERE c.id = $2 AND c.kind = 'group'`,
+          [identity.id, conversationId]
+        );
+        if (!group.length) return json({ status: 'error', message: 'Status hanya dapat dibuat di grup yang Anda ikuti.' }, 403);
+      }
+      const created = await dbQuery(db,
+        `INSERT INTO internal_chat_statuses (author_id, conversation_id, message)
+         VALUES ($1, $2, $3) RETURNING id, created_at, expires_at`,
+        [identity.id, conversationId, message]
+      );
+      return json({ status: 'success', data: created[0] });
+    }
+
+    if (body.action === 'community_create') {
+      const name = typeof body.name === 'string' ? body.name.trim() : '';
+      const description = typeof body.description === 'string' ? body.description.trim() : '';
+      const memberIds = [...new Set((Array.isArray(body.member_ids) ? body.member_ids : []).map(Number).filter(isValidId))]
+        .filter((id) => id !== Number(identity.id));
+      const conversationIds = [...new Set((Array.isArray(body.conversation_ids) ? body.conversation_ids : []).map(Number).filter(isValidId))];
+      if (!name || name.length > 120 || description.length > 500
+          || /[\u0000-\u001f\u007f]/u.test(name)
+          || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(description)) {
+        return json({ status: 'error', message: 'Nama komunitas wajib diisi; deskripsi maksimal 500 karakter.' }, 400);
+      }
+      if (memberIds.length > 199 || conversationIds.length > 100) {
+        return json({ status: 'error', message: 'Jumlah anggota atau grup komunitas melebihi batas.' }, 400);
+      }
+      const [eligibleMembers, eligibleGroups] = await Promise.all([
+        memberIds.length ? dbQuery(db,
+          `SELECT id FROM users WHERE id = ANY($1::bigint[]) AND deleted_at IS NULL AND is_active = TRUE
+           AND role IN ('admin', 'sppg')
+           AND (role <> 'sppg' OR LOWER(COALESCE(status_verifikasi, '')) = 'approved')`,
+          [memberIds]) : Promise.resolve([]),
+        conversationIds.length ? dbQuery(db,
+          `SELECT c.id FROM internal_chat_conversations c
+           JOIN internal_chat_members m ON m.conversation_id = c.id AND m.user_id = $1
+           WHERE c.id = ANY($2::bigint[]) AND c.kind = 'group'`,
+          [identity.id, conversationIds]) : Promise.resolve([])
+      ]);
+      if (eligibleMembers.length !== memberIds.length || eligibleGroups.length !== conversationIds.length) {
+        return json({ status: 'error', message: 'Ada anggota tidak valid atau grup bukan grup yang Anda ikuti.' }, 400);
+      }
+      const created = await dbQuery(db,
+        `WITH community AS (
+           INSERT INTO internal_chat_communities (name, description, created_by)
+           VALUES ($1, $2, $3) RETURNING id
+         ), members AS (
+           INSERT INTO internal_chat_community_members (community_id, user_id)
+           SELECT community.id, selected.user_id
+           FROM community
+           CROSS JOIN UNNEST(ARRAY[$3::bigint] || $4::bigint[]) AS selected(user_id)
+           ON CONFLICT (community_id, user_id) DO NOTHING
+         ), groups AS (
+           INSERT INTO internal_chat_community_groups (community_id, conversation_id)
+           SELECT community.id, selected.conversation_id
+           FROM community CROSS JOIN UNNEST($5::bigint[]) AS selected(conversation_id)
+           ON CONFLICT (community_id, conversation_id) DO NOTHING
+         )
+         SELECT id FROM community`,
+        [name, description, identity.id, memberIds, conversationIds]
+      );
+      return json({ status: 'success', community_id: Number(created[0].id) });
+    }
 
     if (body.action === 'call_start') {
       const conversationId = Number(body.conversation_id);

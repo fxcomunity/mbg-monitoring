@@ -118,6 +118,19 @@ try {
         $respond(['status' => 'success', 'data' => $callData, 'signals' => $signals->fetchAll()]);
     }
 
+    if ($method === 'GET' && $action === 'call_history') {
+        $stmt = $pdo->prepare(
+            "SELECT c.id, c.conversation_id, c.status, c.created_at, c.answered_at, c.ended_at,
+                    COALESCE(peer.sppg_name, peer.full_name) AS peer_name, peer.role AS peer_role
+             FROM internal_chat_calls c
+             JOIN users peer ON peer.id = CASE WHEN c.caller_id = ? THEN c.callee_id ELSE c.caller_id END
+             WHERE c.caller_id = ? OR c.callee_id = ?
+             ORDER BY c.created_at DESC LIMIT 100"
+        );
+        $stmt->execute([$userId, $userId, $userId]);
+        $respond(['status' => 'success', 'data' => $stmt->fetchAll()]);
+    }
+
     if ($method === 'GET' && $action === 'directory') {
         $stmt = $pdo->prepare(
             "SELECT u.id, u.full_name, u.role, u.sppg_name, u.avatar_url,
@@ -137,6 +150,7 @@ try {
     }
 
     if ($method === 'GET' && $action === 'conversations') {
+        $archived = ($_GET['archived'] ?? '') === '1';
         $stmt = $pdo->prepare(
             "SELECT c.id, c.kind, c.name, c.updated_at,
                     (SELECT u.id FROM internal_chat_members peer
@@ -169,10 +183,58 @@ try {
                      WHERE members.conversation_id = c.id) AS member_count
              FROM internal_chat_conversations c
              JOIN internal_chat_members mine ON mine.conversation_id = c.id AND mine.user_id = ?
+             WHERE (? = TRUE AND EXISTS (
+                      SELECT 1 FROM internal_chat_archives a
+                      WHERE a.user_id = ? AND a.conversation_id = c.id
+                   ))
+                OR (? = FALSE AND NOT EXISTS (
+                      SELECT 1 FROM internal_chat_archives a
+                      WHERE a.user_id = ? AND a.conversation_id = c.id
+                   ))
              ORDER BY c.updated_at DESC, c.id DESC
              LIMIT 300"
         );
-        $stmt->execute([$userId, $userId, $userId, $userId, $userId, $userId, $userId]);
+        $stmt->execute([$userId, $userId, $userId, $userId, $userId, $userId, $userId, $archived, $userId, $archived, $userId]);
+        $respond(['status' => 'success', 'data' => $stmt->fetchAll()]);
+    }
+
+    if ($method === 'GET' && $action === 'statuses') {
+        $stmt = $pdo->prepare(
+            "SELECT s.id, s.author_id, s.conversation_id, s.message, s.created_at, s.expires_at,
+                    c.name AS group_name, COALESCE(u.sppg_name, u.full_name) AS author_name, u.role AS author_role
+             FROM internal_chat_statuses s
+             JOIN users u ON u.id = s.author_id
+             LEFT JOIN internal_chat_conversations c ON c.id = s.conversation_id
+             WHERE s.expires_at > NOW()
+               AND (s.author_id = ? OR s.conversation_id IS NULL OR EXISTS (
+                 SELECT 1 FROM internal_chat_members m
+                 WHERE m.conversation_id = s.conversation_id AND m.user_id = ?
+               ))
+             ORDER BY s.created_at DESC LIMIT 200"
+        );
+        $stmt->execute([$userId, $userId]);
+        $respond(['status' => 'success', 'data' => $stmt->fetchAll()]);
+    }
+
+    if ($method === 'GET' && $action === 'communities') {
+        $stmt = $pdo->prepare(
+            "SELECT c.id, c.name, c.description, c.created_at,
+                    (SELECT COUNT(*) FROM internal_chat_community_members m WHERE m.community_id = c.id) AS member_count,
+                    COALESCE((
+                      SELECT json_agg(json_build_object('id', g.id, 'name', g.name) ORDER BY g.name)
+                      FROM internal_chat_community_groups cg
+                      JOIN internal_chat_conversations g ON g.id = cg.conversation_id
+                      WHERE cg.community_id = c.id
+                        AND EXISTS (
+                          SELECT 1 FROM internal_chat_members gm
+                          WHERE gm.conversation_id = g.id AND gm.user_id = ?
+                        )
+                    ), '[]'::json) AS groups
+             FROM internal_chat_communities c
+             JOIN internal_chat_community_members mine ON mine.community_id = c.id AND mine.user_id = ?
+             ORDER BY c.updated_at DESC LIMIT 100"
+        );
+        $stmt->execute([$userId, $userId]);
         $respond(['status' => 'success', 'data' => $stmt->fetchAll()]);
     }
 
@@ -229,6 +291,125 @@ try {
 
     if ($action === 'presence') {
         $respond(['status' => 'success']);
+    }
+
+    if ($action === 'archive' || $action === 'unarchive') {
+        $conversationId = filter_var($body['conversation_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!$conversationId) $respond(['status' => 'error', 'message' => 'Percakapan tidak ditemukan.'], 404);
+        $requireConversation((int)$conversationId);
+        if ($action === 'archive') {
+            $stmt = $pdo->prepare(
+                'INSERT INTO internal_chat_archives (user_id, conversation_id) VALUES (?, ?)
+                 ON CONFLICT (user_id, conversation_id) DO NOTHING'
+            );
+            $stmt->execute([$userId, (int)$conversationId]);
+        } else {
+            $stmt = $pdo->prepare('DELETE FROM internal_chat_archives WHERE user_id = ? AND conversation_id = ?');
+            $stmt->execute([$userId, (int)$conversationId]);
+        }
+        $respond(['status' => 'success']);
+    }
+
+    if ($action === 'status_create') {
+        $message = trim((string)($body['message'] ?? ''));
+        $conversationId = isset($body['conversation_id']) && $body['conversation_id'] !== ''
+            ? filter_var($body['conversation_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) : null;
+        if ($message === '' || mb_strlen($message) > 500 || preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $message)) {
+            $respond(['status' => 'error', 'message' => 'Status wajib diisi dan maksimal 500 karakter.'], 400);
+        }
+        if ($conversationId !== null) {
+            if (!$conversationId) $respond(['status' => 'error', 'message' => 'Grup status tidak valid.'], 400);
+            $group = $pdo->prepare(
+                "SELECT 1 FROM internal_chat_conversations c
+                 JOIN internal_chat_members m ON m.conversation_id = c.id AND m.user_id = ?
+                 WHERE c.id = ? AND c.kind = 'group'"
+            );
+            $group->execute([$userId, (int)$conversationId]);
+            if (!$group->fetchColumn()) $respond(['status' => 'error', 'message' => 'Status hanya dapat dibuat di grup yang Anda ikuti.'], 403);
+        }
+        $stmt = $pdo->prepare(
+            'INSERT INTO internal_chat_statuses (author_id, conversation_id, message)
+             VALUES (?, ?, ?) RETURNING id, created_at, expires_at'
+        );
+        $stmt->execute([$userId, $conversationId === null ? null : (int)$conversationId, $message]);
+        $respond(['status' => 'success', 'data' => $stmt->fetch()]);
+    }
+
+    if ($action === 'community_create') {
+        $name = trim((string)($body['name'] ?? ''));
+        $description = trim((string)($body['description'] ?? ''));
+        $memberIds = $body['member_ids'] ?? [];
+        $conversationIds = $body['conversation_ids'] ?? [];
+        if ($name === '' || mb_strlen($name) > 120 || mb_strlen($description) > 500 ||
+            preg_match('/[\x00-\x1F\x7F]/u', $name) ||
+            preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $description)) {
+            $respond(['status' => 'error', 'message' => 'Nama komunitas wajib diisi; deskripsi maksimal 500 karakter.'], 400);
+        }
+        if (!is_array($memberIds) || !is_array($conversationIds) ||
+            count($memberIds) > 199 || count($conversationIds) > 100) {
+            $respond(['status' => 'error', 'message' => 'Jumlah anggota atau grup komunitas melebihi batas.'], 400);
+        }
+        $memberIds = array_values(array_unique(array_filter(array_map(
+            static fn($id) => filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null,
+            $memberIds
+        ))));
+        $memberIds = array_values(array_diff($memberIds, [$userId]));
+        $conversationIds = array_values(array_unique(array_filter(array_map(
+            static fn($id) => filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null,
+            $conversationIds
+        ))));
+        if (count($memberIds) > 199 || count($conversationIds) > 100) {
+            $respond(['status' => 'error', 'message' => 'Jumlah anggota atau grup komunitas melebihi batas.'], 400);
+        }
+        if ($memberIds) {
+            $placeholders = implode(',', array_fill(0, count($memberIds), '?'));
+            $eligible = $pdo->prepare(
+                "SELECT id FROM users WHERE id IN ($placeholders) AND deleted_at IS NULL AND is_active = TRUE
+                 AND role IN ('admin', 'sppg')
+                 AND (role <> 'sppg' OR LOWER(COALESCE(status_verifikasi, '')) = 'approved')"
+            );
+            $eligible->execute($memberIds);
+            if (count($eligible->fetchAll(PDO::FETCH_COLUMN)) !== count($memberIds)) {
+                $respond(['status' => 'error', 'message' => 'Ada anggota komunitas yang tidak aktif atau bukan akun Admin/SPPG.'], 400);
+            }
+        }
+        if ($conversationIds) {
+            $placeholders = implode(',', array_fill(0, count($conversationIds), '?'));
+            $groups = $pdo->prepare(
+                "SELECT c.id FROM internal_chat_conversations c
+                 JOIN internal_chat_members m ON m.conversation_id = c.id AND m.user_id = ?
+                 WHERE c.id IN ($placeholders) AND c.kind = 'group'"
+            );
+            $groups->execute(array_merge([$userId], $conversationIds));
+            if (count($groups->fetchAll(PDO::FETCH_COLUMN)) !== count($conversationIds)) {
+                $respond(['status' => 'error', 'message' => 'Ada grup yang tidak Anda ikuti atau tidak valid.'], 400);
+            }
+        }
+        $pdo->beginTransaction();
+        try {
+            $stmt = $pdo->prepare(
+                'INSERT INTO internal_chat_communities (name, description, created_by)
+                 VALUES (?, ?, ?) RETURNING id'
+            );
+            $stmt->execute([$name, $description, $userId]);
+            $communityId = (int)$stmt->fetchColumn();
+            $member = $pdo->prepare(
+                'INSERT INTO internal_chat_community_members (community_id, user_id)
+                 VALUES (?, ?) ON CONFLICT (community_id, user_id) DO NOTHING'
+            );
+            $member->execute([$communityId, $userId]);
+            foreach ($memberIds as $memberId) $member->execute([$communityId, (int)$memberId]);
+            $group = $pdo->prepare(
+                'INSERT INTO internal_chat_community_groups (community_id, conversation_id)
+                 VALUES (?, ?) ON CONFLICT (community_id, conversation_id) DO NOTHING'
+            );
+            foreach ($conversationIds as $groupId) $group->execute([$communityId, (int)$groupId]);
+            $pdo->commit();
+            $respond(['status' => 'success', 'community_id' => $communityId]);
+        } catch (Throwable $error) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $error;
+        }
     }
 
     if ($action === 'call_start') {

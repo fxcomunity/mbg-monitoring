@@ -2,19 +2,21 @@
 
 ## Database
 
-Jalankan `database/neon_auth_sessions.sql` dan `database/internal_chat.sql` satu kali pada database Neon. Keduanya memerlukan tabel `users` dari schema utama. File `database/schema_all.sql` juga menyertakan definisi tabel sesi untuk pemasangan baru.
+Jalankan `database/neon_auth_sessions.sql` dan `database/internal_chat.sql` satu kali pada database Neon. Keduanya memerlukan tabel `users` dari schema utama. Migrasi chat mencakup percakapan, pesan, panggilan, status 24 jam, arsip per pengguna, dan komunitas beserta grup anggotanya.
 
 Sesi Cloudflare Pages kini disimpan di Neon pada tabel `auth_sessions`; halaman Pages tidak membutuhkan binding KV `SESSIONS`. Browser tetap menerima cookie token acak HttpOnly, sedangkan database hanya menyimpan hash token. Terapkan `database/neon_auth_sessions.sql` di Neon SQL Editor sebelum deploy versi ini agar login dan validasi sesi berfungsi.
 
 ## Halaman
 
-- `dashboard/komunikasi/chat/` — daftar chat dan pesan langsung.
-- Grup dibuat melalui dialog di halaman chat, tanpa membuka halaman `grup/create`.
-- `dashboard/komunikasi/chat/grup/{slug-nama-grup}/{id}` — chat grup; URL dipetakan ke halaman chat yang sama sambil memilih ID grup.
+- `dashboard/komunikasi/chat/` — Chat dan percakapan langsung.
+- Grup dibuat melalui dialog di halaman chat; membuka grup mengarah ke `dashboard/komunikasi/grup/chat/{id}`.
 - `dashboard/komunikasi/chat/telephone/?conversation_id={id}` — memulai panggilan suara.
 - `dashboard/komunikasi/chat/telephone/?call_id={id}` — menerima atau melanjutkan panggilan.
+- Navigasi bawah menyediakan Chat, Pembaruan, Komunitas, Panggilan, dan Arsip.
+- Status pribadi dibagikan ke kontak internal dan kedaluwarsa setelah 24 jam. Status grup hanya terlihat oleh anggota grup.
+- Chat dapat diarsipkan per akun. Komunitas menyimpan anggota Admin/SPPG dan tautan ke grup koordinasi.
 
-Panggilan suara menggunakan WebRTC dan meminta izin mikrofon. Verifikasi peran tetap dilakukan di server/database; API chat hanya menerima Admin/SPPG. Dashboard Admin dan SPPG memperbarui presence selama sesi aktif, sehingga status berubah offline setelah heartbeat berhenti selama 90 detik.
+Panggilan suara menggunakan WebRTC dan meminta izin mikrofon. Aktifkan tombol suara untuk nada panggilan masuk/notifikasi; panggilan keluar memainkan nada tunggu selama menunggu jawaban. Browser dapat meminta izin notifikasi sistem. Verifikasi peran tetap dilakukan di server/database; API chat hanya menerima Admin/SPPG. Dashboard Admin dan SPPG memperbarui presence selama sesi aktif, sehingga status berubah offline setelah heartbeat berhenti selama 90 detik.
 
 ### TURN, Cloudflare Pages, dan Neon
 

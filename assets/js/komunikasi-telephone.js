@@ -17,7 +17,9 @@
     pendingCandidates: [],
     busy: false,
     ending: false,
-    pollTimer: null
+    pollTimer: null,
+    audioContext: null,
+    ringbackTimer: null
   };
 
   function showError(message) {
@@ -43,6 +45,41 @@
     button.querySelector('.material-symbols-outlined').textContent = icon;
     button.lastElementChild.textContent = label;
     button.hidden = false;
+  }
+
+  async function playRingback() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      if (!state.audioContext) state.audioContext = new AudioContext();
+      if (state.audioContext.state === 'suspended') await state.audioContext.resume();
+      const now = state.audioContext.currentTime;
+      [440, 480].forEach((frequency, index) => {
+        const oscillator = state.audioContext.createOscillator();
+        const gain = state.audioContext.createGain();
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.0001, now + index * 0.18);
+        gain.gain.linearRampToValueAtTime(0.1, now + index * 0.18 + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.18 + 0.16);
+        oscillator.connect(gain);
+        gain.connect(state.audioContext.destination);
+        oscillator.start(now + index * 0.18);
+        oscillator.stop(now + index * 0.18 + 0.18);
+      });
+    } catch (error) {
+      console.warn('Nada panggilan tidak dapat diputar:', error.message);
+    }
+  }
+
+  function startRingback() {
+    if (state.ringbackTimer) return;
+    playRingback();
+    state.ringbackTimer = window.setInterval(playRingback, 2200);
+  }
+
+  function stopRingback() {
+    if (state.ringbackTimer) window.clearInterval(state.ringbackTimer);
+    state.ringbackTimer = null;
   }
 
   async function request(url, options = {}) {
@@ -89,7 +126,10 @@
       }).catch((error) => console.warn('Kandidat jaringan tidak terkirim:', error.message));
     };
     connection.onconnectionstatechange = () => {
-      if (connection.connectionState === 'connected') setStatus('Terhubung · panggilan suara aktif');
+      if (connection.connectionState === 'connected') {
+        stopRingback();
+        setStatus('Terhubung · panggilan suara aktif');
+      }
       if (connection.connectionState === 'failed') showError('Koneksi audio gagal. Jaringan ini mungkin memerlukan konfigurasi server TURN.');
       if (connection.connectionState === 'disconnected') setStatus('Koneksi terputus, mencoba menyambungkan kembali...');
     };
@@ -140,6 +180,7 @@
       state.call = result.data;
       const terminal = ['declined', 'ended', 'missed'].includes(state.call.status);
       if (terminal) {
+        stopRingback();
         state.ending = true;
         setStatus(state.call.status === 'declined' ? 'Panggilan ditolak.' : state.call.status === 'missed' ? 'Panggilan tidak dijawab.' : 'Panggilan berakhir.');
         cleanup();
@@ -165,6 +206,7 @@
   }
 
   async function startOutgoingCall() {
+    startRingback();
     setAction('Menghubungi...', 'call', true);
     try {
       const result = await post('call_start', { conversation_id: state.conversationId });
@@ -182,6 +224,7 @@
       setAction('Sedang memanggil', 'call', true);
       startPolling();
     } catch (error) {
+      stopRingback();
       if (state.callId) await post('call_end', { call_id: state.callId }).catch(() => {});
       cleanup();
       showError(error.name === 'NotAllowedError' ? 'Izin mikrofon ditolak. Aktifkan akses mikrofon di browser lalu coba lagi.' : error.message);
@@ -190,6 +233,7 @@
   }
 
   async function answerIncomingCall() {
+    stopRingback();
     setAction('Menjawab...', 'call', true);
     try {
       await acquireMicrophone();
@@ -209,6 +253,7 @@
   async function finishCall() {
     if (!state.callId || state.ending) return;
     state.ending = true;
+    stopRingback();
     setAction('Mengakhiri...', 'call_end', true);
     try {
       await post('call_end', { call_id: state.callId });
@@ -222,6 +267,7 @@
   }
 
   function cleanup() {
+    stopRingback();
     if (state.pollTimer) window.clearInterval(state.pollTimer);
     state.pollTimer = null;
     state.localStream?.getTracks().forEach((track) => track.stop());

@@ -23,6 +23,7 @@
 /dashboard/komunikasi.html       /dashboard/komunikasi/chat/                   301
 /dashboard/komunikasi/grup/create /dashboard/komunikasi/chat/                  302
 /dashboard/komunikasi/grup/create/* /dashboard/komunikasi/chat/                 302
+/dashboard/komunikasi/grup/chat/* /dashboard/komunikasi/chat/index.html?conversation_id=:splat 200
 /dashboard/komunikasi/chat/grup/* /dashboard/komunikasi/chat/index.html?conversation_id=:splat 200
 /api/auth_user.php        /api/auth_user        301
 /api/change_password.php  /api/change_password  301

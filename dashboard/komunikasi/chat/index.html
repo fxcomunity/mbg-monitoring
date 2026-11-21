@@ -7,8 +7,9 @@
   <meta name="site-root" content="../../../">
   <script>
     (function () {
-      const communicationPath = '/dashboard/komunikasi/chat/';
-      const communicationIndex = location.pathname.indexOf(communicationPath);
+      const communicationPaths = ['/dashboard/komunikasi/chat/', '/dashboard/komunikasi/grup/chat/'];
+      const communicationPath = communicationPaths.find((path) => location.pathname.includes(path));
+      const communicationIndex = communicationPath ? location.pathname.indexOf(communicationPath) : -1;
       if (communicationIndex === -1) return;
       const rootPath = `${location.pathname.slice(0, communicationIndex)}/`;
       const rootUrl = new URL(rootPath, location.origin);
@@ -41,6 +42,10 @@
       </div>
       <span id="roleBadge" class="role-badge">Admin/SPPG</span>
       <div class="header-spacer"></div>
+      <button id="notificationSoundToggle" class="dashboard-link sound-toggle" type="button" aria-pressed="false" title="Aktifkan suara panggilan dan notifikasi">
+        <span class="material-symbols-outlined" aria-hidden="true">notifications_off</span>
+        <span class="sound-label">Suara mati</span>
+      </button>
       <a id="dashboardLinkDesktop" class="dashboard-link" href="dashboard/admin/">
         <span class="material-symbols-outlined" aria-hidden="true">dashboard</span>
         Dashboard
@@ -48,7 +53,7 @@
     </header>
 
     <section class="workspace" aria-label="Pusat komunikasi internal">
-      <aside class="conversation-sidebar">
+      <aside id="conversationSidebar" class="conversation-sidebar">
         <div class="sidebar-heading">
           <div>
             <p class="eyebrow">RUANG KERJA</p>
@@ -145,7 +150,66 @@
           </div>
         </div>
       </section>
+
+      <section id="featurePanel" class="feature-panel" aria-live="polite" hidden>
+        <section id="updatesView" class="feature-view" hidden>
+          <div class="feature-heading">
+            <div><p class="eyebrow">PEMBARUAN</p><h1>Status</h1></div>
+          </div>
+          <form id="statusCreateForm" class="feature-form">
+            <label for="statusMessage">Bagikan status singkat</label>
+            <textarea id="statusMessage" maxlength="500" required placeholder="Apa kabar koordinasi hari ini?"></textarea>
+            <div class="feature-form-row">
+              <label class="sr-only" for="statusGroup">Bagikan ke</label>
+              <select id="statusGroup">
+                <option value="">Status saya · semua kontak internal</option>
+              </select>
+              <button class="feature-submit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">add_circle</span>Bagikan</button>
+            </div>
+            <p id="statusError" class="feature-error" role="alert" hidden></p>
+          </form>
+          <div class="feature-section-title"><h2>Status kontak &amp; grup</h2><button id="refreshStatuses" class="feature-text-button" type="button">Muat ulang</button></div>
+          <div id="statusList" class="feature-list"><p class="no-contacts">Memuat status...</p></div>
+        </section>
+
+        <section id="communitiesView" class="feature-view" hidden>
+          <div class="feature-heading">
+            <div><p class="eyebrow">RUANG BERSAMA</p><h1>Komunitas</h1></div>
+            <button id="newCommunityButton" class="feature-submit" type="button"><span class="material-symbols-outlined" aria-hidden="true">add</span>Buat komunitas</button>
+          </div>
+          <p class="feature-description">Satukan anggota Admin/SPPG dan grup koordinasi dalam satu komunitas.</p>
+          <div id="communityList" class="feature-list"><p class="no-contacts">Memuat komunitas...</p></div>
+        </section>
+
+        <section id="callsView" class="feature-view" hidden>
+          <div class="feature-heading"><div><p class="eyebrow">RIWAYAT</p><h1>Panggilan</h1></div></div>
+          <div id="callList" class="feature-list"><p class="no-contacts">Memuat riwayat panggilan...</p></div>
+        </section>
+
+        <section id="archivesView" class="feature-view" hidden>
+          <div class="feature-heading"><div><p class="eyebrow">TERSIMPAN</p><h1>Diarsipkan</h1></div></div>
+          <div id="archivedList" class="feature-list"><p class="no-contacts">Memuat arsip...</p></div>
+        </section>
+      </section>
     </section>
+
+    <nav class="communication-nav" aria-label="Navigasi komunikasi">
+      <button class="communication-nav-item is-active" type="button" data-section="chats">
+        <span class="material-symbols-outlined" aria-hidden="true">chat</span><span>Chat</span>
+      </button>
+      <button class="communication-nav-item" type="button" data-section="updates">
+        <span class="material-symbols-outlined" aria-hidden="true">donut_large</span><span>Pembaruan</span>
+      </button>
+      <button class="communication-nav-item" type="button" data-section="communities">
+        <span class="material-symbols-outlined" aria-hidden="true">diversity_3</span><span>Komunitas</span>
+      </button>
+      <button class="communication-nav-item" type="button" data-section="calls">
+        <span class="material-symbols-outlined" aria-hidden="true">call</span><span>Panggilan</span>
+      </button>
+      <button class="communication-nav-item" type="button" data-section="archives">
+        <span class="material-symbols-outlined" aria-hidden="true">archive</span><span>Arsip</span>
+      </button>
+    </nav>
   </main>
 
   <dialog id="groupCreateDialog" class="group-dialog" aria-labelledby="groupDialogTitle">
@@ -175,6 +239,30 @@
           <span class="material-symbols-outlined" aria-hidden="true">group_add</span>
           Buat grup
         </button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="communityCreateDialog" class="group-dialog" aria-labelledby="communityDialogTitle">
+    <form id="communityCreateForm" class="group-card">
+      <div class="group-heading">
+        <div><p class="eyebrow">RUANG BERSAMA</p><h2 id="communityDialogTitle">Buat komunitas</h2></div>
+        <button id="closeCommunityDialog" class="icon-button" type="button" aria-label="Tutup">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <label class="group-label" for="communityName">Nama komunitas</label>
+      <input id="communityName" maxlength="120" required placeholder="Contoh: Koordinasi Wilayah Barat">
+      <label class="group-label" for="communityDescription">Deskripsi</label>
+      <textarea id="communityDescription" maxlength="500" placeholder="Tujuan komunitas (opsional)"></textarea>
+      <label class="group-label" for="communityMembers">Undang anggota Admin/SPPG</label>
+      <div id="communityMembers" class="group-members" aria-label="Pilih anggota komunitas"></div>
+      <label class="group-label" for="communityGroups">Tambahkan grup koordinasi</label>
+      <div id="communityGroups" class="group-members" aria-label="Pilih grup komunitas"></div>
+      <p id="communityError" class="group-error" role="alert" hidden></p>
+      <div class="group-actions">
+        <button id="cancelCommunityCreate" class="group-cancel" type="button">Batal</button>
+        <button id="createCommunityButton" class="group-submit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">diversity_3</span>Buat komunitas</button>
       </div>
     </form>
   </dialog>

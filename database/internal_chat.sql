@@ -67,3 +67,47 @@ CREATE INDEX IF NOT EXISTS idx_internal_chat_calls_participants
   ON internal_chat_calls (callee_id, status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_internal_chat_call_signals_poll
   ON internal_chat_call_signals (call_id, recipient_id, id);
+
+CREATE TABLE IF NOT EXISTS internal_chat_archives (
+  user_id         BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  conversation_id BIGINT NOT NULL REFERENCES internal_chat_conversations(id) ON DELETE CASCADE,
+  archived_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, conversation_id)
+);
+
+CREATE TABLE IF NOT EXISTS internal_chat_statuses (
+  id              BIGSERIAL PRIMARY KEY,
+  author_id       BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  conversation_id BIGINT REFERENCES internal_chat_conversations(id) ON DELETE CASCADE,
+  message         VARCHAR(500) NOT NULL CHECK (length(trim(message)) > 0),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  expires_at      TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '24 hours'
+);
+
+CREATE TABLE IF NOT EXISTS internal_chat_communities (
+  id          BIGSERIAL PRIMARY KEY,
+  name        VARCHAR(120) NOT NULL CHECK (length(trim(name)) > 0),
+  description VARCHAR(500) NOT NULL DEFAULT '',
+  created_by  BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS internal_chat_community_members (
+  community_id BIGINT NOT NULL REFERENCES internal_chat_communities(id) ON DELETE CASCADE,
+  user_id      BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  joined_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (community_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS internal_chat_community_groups (
+  community_id   BIGINT NOT NULL REFERENCES internal_chat_communities(id) ON DELETE CASCADE,
+  conversation_id BIGINT NOT NULL REFERENCES internal_chat_conversations(id) ON DELETE CASCADE,
+  added_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (community_id, conversation_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_internal_chat_statuses_expiry
+  ON internal_chat_statuses (expires_at DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_internal_chat_community_members_user
+  ON internal_chat_community_members (user_id, community_id);
