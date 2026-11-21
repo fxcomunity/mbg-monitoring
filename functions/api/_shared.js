@@ -35,9 +35,31 @@ export async function dbQuery(databaseUrl, query, params = []) {
     throw new Error('DATABASE_URL format salah');
   }
 
-  const { neon } = await import('@neondatabase/serverless');
-  const sql = neon(databaseUrl);
-  const rows = await sql.query(query, params);
+  let rows;
+  const neonMod = await import('@neondatabase/serverless').catch(() => null);
+  if (neonMod && typeof neonMod.neon === 'function') {
+    const sql = neonMod.neon(databaseUrl);
+    rows = await sql.query(query, params);
+  } else {
+    // Fallback native HTTP API fetch for Cloudflare Workers
+    const parsed = new URL(databaseUrl);
+    const endpoint = `https://${parsed.host}/sql`;
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${parsed.password}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query, params })
+    });
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      throw new Error(`Database error (${response.status}): ${errText}`);
+    }
+    const result = await response.json().catch(() => ({}));
+    rows = result.rows || [];
+  }
+
   const normalized = Array.isArray(rows) ? rows : (rows?.rows || []);
   Object.defineProperty(normalized, 'rows', {
     value: normalized,

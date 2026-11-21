@@ -2,6 +2,9 @@
   "name": "mbg-monitoring",
   "private": true,
   "type": "module",
+  "scripts": {
+    "build": "npm install"
+  },
   "dependencies": {
     "@neondatabase/serverless": "1.2.1"
   }
