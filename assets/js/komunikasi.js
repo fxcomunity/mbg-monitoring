@@ -788,8 +788,27 @@
     if (callId === state.incomingCallId) return;
     state.incomingCallId = callId;
     state.incomingConversationId = Number(incoming.conversation_id) || 0;
-    $('#incomingCaller').textContent = incoming.caller_name || 'Admin/SPPG';
-    $('#incomingCallStatus').textContent = `${incoming.caller_role === 'admin' ? 'Admin' : 'SPPG'} menelepon Anda`;
+
+    const callerName = incoming.caller_name || 'Admin/SPPG';
+    const callerRole = incoming.caller_role === 'admin' ? 'Admin' : 'SPPG';
+    $('#incomingCaller').textContent = callerName;
+    $('#incomingCallStatus').textContent = `${callerRole} menelepon Anda (Panggilan Suara WebRTC)`;
+
+    const phoneEl = $('#incomingCallPhone');
+    if (phoneEl) {
+      phoneEl.textContent = `Kontak: ${incoming.caller_phone || '0895404147521'}`;
+      phoneEl.hidden = false;
+    }
+
+    const avatarEl = $('#incomingAvatar');
+    if (avatarEl) {
+      avatarEl.className = `avatar ${incoming.caller_role === 'admin' ? 'avatar-admin' : 'avatar-sppg'} incoming-avatar-pulse`;
+      if (incoming.caller_avatar) {
+        avatarEl.innerHTML = `<img src="${escapeHtml(incoming.caller_avatar)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+      } else {
+        avatarEl.textContent = initials(callerName) || '☎';
+      }
+    }
     const muted = localStorage.getItem(`mbg-muted-conversation-${Number(incoming.conversation_id)}`) === 'true';
     if (state.notificationsEnabled && !muted) startRingtone('incoming');
     if (state.notificationsEnabled && !muted && document.hidden && 'Notification' in window && Notification.permission === 'granted' && !state.notifiedCalls.has(callId)) {
@@ -1075,6 +1094,51 @@
     }));
     $('#sidebarProfileButton').addEventListener('click', () => openSettings());
     $('#closeSettingsDialog').addEventListener('click', () => $('#settingsDialog').close());
+
+    async function triggerHelpCall() {
+      const btn = $('#startHelpCallButton');
+      const notice = $('#helpCallNotice');
+      if (btn) {
+        btn.disabled = true;
+        const label = btn.querySelector('span:last-child');
+        if (label) label.textContent = 'Menghubungkan...';
+      }
+      if (notice) {
+        notice.textContent = 'Menghubungkan ke Admin Pusat Bantuan via WebRTC...';
+        notice.classList.remove('is-error');
+      }
+
+      try {
+        const result = await request(chatEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'help_call_start' })
+        });
+        const url = new URL('chat/telephone/', communicationRoot);
+        url.searchParams.set('call_id', String(result.call_id));
+        url.searchParams.set('is_help', '1');
+        location.href = url.href;
+      } catch (err) {
+        if (notice) {
+          notice.textContent = err.message || 'Gagal memulai panggilan bantuan.';
+          notice.classList.add('is-error');
+        } else {
+          alert(err.message || 'Gagal memulai panggilan bantuan.');
+        }
+        if (btn) {
+          btn.disabled = false;
+          const label = btn.querySelector('span:last-child');
+          if (label) label.textContent = 'Panggil';
+        }
+      }
+    }
+
+    $('#startHelpCallButton')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      triggerHelpCall();
+    });
+    $('#helpCallCard')?.addEventListener('click', () => {
+      triggerHelpCall();
+    });
     document.querySelectorAll('[data-settings-tab]').forEach((button) => {
       button.addEventListener('click', () => setSettingsTab(button.dataset.settingsTab));
     });
@@ -1432,6 +1496,7 @@
       stopRingtone();
       const url = new URL('chat/telephone/', communicationRoot);
       url.searchParams.set('call_id', String(state.incomingCallId));
+      url.searchParams.set('is_help', '1');
       location.href = url.href;
     });
     $('#declineIncomingCall').addEventListener('click', async () => {
@@ -1525,7 +1590,11 @@
       renderConversations();
       renderStatusGroups();
       renderCommunityChoices();
-      const requestedView = new URLSearchParams(location.search).get('view');
+      const urlParams = new URLSearchParams(location.search);
+      if (urlParams.get('settings') === 'help' || urlParams.get('tab') === 'help') {
+        openSettings('help');
+      }
+      const requestedView = urlParams.get('view');
       const path = location.pathname.toLowerCase().replace(/\/+$/, '');
       if (requestedView === 'unread' || path.endsWith('/sebelum-baca')) routeToUnread(false);
       else if (requestedView === 'contacts' || path.endsWith('/kontak')) setListView('contacts', false);

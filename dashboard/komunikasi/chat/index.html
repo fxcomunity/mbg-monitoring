@@ -35,8 +35,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/komunikasi.css?v=20261122-ai-ux-v5">
-  <script src="assets/js/komunikasi.js?v=20261122-ai-ux-v5" defer></script>
+  <link rel="stylesheet" href="assets/css/komunikasi.css?v=20261122-webrtc-v1">
+  <script src="assets/js/komunikasi.js?v=20261122-webrtc-v1" defer></script>
 </head>
 <body>
   <main id="communicationApp" class="communication-app">
@@ -436,8 +436,22 @@
         <section class="settings-view" data-settings-view="help" hidden>
           <p class="eyebrow">BANTUAN</p>
           <h3>Pusat Bantuan</h3>
-          <p class="settings-description">Butuh bantuan terkait komunikasi MBG Connect? Hubungi tim pengembang.</p>
-          <a class="settings-contact-link" href="tel:0895404147521"><span class="material-symbols-outlined" aria-hidden="true">call</span><span><strong>Hubungi kami</strong><small>0895404147521</small></span></a>
+          <p class="settings-description">Butuh bantuan terkait operasional atau komunikasi MBG Connect? Hubungi Admin Satgas melalui panggilan suara WebRTC langsung di dalam website.</p>
+          <div class="settings-help-card">
+            <div class="settings-contact-link help-contact-link" id="helpCallCard" role="button" tabindex="0" title="Klik untuk memulai panggilan suara WebRTC ke Admin">
+              <span class="material-symbols-outlined help-contact-icon" aria-hidden="true">support_agent</span>
+              <div class="help-contact-text">
+                <strong>Hubungi kami</strong>
+                <small class="help-contact-phone">0895404147521</small>
+                <span class="help-contact-subtitle">Panggilan Suara WebRTC Internal</span>
+              </div>
+              <button id="startHelpCallButton" class="help-call-action-btn" type="button" aria-label="Panggil Admin via WebRTC">
+                <span class="material-symbols-outlined" aria-hidden="true">call</span>
+                <span>Panggil</span>
+              </button>
+            </div>
+            <p id="helpCallNotice" class="help-call-notice">Panggilan suara WebRTC langsung antar-browser tanpa WhatsApp dan tanpa pulsa.</p>
+          </div>
           <button class="settings-shortcut-link" type="button" data-open-settings-tab="shortcuts"><span class="material-symbols-outlined" aria-hidden="true">keyboard</span>Pintasan Keyboard</button>
         </section>
         <section class="settings-view" data-settings-view="shortcuts" hidden>
@@ -465,10 +479,11 @@
 
   <dialog id="incomingCallDialog" class="incoming-call-dialog" aria-labelledby="incomingCaller">
     <div class="incoming-call-card">
-      <div class="avatar avatar-admin" aria-hidden="true">☎</div>
-      <p class="call-eyebrow">PANGGILAN MASUK</p>
+      <div id="incomingAvatar" class="avatar avatar-admin incoming-avatar-pulse" aria-hidden="true">☎</div>
+      <p class="call-eyebrow">PANGGILAN MASUK WEBRTC</p>
       <h2 id="incomingCaller">Panggilan MBG Connect</h2>
       <p id="incomingCallStatus">Panggilan suara dari Admin/SPPG</p>
+      <p id="incomingCallPhone" class="incoming-call-phone">Kontak: 0895404147521</p>
       <div class="incoming-call-actions">
         <button id="declineIncomingCall" class="incoming-call-action decline" type="button">
           <span class="material-symbols-outlined" aria-hidden="true">call_end</span>Tolak

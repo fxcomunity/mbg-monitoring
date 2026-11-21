@@ -56,7 +56,12 @@ try {
     }
 
     if ($method === 'GET' && $action === 'call_config') {
-        $iceServers = [['urls' => 'stun:stun.l.google.com:19302']];
+        $iceServers = [
+            ['urls' => 'stun:stun.l.google.com:19302'],
+            ['urls' => 'stun:stun1.l.google.com:19302'],
+            ['urls' => 'stun:stun2.l.google.com:19302'],
+            ['urls' => 'stun:stun.cloudflare.com:3478']
+        ];
         $turnUrl = trim((string)(getenv('TURN_URL') ?: ''));
         $turnSecret = (string)(getenv('TURN_SHARED_SECRET') ?: '');
         if (($turnUrl === '') !== ($turnSecret === '')) {
@@ -511,6 +516,106 @@ try {
             if ($pdo->inTransaction()) $pdo->rollBack();
             throw $error;
         }
+    }
+
+    if ($action === 'help_call_start') {
+        $ownerId = $userId;
+
+        // Cari admin penerima bantuan (admin aktif, prioritaskan yang sedang online)
+        $findAdmin = $pdo->prepare(
+            "SELECT u.id, u.full_name, u.role, u.avatar_url, u.phone,
+                    COALESCE(p.last_seen_at >= NOW() - INTERVAL '180 seconds', FALSE) AS is_online
+             FROM users u
+             LEFT JOIN internal_chat_presence p ON p.user_id = u.id
+             WHERE u.role = 'admin' AND u.is_active = TRUE AND u.deleted_at IS NULL
+               AND u.id <> ?
+             ORDER BY is_online DESC, (CASE WHEN u.id = 1 THEN 0 ELSE 1 END), u.id ASC
+             LIMIT 1"
+        );
+        $findAdmin->execute([$ownerId]);
+        $targetAdmin = $findAdmin->fetch();
+
+        if (!$targetAdmin) {
+            $fallback = $pdo->query(
+                "SELECT u.id, u.full_name, u.role, u.avatar_url, u.phone,
+                        COALESCE(p.last_seen_at >= NOW() - INTERVAL '180 seconds', FALSE) AS is_online
+                 FROM users u
+                 LEFT JOIN internal_chat_presence p ON p.user_id = u.id
+                 WHERE u.role = 'admin' AND u.is_active = TRUE AND u.deleted_at IS NULL
+                 ORDER BY (CASE WHEN u.id = 1 THEN 0 ELSE 1 END), u.id ASC
+                 LIMIT 1"
+            );
+            $targetAdmin = $fallback->fetch();
+        }
+
+        if (!$targetAdmin) {
+            $respond(['status' => 'error', 'message' => 'Admin Pusat Bantuan tidak tersedia saat ini.'], 404);
+        }
+
+        $adminId = (int)$targetAdmin['id'];
+        $allowOffline = !empty($body['force']);
+
+        if (!$targetAdmin['is_online'] && !$allowOffline && $adminId !== $ownerId) {
+            $respond([
+                'status' => 'error',
+                'error_code' => 'RECEIVER_OFFLINE',
+                'message' => 'Panggilan gagal: Admin Pusat Bantuan sedang offline. Pastikan admin sedang aktif di dashboard MBG Connect untuk menerima panggilan WebRTC.'
+            ], 409);
+        }
+
+        $directKey = min($ownerId, $adminId) . ':' . max($ownerId, $adminId);
+        $convStmt = $pdo->prepare(
+            "WITH conversation AS (
+               INSERT INTO internal_chat_conversations (kind, direct_key, created_by)
+               VALUES ('direct', ?, ?)
+               ON CONFLICT (direct_key) DO UPDATE SET direct_key = EXCLUDED.direct_key
+               RETURNING id
+             ), membership AS (
+               INSERT INTO internal_chat_members (conversation_id, user_id)
+               SELECT conversation.id, member.user_id
+               FROM conversation CROSS JOIN (VALUES (?::bigint), (?::bigint)) AS member(user_id)
+               ON CONFLICT (conversation_id, user_id) DO NOTHING
+               RETURNING user_id
+             )
+             SELECT id FROM conversation"
+        );
+        $convStmt->execute([$directKey, $ownerId, $ownerId, $adminId]);
+        $conversationId = (int)$convStmt->fetchColumn();
+
+        $pdo->exec(
+            "UPDATE internal_chat_calls SET status = 'missed', ended_at = NOW()
+             WHERE status = 'ringing' AND created_at < NOW() - INTERVAL '60 seconds'"
+        );
+        $pdo->exec(
+            "UPDATE internal_chat_calls SET status = 'ended', ended_at = NOW()
+             WHERE status = 'active' AND answered_at < NOW() - INTERVAL '4 hours'"
+        );
+
+        $endPrev = $pdo->prepare(
+            "UPDATE internal_chat_calls SET status = 'ended', ended_at = NOW()
+             WHERE status IN ('ringing', 'active') AND caller_id = ?"
+        );
+        $endPrev->execute([$ownerId]);
+
+        $createCall = $pdo->prepare(
+            "INSERT INTO internal_chat_calls (conversation_id, caller_id, callee_id, status)
+             VALUES (?, ?, ?, 'ringing') RETURNING id"
+        );
+        $createCall->execute([$conversationId, $ownerId, $adminId]);
+        $callId = (int)$createCall->fetchColumn();
+
+        $respond([
+            'status' => 'success',
+            'call_id' => $callId,
+            'conversation_id' => $conversationId,
+            'peer' => [
+                'id' => $adminId,
+                'name' => $targetAdmin['full_name'] ?: 'Satgas Administrator BGN',
+                'role' => 'admin',
+                'phone' => $targetAdmin['phone'] ?: '0895404147521',
+                'avatar' => $targetAdmin['avatar_url'] ?: ''
+            ]
+        ]);
     }
 
     if ($action === 'call_start') {

@@ -4,11 +4,14 @@
   const apiUrl = new URL(isLocal ? 'api/internal_chat.php' : 'api/internal_chat', siteRoot);
   const authUrl = new URL(isLocal ? 'api/auth_user.php' : 'api/auth_user', siteRoot);
   const params = new URLSearchParams(location.search);
+  const isHelpCall = params.get('is_help') === '1' || params.get('help') === '1';
   const $ = (selector) => document.querySelector(selector);
+
   const state = {
     userId: 0,
     callId: Number(params.get('call_id')) || 0,
     conversationId: Number(params.get('conversation_id')) || 0,
+    isHelp: isHelpCall,
     call: null,
     peer: null,
     connection: null,
@@ -19,18 +22,27 @@
     ending: false,
     pollTimer: null,
     audioContext: null,
-    ringbackTimer: null
+    ringbackTimer: null,
+    callTimerInterval: null,
+    callStartTime: null
   };
 
   function showError(message) {
-    $('#callError').textContent = message;
-    $('#callError').hidden = false;
-    $('#callStatus').textContent = 'Panggilan belum tersambung.';
+    const errorEl = $('#callError');
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.hidden = false;
+    }
+    const statusEl = $('#callStatus');
+    if (statusEl) statusEl.textContent = 'Panggilan belum tersambung.';
+    stopCallTimer();
   }
 
   function setStatus(message) {
-    $('#callStatus').textContent = message;
-    $('#callError').hidden = true;
+    const statusEl = $('#callStatus');
+    if (statusEl) statusEl.textContent = message;
+    const errorEl = $('#callError');
+    if (errorEl) errorEl.hidden = true;
   }
 
   function showControls(visible) {
@@ -41,17 +53,66 @@
 
   function setAction(label, icon, disabled) {
     const button = $('#callAction');
+    if (!button) return;
     button.disabled = Boolean(disabled);
     button.querySelector('.material-symbols-outlined').textContent = icon;
     button.lastElementChild.textContent = label;
     button.hidden = false;
   }
 
+  function startCallTimer() {
+    if (state.callTimerInterval) return;
+    state.callStartTime = Date.now();
+    const durationEl = $('#callDuration');
+    const timerEl = $('#callTimer');
+    if (durationEl) durationEl.hidden = false;
+    if (timerEl) timerEl.textContent = '00:00';
+    state.callTimerInterval = window.setInterval(() => {
+      const elapsed = Math.floor((Date.now() - state.callStartTime) / 1000);
+      const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const s = String(elapsed % 60).padStart(2, '0');
+      if (timerEl) timerEl.textContent = `${m}:${s}`;
+    }, 1000);
+  }
+
+  function stopCallTimer() {
+    if (state.callTimerInterval) {
+      window.clearInterval(state.callTimerInterval);
+      state.callTimerInterval = null;
+    }
+  }
+
+  function updatePeerDisplay(name, role, phone, avatarUrl) {
+    const nameEl = $('#callName');
+    if (nameEl) nameEl.textContent = name || 'Admin Pusat Bantuan';
+    const phoneEl = $('#callPhone');
+    if (phoneEl) phoneEl.textContent = `Kontak: ${phone || '0895404147521'}`;
+
+    const avatarContainer = $('#callAvatar');
+    const avatarImg = $('#callAvatarImg');
+    const avatarText = $('#callAvatarText');
+
+    if (avatarContainer) {
+      avatarContainer.className = `avatar call-avatar ${role === 'admin' ? 'avatar-admin' : 'avatar-sppg'}`;
+    }
+
+    if (avatarUrl && avatarImg) {
+      avatarImg.src = avatarUrl;
+      avatarImg.style.display = 'block';
+      if (avatarText) avatarText.style.display = 'none';
+    } else if (avatarText) {
+      if (avatarImg) avatarImg.style.display = 'none';
+      avatarText.style.display = 'block';
+      const parts = (name || 'MB').trim().split(/\s+/).slice(0, 2);
+      avatarText.textContent = parts.map((p) => p[0] || '').join('').toUpperCase() || 'BGN';
+    }
+  }
+
   async function playRingback() {
     try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return;
-      if (!state.audioContext) state.audioContext = new AudioContext();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!state.audioContext) state.audioContext = new AudioCtx();
       if (state.audioContext.state === 'suspended') await state.audioContext.resume();
       const now = state.audioContext.currentTime;
       [440, 480].forEach((frequency, index) => {
@@ -105,18 +166,27 @@
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error('Browser atau koneksi ini tidak mendukung akses mikrofon. Gunakan HTTPS atau localhost.');
     }
+    setStatus('Menghubungkan ke mikrofon...');
     state.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
   }
 
   async function createPeerConnection() {
     const config = await request(new URL('?action=call_config', apiUrl));
-    const connection = new RTCPeerConnection({ iceServers: config.ice_servers || [] });
+    const connection = new RTCPeerConnection({ iceServers: config.ice_servers || [{ urls: 'stun:stun.l.google.com:19302' }] });
     state.connection = connection;
-    state.localStream.getTracks().forEach((track) => connection.addTrack(track, state.localStream));
+
+    if (state.localStream) {
+      state.localStream.getTracks().forEach((track) => connection.addTrack(track, state.localStream));
+    }
+
     connection.ontrack = (event) => {
-      $('#remoteAudio').srcObject = event.streams[0] || new MediaStream([event.track]);
-      $('#remoteAudio').play().catch(() => setStatus('Terhubung. Tekan Speaker untuk mengaktifkan audio lawan bicara.'));
+      const audio = $('#remoteAudio');
+      if (audio) {
+        audio.srcObject = event.streams[0] || new MediaStream([event.track]);
+        audio.play().catch(() => setStatus('Terhubung. Tekan Speaker untuk mengaktifkan audio lawan bicara.'));
+      }
     };
+
     connection.onicecandidate = (event) => {
       if (!event.candidate || !state.callId || state.ending) return;
       post('call_signal', {
@@ -125,13 +195,18 @@
         payload: event.candidate.toJSON()
       }).catch((error) => console.warn('Kandidat jaringan tidak terkirim:', error.message));
     };
+
     connection.onconnectionstatechange = () => {
       if (connection.connectionState === 'connected') {
         stopRingback();
         setStatus('Terhubung · panggilan suara aktif');
+        startCallTimer();
+      } else if (connection.connectionState === 'failed') {
+        stopCallTimer();
+        showError('Koneksi audio gagal. Jaringan ini mungkin memerlukan konfigurasi server TURN.');
+      } else if (connection.connectionState === 'disconnected') {
+        setStatus('Koneksi terputus, mencoba menyambungkan kembali...');
       }
-      if (connection.connectionState === 'failed') showError('Koneksi audio gagal. Jaringan ini mungkin memerlukan konfigurasi server TURN.');
-      if (connection.connectionState === 'disconnected') setStatus('Koneksi terputus, mencoba menyambungkan kembali...');
     };
   }
 
@@ -178,16 +253,35 @@
       });
       const result = await request(`${apiUrl.href}?${query}`);
       state.call = result.data;
+
+      // Update peer details if available
+      if (result.data) {
+        updatePeerDisplay(
+          result.data.peer_name,
+          result.data.peer_role,
+          result.data.peer_phone || (state.isHelp ? '0895404147521' : ''),
+          result.data.peer_avatar
+        );
+      }
+
       const terminal = ['declined', 'ended', 'missed'].includes(state.call.status);
       if (terminal) {
         stopRingback();
+        stopCallTimer();
         state.ending = true;
-        setStatus(state.call.status === 'declined' ? 'Panggilan ditolak.' : state.call.status === 'missed' ? 'Panggilan tidak dijawab.' : 'Panggilan berakhir.');
+        setStatus(state.call.status === 'declined' ? 'Panggilan ditolak oleh penerima.' : state.call.status === 'missed' ? 'Panggilan tidak dijawab.' : 'Panggilan berakhir.');
         cleanup();
         setAction('Kembali ke chat', 'arrow_back', false);
-        $('#callAction').onclick = () => location.href = new URL('dashboard/komunikasi/chat/', siteRoot).href;
+        $('#callAction').onclick = () => location.href = new URL('dashboard/komunikasi/chat/?settings=help', siteRoot).href;
         return;
       }
+
+      if (state.call.status === 'active' && !state.callTimerInterval) {
+        stopRingback();
+        setStatus('Terhubung · panggilan suara aktif');
+        startCallTimer();
+      }
+
       for (const signal of result.signals || []) {
         state.signalCursor = Math.max(state.signalCursor, Number(signal.id) || 0);
         await handleSignal(signal);
@@ -205,51 +299,54 @@
     pollCall();
   }
 
-  // Jalankan mic + peer connection PARALEL dengan call_start untuk memangkas waktu tunggu
   async function startOutgoingCall() {
     startRingback();
     setAction('Menghubungi...', 'call', true);
+    setStatus('Menghubungkan ke Pusat Bantuan...');
     try {
-      // Paralel: minta mic & call_start bersamaan
       const [result] = await Promise.all([
-        post('call_start', { conversation_id: state.conversationId }),
+        state.callId ? Promise.resolve({ call_id: state.callId }) : post('call_start', { conversation_id: state.conversationId }),
         acquireMicrophone()
       ]);
       state.callId = Number(result.call_id);
       const currentUrl = new URL(location.href);
       currentUrl.searchParams.set('call_id', String(state.callId));
       history.replaceState(null, '', currentUrl);
+
       await createPeerConnection();
       const offer = await state.connection.createOffer();
       await state.connection.setLocalDescription(offer);
       await post('call_signal', { call_id: state.callId, signal_type: 'offer', payload: offer });
+
       showControls(true);
       setStatus('Memanggil... Menunggu jawaban.');
       setAction('Sedang memanggil', 'call', true);
       startPolling();
     } catch (error) {
       stopRingback();
+      stopCallTimer();
       if (state.callId) await post('call_end', { call_id: state.callId }).catch(() => {});
       cleanup();
-      showError(error.name === 'NotAllowedError' ? 'Izin mikrofon ditolak. Aktifkan akses mikrofon di browser lalu coba lagi.' : error.message);
+      showError(error.name === 'NotAllowedError' ? 'Izin mikrofon ditolak. Izinkan akses mikrofon di browser lalu coba lagi.' : error.message);
       setAction('Coba panggil lagi', 'call', false);
+      $('#callAction').onclick = () => startOutgoingCall();
     }
   }
 
-  // Jawab: mic + call_answer paralel
   async function answerIncomingCall() {
     stopRingback();
     setAction('Menjawab...', 'call', true);
+    setStatus('Menjawab panggilan...');
     try {
       await acquireMicrophone();
-      // Paralel: buat peer connection & konfirmasi jawaban ke server
       await Promise.all([
         createPeerConnection(),
         post('call_answer', { call_id: state.callId })
       ]);
       showControls(true);
-      setStatus('Menghubungkan audio...');
+      setStatus('Terhubung · panggilan suara aktif');
       setAction('Panggilan aktif', 'call', true);
+      startCallTimer();
       startPolling();
     } catch (error) {
       cleanup();
@@ -262,6 +359,7 @@
     if (!state.callId || state.ending) return;
     state.ending = true;
     stopRingback();
+    stopCallTimer();
     setAction('Mengakhiri...', 'call_end', true);
     try {
       await post('call_end', { call_id: state.callId });
@@ -270,32 +368,26 @@
     }
     cleanup();
     setStatus('Panggilan berakhir.');
-    setAction('Kembali ke chat', 'arrow_back', false);
-    $('#callAction').onclick = () => location.href = new URL('dashboard/komunikasi/chat/', siteRoot).href;
+    setAction('Kembali ke Bantuan', 'arrow_back', false);
+    $('#callAction').onclick = () => location.href = new URL('dashboard/komunikasi/chat/?settings=help', siteRoot).href;
   }
 
   function cleanup() {
     stopRingback();
+    stopCallTimer();
     if (state.pollTimer) window.clearInterval(state.pollTimer);
     state.pollTimer = null;
     state.localStream?.getTracks().forEach((track) => track.stop());
     state.localStream = null;
     state.connection?.close();
     state.connection = null;
-    $('#remoteAudio').srcObject = null;
+    const audio = $('#remoteAudio');
+    if (audio) audio.srcObject = null;
     showControls(false);
   }
 
   async function initialize() {
-    // Paralel: auth + call_state (jika ada call_id)
     const authFetch = fetch(authUrl, { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
-
-    let callFetch = null;
-    if (state.callId) {
-      const query = new URLSearchParams({ action: 'call_state', call_id: String(state.callId), after_signal_id: '0' });
-      callFetch = request(`${apiUrl.href}?${query}`);
-    }
-
     const auth = await authFetch;
     if (!auth.ok) {
       location.replace(new URL('auth/login.html', siteRoot));
@@ -303,26 +395,66 @@
     }
     const authResult = await auth.json();
     const role = authResult?.user?.role;
-    if (!authResult?.logged_in || !['admin', 'sppg'].includes(role)) {
-      location.replace(new URL(role === 'user' ? 'dashboard/user/' : 'auth/login.html', siteRoot));
+    if (!authResult?.logged_in || !['admin', 'sppg', 'user'].includes(role)) {
+      location.replace(new URL('auth/login.html', siteRoot));
+      return;
+    }
+    state.userId = Number(authResult.user.id);
+
+    // KASUS 1: Inisiasi Panggilan Bantuan (Help Center WebRTC Call) tanpa call_id sebelumnya
+    if (!state.callId && state.isHelp) {
+      $('#callEyebrow').textContent = 'PUSAT BANTUAN MBG CONNECT';
+      setStatus('Menghubungkan ke Admin Pusat Bantuan...');
+      setAction('Menghubungi...', 'call', true);
+
+      try {
+        const helpResult = await post('help_call_start');
+        state.callId = Number(helpResult.call_id);
+        state.conversationId = Number(helpResult.conversation_id);
+        state.peer = helpResult.peer.name;
+
+        updatePeerDisplay(
+          helpResult.peer.name,
+          helpResult.peer.role,
+          helpResult.peer.phone || '0895404147521',
+          helpResult.peer.avatar
+        );
+
+        const currentUrl = new URL(location.href);
+        currentUrl.searchParams.set('call_id', String(state.callId));
+        history.replaceState(null, '', currentUrl);
+
+        await startOutgoingCall();
+      } catch (err) {
+        showError(err.message || 'Admin Pusat Bantuan sedang tidak tersedia.');
+        setAction('Coba lagi', 'refresh', false);
+        $('#callAction').onclick = () => location.reload();
+      }
       return;
     }
 
+    // KASUS 2: Panggilan yang sudah memiliki call_id (Caller atau Callee yang menjawab)
     if (state.callId) {
-      // Ambil call_state + identity paralel
+      const query = new URLSearchParams({ action: 'call_state', call_id: String(state.callId), after_signal_id: '0' });
       const [result, identity] = await Promise.all([
-        callFetch,
+        request(`${apiUrl.href}?${query}`),
         request(new URL('?action=me', apiUrl))
       ]);
       state.call = result.data;
       state.peer = result.data.peer_name;
       state.userId = Number(identity.user_id);
-      $('#callName').textContent = state.peer;
-      $('#callAvatar').textContent = state.peer.trim().split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toUpperCase();
-      $('#callAvatar').className = `avatar call-avatar ${result.data.peer_role === 'admin' ? 'avatar-admin' : 'avatar-sppg'}`;
+
+      updatePeerDisplay(
+        result.data.peer_name,
+        result.data.peer_role,
+        result.data.peer_phone || (state.isHelp ? '0895404147521' : ''),
+        result.data.peer_avatar
+      );
+
       const isCallee = Number(result.data.callee_id) === state.userId;
       if (isCallee && result.data.status === 'ringing') {
-        setStatus('Panggilan masuk · izinkan mikrofon untuk menjawab.');
+        $('#callEyebrow').textContent = 'PANGGILAN MASUK';
+        setStatus('Panggilan masuk · Izinkan mikrofon untuk menjawab.');
         setAction('Jawab', 'call', false);
         $('#callAction').addEventListener('click', answerIncomingCall);
       } else if (!isCallee && ['ringing', 'active'].includes(result.data.status)) {
@@ -339,32 +471,35 @@
         setStatus('Panggilan sedang berlangsung.');
         setAction('Panggilan aktif', 'call', true);
         showControls(true);
+        startCallTimer();
         await acquireMicrophone();
         await createPeerConnection();
         startPolling();
       } else {
         setStatus('Panggilan sudah berakhir.');
         setAction('Kembali ke chat', 'arrow_back', false);
-        $('#callAction').onclick = () => location.href = new URL('dashboard/komunikasi/chat/', siteRoot).href;
+        $('#callAction').onclick = () => location.href = new URL('dashboard/komunikasi/chat/?settings=help', siteRoot).href;
       }
-    } else if (state.conversationId) {
+      return;
+    }
+
+    // KASUS 3: Memulai panggilan dari direct conversation yang dipilih
+    if (state.conversationId) {
       const result = await request(new URL('?action=conversations', apiUrl));
       const conversation = (result.data || []).find((item) => Number(item.id) === state.conversationId);
       if (!conversation || conversation.kind !== 'direct') throw new Error('Panggilan hanya dapat dimulai dari chat satu lawan satu.');
       state.peer = conversation.peer_name;
-      $('#callName').textContent = state.peer;
-      $('#callAvatar').textContent = state.peer.trim().split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toUpperCase();
-      $('#callAvatar').className = `avatar call-avatar ${conversation.peer_role === 'admin' ? 'avatar-admin' : 'avatar-sppg'}`;
+      updatePeerDisplay(conversation.peer_name, conversation.peer_role, '0895404147521', '');
       setStatus('Siap memulai panggilan suara.');
       setAction('Panggil', 'call', false);
       $('#callAction').addEventListener('click', startOutgoingCall);
     } else {
-      throw new Error('Pilih percakapan satu lawan satu terlebih dahulu.');
+      throw new Error('Panggilan tidak valid. Silakan buka menu Bantuan untuk menghubungi Admin.');
     }
   }
 
-  $('#endCallButton').addEventListener('click', finishCall);
-  $('#muteButton').addEventListener('click', () => {
+  $('#endCallButton')?.addEventListener('click', finishCall);
+  $('#muteButton')?.addEventListener('click', () => {
     const track = state.localStream?.getAudioTracks()[0];
     if (!track) return;
     track.enabled = !track.enabled;
@@ -373,13 +508,17 @@
     button.querySelector('.material-symbols-outlined').textContent = track.enabled ? 'mic' : 'mic_off';
     button.lastElementChild.textContent = track.enabled ? 'Bisukan' : 'Bunyikan';
   });
-  $('#speakerButton').addEventListener('click', () => {
+
+  $('#speakerButton')?.addEventListener('click', () => {
     const audio = $('#remoteAudio');
+    if (!audio) return;
     audio.muted = !audio.muted;
-    $('#speakerButton').setAttribute('aria-pressed', String(!audio.muted));
-    $('#speakerButton').querySelector('.material-symbols-outlined').textContent = audio.muted ? 'volume_off' : 'volume_up';
-    $('#speakerButton').lastElementChild.textContent = audio.muted ? 'Nyalakan suara' : 'Speaker';
+    const button = $('#speakerButton');
+    button.setAttribute('aria-pressed', String(!audio.muted));
+    button.querySelector('.material-symbols-outlined').textContent = audio.muted ? 'volume_off' : 'volume_up';
+    button.lastElementChild.textContent = audio.muted ? 'Nyalakan suara' : 'Speaker';
   });
+
   window.addEventListener('pagehide', () => {
     if (!state.ending && state.callId) post('call_end', { call_id: state.callId }).catch(() => {});
     cleanup();
@@ -388,7 +527,7 @@
   initialize().catch((error) => {
     console.error('Panggilan suara gagal dimulai:', error);
     showError(error.message);
-    setAction('Kembali ke chat', 'arrow_back', false);
-    $('#callAction').onclick = () => location.href = new URL('dashboard/komunikasi/chat/', siteRoot).href;
+    setAction('Kembali', 'arrow_back', false);
+    $('#callAction').onclick = () => location.href = new URL('dashboard/komunikasi/chat/?settings=help', siteRoot).href;
   });
 })();

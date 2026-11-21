@@ -56,7 +56,12 @@ export async function onRequest({ request, env }) {
         return json({ status: 'success', user_id: Number(identity.id), data: rows[0] });
       }
       if (action === 'call_config') {
-        const iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+        const iceServers = [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun.cloudflare.com:3478' }
+        ];
         const turnUrl = String(env.TURN_URL || '').trim();
         const turnSecret = String(env.TURN_SHARED_SECRET || '');
         if (Boolean(turnUrl) !== Boolean(turnSecret)) {
@@ -461,6 +466,104 @@ export async function onRequest({ request, env }) {
         [name, description, identity.id, memberIds, conversationIds]
       );
       return json({ status: 'success', community_id: Number(created[0].id) });
+    }
+
+    if (body.action === 'help_call_start') {
+      const ownerId = Number(identity.id);
+
+      // Cari admin penerima bantuan (admin aktif, prioritaskan yang sedang online)
+      let adminRows = await dbQuery(db,
+        `SELECT u.id, u.full_name, u.role, u.avatar_url, u.phone,
+                COALESCE(p.last_seen_at >= NOW() - INTERVAL '180 seconds', FALSE) AS is_online
+         FROM users u
+         LEFT JOIN internal_chat_presence p ON p.user_id = u.id
+         WHERE u.role = 'admin' AND u.is_active = TRUE AND u.deleted_at IS NULL
+           AND u.id <> $1
+         ORDER BY is_online DESC, (CASE WHEN u.id = 1 THEN 0 ELSE 1 END), u.id ASC
+         LIMIT 1`,
+        [ownerId]
+      );
+
+      if (!adminRows.length) {
+        adminRows = await dbQuery(db,
+          `SELECT u.id, u.full_name, u.role, u.avatar_url, u.phone,
+                  COALESCE(p.last_seen_at >= NOW() - INTERVAL '180 seconds', FALSE) AS is_online
+           FROM users u
+           LEFT JOIN internal_chat_presence p ON p.user_id = u.id
+           WHERE u.role = 'admin' AND u.is_active = TRUE AND u.deleted_at IS NULL
+           ORDER BY (CASE WHEN u.id = 1 THEN 0 ELSE 1 END), u.id ASC
+           LIMIT 1`
+        );
+      }
+
+      if (!adminRows.length) {
+        return json({ status: 'error', message: 'Admin Pusat Bantuan tidak tersedia saat ini.' }, 404);
+      }
+
+      const targetAdmin = adminRows[0];
+      const adminId = Number(targetAdmin.id);
+
+      // Verifikasi status online penerima (Kebutuhan: panggilan gagal jika penerima offline)
+      const allowOffline = body.force === true || body.force === '1';
+      if (!targetAdmin.is_online && !allowOffline && adminId !== ownerId) {
+        return json({
+          status: 'error',
+          error_code: 'RECEIVER_OFFLINE',
+          message: 'Panggilan gagal: Admin Pusat Bantuan sedang offline. Pastikan admin sedang aktif di dashboard MBG Connect untuk menerima panggilan WebRTC.'
+        }, 409);
+      }
+
+      const directKey = `${Math.min(ownerId, adminId)}:${Math.max(ownerId, adminId)}`;
+      const convRows = await dbQuery(db,
+        `WITH conversation AS (
+           INSERT INTO internal_chat_conversations (kind, direct_key, created_by)
+           VALUES ('direct', $1, $2)
+           ON CONFLICT (direct_key) DO UPDATE SET direct_key = EXCLUDED.direct_key
+           RETURNING id
+         ), membership AS (
+           INSERT INTO internal_chat_members (conversation_id, user_id)
+           SELECT conversation.id, member.user_id
+           FROM conversation CROSS JOIN UNNEST(ARRAY[$2::bigint, $3::bigint]) AS member(user_id)
+           ON CONFLICT (conversation_id, user_id) DO NOTHING
+           RETURNING user_id
+         )
+         SELECT id FROM conversation`,
+        [directKey, ownerId, adminId]
+      );
+      const conversationId = Number(convRows[0].id);
+
+      await dbQuery(db,
+        `UPDATE internal_chat_calls SET status = 'missed', ended_at = NOW()
+         WHERE status = 'ringing' AND created_at < NOW() - INTERVAL '60 seconds'`
+      );
+      await dbQuery(db,
+        `UPDATE internal_chat_calls SET status = 'ended', ended_at = NOW()
+         WHERE status = 'active' AND answered_at < NOW() - INTERVAL '4 hours'`
+      );
+      await dbQuery(db,
+        `UPDATE internal_chat_calls SET status = 'ended', ended_at = NOW()
+         WHERE status IN ('ringing', 'active') AND caller_id = $1`,
+        [ownerId]
+      );
+
+      const created = await dbQuery(db,
+        `INSERT INTO internal_chat_calls (conversation_id, caller_id, callee_id, status)
+         VALUES ($1, $2, $3, 'ringing') RETURNING id`,
+        [conversationId, ownerId, adminId]
+      );
+
+      return json({
+        status: 'success',
+        call_id: Number(created[0].id),
+        conversation_id: conversationId,
+        peer: {
+          id: adminId,
+          name: targetAdmin.full_name || 'Satgas Administrator BGN',
+          role: 'admin',
+          phone: targetAdmin.phone || '0895404147521',
+          avatar: targetAdmin.avatar_url || ''
+        }
+      });
     }
 
     if (body.action === 'call_start') {
