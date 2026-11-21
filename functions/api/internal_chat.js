@@ -503,15 +503,8 @@ export async function onRequest({ request, env }) {
       const targetAdmin = adminRows[0];
       const adminId = Number(targetAdmin.id);
 
-      // Verifikasi status online penerima (Kebutuhan: panggilan gagal jika penerima offline)
-      const allowOffline = body.force === true || body.force === '1';
-      if (!targetAdmin.is_online && !allowOffline && adminId !== ownerId) {
-        return json({
-          status: 'error',
-          error_code: 'RECEIVER_OFFLINE',
-          message: 'Panggilan gagal: Admin Pusat Bantuan sedang offline. Pastikan admin sedang aktif di dashboard MBG Connect untuk menerima panggilan WebRTC.'
-        }, 409);
-      }
+      // Catatan: Jika admin offline, panggilan tetap masuk ke status 'ringing'
+      // Layar panggilan akan berdering dan jika tidak diangkat dalam 60 detik akan otomatis berstatus 'missed'
 
       const directKey = `${Math.min(ownerId, adminId)}:${Math.max(ownerId, adminId)}`;
       const convRows = await dbQuery(db,

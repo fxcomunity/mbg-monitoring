@@ -553,15 +553,7 @@ try {
         }
 
         $adminId = (int)$targetAdmin['id'];
-        $allowOffline = !empty($body['force']);
-
-        if (!$targetAdmin['is_online'] && !$allowOffline && $adminId !== $ownerId) {
-            $respond([
-                'status' => 'error',
-                'error_code' => 'RECEIVER_OFFLINE',
-                'message' => 'Panggilan gagal: Admin Pusat Bantuan sedang offline. Pastikan admin sedang aktif di dashboard MBG Connect untuk menerima panggilan WebRTC.'
-            ], 409);
-        }
+        // Panggilan tetap dibuat dengan status 'ringing' agar layar panggilan terbuka dan berdering
 
         $directKey = min($ownerId, $adminId) . ':' . max($ownerId, $adminId);
         $convStmt = $pdo->prepare(
