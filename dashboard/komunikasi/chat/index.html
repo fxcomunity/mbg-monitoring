@@ -3,11 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#075e54">
+  <meta name="theme-color" content="#0b141a">
   <meta name="site-root" content="../../../">
   <script>
     (function () {
-      const communicationPaths = ['/dashboard/komunikasi/chat/', '/dashboard/komunikasi/grup/chat/'];
+      const communicationPaths = [
+        '/dashboard/komunikasi/chat/',
+        '/dashboard/komunikasi/grup/chat/',
+        '/dashboard/komunikasi/Kontak',
+        '/dashboard/komunikasi/sebelum-baca',
+        '/dashboard/komunikasi/pembaruan',
+        '/dashboard/komunikasi/komunitas',
+        '/dashboard/komunikasi/panggilan',
+        '/dashboard/komunikasi/arsip',
+        '/dashboard/komunikasi/user',
+        '/dashboard/komunikasi/ai'
+      ];
       const communicationPath = communicationPaths.find((path) => location.pathname.includes(path));
       const communicationIndex = communicationPath ? location.pathname.indexOf(communicationPath) : -1;
       if (communicationIndex === -1) return;
@@ -24,8 +35,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/komunikasi.css">
-  <script src="assets/js/komunikasi.js" defer></script>
+  <link rel="stylesheet" href="assets/css/komunikasi.css?v=20261122-user-nav-v4">
+  <script src="assets/js/komunikasi.js?v=20261122-user-nav-v4" defer></script>
 </head>
 <body>
   <main id="communicationApp" class="communication-app">
@@ -40,6 +51,9 @@
         <strong>MBG Connect</strong>
         <span>Komunikasi internal</span>
       </div>
+      <button id="headerMoreButton" class="icon-button header-more-button" type="button" aria-label="Opsi komunikasi" aria-haspopup="dialog">
+        <span class="material-symbols-outlined" aria-hidden="true">more_vert</span>
+      </button>
       <span id="roleBadge" class="role-badge">Admin/SPPG</span>
       <div class="header-spacer"></div>
       <button id="notificationSoundToggle" class="dashboard-link sound-toggle" type="button" aria-pressed="false" title="Aktifkan suara panggilan dan notifikasi">
@@ -114,7 +128,9 @@
             <button id="backToContacts" class="icon-button mobile-back" type="button" aria-label="Kembali ke daftar kontak">
               <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
             </button>
-            <div id="activeAvatar" class="avatar avatar-large" aria-hidden="true"></div>
+            <button id="activeAvatarButton" class="profile-avatar-button" type="button" aria-label="Lihat profil kontak">
+              <span id="activeAvatar" class="avatar avatar-large" aria-hidden="true"></span>
+            </button>
             <div class="chat-contact-copy">
               <h2 id="activeName"></h2>
               <p id="activeStatus"></p>
@@ -124,7 +140,7 @@
                 <span class="material-symbols-outlined" aria-hidden="true">call</span>
                 <span class="call-button-label">Telepon</span>
               </button>
-              <button class="icon-button more-button" type="button" aria-label="Opsi percakapan">
+              <button id="conversationMenuButton" class="icon-button more-button" type="button" aria-label="Opsi percakapan" aria-haspopup="dialog">
                 <span class="material-symbols-outlined" aria-hidden="true">more_vert</span>
               </button>
             </div>
@@ -152,6 +168,25 @@
       </section>
 
       <section id="featurePanel" class="feature-panel" aria-live="polite" hidden>
+        <section id="aiView" class="feature-view ai-view" hidden>
+          <div class="ai-heading">
+            <img class="ai-profile-picture" src="assets/images/communication-ai.png" alt="Asisten AI MBG">
+            <div><p class="eyebrow">ASISTEN KOMUNIKASI</p><h1>AI MBG</h1><p>Tanya dan cari akun Admin/SPPG dari direktori komunikasi.</p></div>
+            <button id="aiContactsButton" class="feature-submit" type="button"><span class="material-symbols-outlined" aria-hidden="true">group</span>Daftar akun</button>
+          </div>
+          <div id="aiMessages" class="ai-messages" role="log" aria-live="polite">
+            <article class="ai-message assistant"><img src="assets/images/communication-ai.png" alt=""><p>Halo! Saya bisa membantu mencari akun Admin dan SPPG yang tersedia di direktori komunikasi. Tanyakan nama, unit, atau peran.</p></article>
+          </div>
+          <form id="aiChatForm" class="ai-composer">
+            <label class="sr-only" for="aiMessageInput">Tanya AI MBG</label>
+            <input id="aiMessageInput" maxlength="500" autocomplete="off" placeholder="Cari nama Admin atau SPPG...">
+            <button id="aiSendButton" class="send-button" type="submit" aria-label="Kirim pertanyaan ke AI">
+              <span class="material-symbols-outlined" aria-hidden="true">send</span>
+            </button>
+          </form>
+          <p id="aiNotice" class="ai-notice">Pencarian akun dilakukan di perangkat; pertanyaan umum diproses OpenRouter. Hindari mengirim data pribadi/sensitif.</p>
+        </section>
+
         <section id="updatesView" class="feature-view" hidden>
           <div class="feature-heading">
             <div><p class="eyebrow">PEMBARUAN</p><h1>Status</h1></div>
@@ -188,7 +223,27 @@
 
         <section id="archivesView" class="feature-view" hidden>
           <div class="feature-heading"><div><p class="eyebrow">TERSIMPAN</p><h1>Diarsipkan</h1></div></div>
+          <p class="feature-description">Arsip hanya mengubah daftar percakapan di akun Anda; chat tetap tersedia bagi kontak lain.</p>
           <div id="archivedList" class="feature-list"><p class="no-contacts">Memuat arsip...</p></div>
+        </section>
+
+        <section id="usersView" class="feature-view" hidden>
+          <div class="feature-heading">
+            <div><p class="eyebrow">DIREKTORI</p><h1>User &amp; Kontak</h1></div>
+          </div>
+          <p class="feature-description">Daftar seluruh akun kontak dengan role Admin Satgas dan Mitra SPPG.</p>
+          <label class="search-box" style="margin: 0.5rem 0 0.85rem 0;">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input id="usersSectionSearch" type="search" placeholder="Cari nama akun, admin, atau SPPG..." autocomplete="off">
+          </label>
+          <div class="filter-row role-filters" style="padding: 0 0 0.75rem 0; margin-bottom: 0.75rem;" aria-label="Filter role user">
+            <button class="filter-chip is-active" type="button" data-user-filter="all">Semua</button>
+            <button class="filter-chip" type="button" data-user-filter="admin">Admin Satgas</button>
+            <button class="filter-chip" type="button" data-user-filter="sppg">Mitra SPPG</button>
+          </div>
+          <div id="usersSectionList" class="feature-list" role="group" aria-label="Daftar akun Admin dan SPPG">
+            <p class="no-contacts">Memuat data user...</p>
+          </div>
         </section>
       </section>
     </section>
@@ -208,6 +263,14 @@
       </button>
       <button class="communication-nav-item" type="button" data-section="archives">
         <span class="material-symbols-outlined" aria-hidden="true">archive</span><span>Arsip</span>
+      </button>
+      <button class="communication-nav-item" type="button" data-section="users">
+        <span class="material-symbols-outlined" aria-hidden="true">group</span><span>User</span>
+      </button>
+      <button id="sidebarProfileButton" class="sidebar-profile-button" type="button" aria-label="Buka pengaturan profil dan akun" title="Profil dan pengaturan">
+        <span id="sidebarProfileAvatar" class="avatar avatar-admin" aria-hidden="true">MB</span>
+        <span class="sidebar-profile-copy"><strong id="sidebarProfileName">Profil saya</strong><small>Profil</small></span>
+        <span class="material-symbols-outlined" aria-hidden="true">settings</span>
       </button>
     </nav>
   </main>
@@ -265,6 +328,139 @@
         <button id="createCommunityButton" class="group-submit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">diversity_3</span>Buat komunitas</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileName">
+    <form id="profileForm" class="profile-card">
+      <div class="group-heading">
+        <div><p class="eyebrow">PROFIL MBG CONNECT</p><h2 id="profileName">Profil</h2></div>
+        <button id="closeProfileDialog" class="icon-button" type="button" aria-label="Tutup">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <div id="profileAvatar" class="avatar profile-avatar avatar-admin" aria-hidden="true">MB</div>
+      <p id="profileRole" class="profile-role"></p>
+      <label id="profileAboutLabel" class="group-label" for="profileAbout">Tentang</label>
+      <textarea id="profileAbout" maxlength="240" placeholder="Tulis deskripsi singkat tentang Anda..."></textarea>
+      <p id="profileAboutReadOnly" class="profile-about-readonly" hidden></p>
+      <p id="profileError" class="group-error" role="alert" hidden></p>
+      <div id="profileActions" class="group-actions">
+        <button id="cancelProfile" class="group-cancel" type="button">Tutup</button>
+        <button id="saveProfile" class="group-submit" type="submit">Simpan deskripsi</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="conversationMenuDialog" class="conversation-menu-dialog" aria-labelledby="conversationMenuTitle">
+    <div class="profile-card conversation-menu-card">
+      <div class="group-heading">
+        <div><p class="eyebrow">PENGATURAN CHAT</p><h2 id="conversationMenuTitle">Opsi percakapan</h2></div>
+        <button id="closeConversationMenu" class="icon-button" type="button" aria-label="Tutup">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <button id="conversationProfileAction" class="conversation-menu-item" type="button">
+        <span class="material-symbols-outlined" aria-hidden="true">account_circle</span><span>Lihat profil</span>
+      </button>
+      <button id="conversationMuteAction" class="conversation-menu-item" type="button" aria-pressed="false">
+        <span class="material-symbols-outlined" aria-hidden="true">notifications_off</span><span>Bisukan notifikasi chat</span>
+      </button>
+      <button id="conversationPinAction" class="conversation-menu-item" type="button" aria-pressed="false">
+        <span class="material-symbols-outlined" aria-hidden="true">push_pin</span><span>Sematkan chat</span>
+      </button>
+      <button id="conversationSoundAction" class="conversation-menu-item" type="button" aria-pressed="false">
+        <span class="material-symbols-outlined" aria-hidden="true">volume_up</span><span>Suara panggilan &amp; notifikasi</span>
+      </button>
+      <p id="conversationMenuNotice" class="profile-about-readonly"></p>
+    </div>
+  </dialog>
+
+  <dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsDialogTitle">
+    <div class="settings-layout">
+      <aside class="settings-sidebar">
+        <div class="settings-sidebar-heading">
+          <h2 id="settingsDialogTitle">Pengaturan</h2>
+          <button id="closeSettingsDialog" class="icon-button" type="button" aria-label="Tutup pengaturan">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+          </button>
+        </div>
+        <button class="settings-tab is-active" type="button" data-settings-tab="profile"><span class="material-symbols-outlined" aria-hidden="true">person</span>Profil</button>
+        <button class="settings-tab" type="button" data-settings-tab="account"><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span>Akun</button>
+        <button class="settings-tab" type="button" data-settings-tab="chat"><span class="material-symbols-outlined" aria-hidden="true">palette</span>Chat</button>
+        <button class="settings-tab" type="button" data-settings-tab="help"><span class="material-symbols-outlined" aria-hidden="true">help</span>Bantuan</button>
+        <button class="settings-tab" type="button" data-settings-tab="shortcuts"><span class="material-symbols-outlined" aria-hidden="true">keyboard</span>Pintasan keyboard</button>
+      </aside>
+      <div class="settings-content">
+        <section class="settings-view" data-settings-view="profile">
+          <p class="eyebrow">PROFIL</p>
+          <h3>Profil Anda</h3>
+          <div class="settings-profile-summary">
+            <div id="settingsProfileAvatar" class="avatar profile-avatar avatar-admin" aria-hidden="true">MB</div>
+            <div><strong id="settingsProfileName">Nama akun</strong><span id="settingsProfileEmail">Email akun</span><span id="settingsProfileRole">Admin/SPPG</span></div>
+          </div>
+          <form id="settingsProfileForm" class="settings-form">
+            <label class="group-label" for="settingsAbout">About</label>
+            <textarea id="settingsAbout" maxlength="240" placeholder="Tulis deskripsi singkat tentang Anda..."></textarea>
+            <p id="settingsProfileError" class="group-error" role="alert" hidden></p>
+            <button id="saveSettingsProfile" class="group-submit" type="submit">Simpan About</button>
+          </form>
+        </section>
+        <section class="settings-view" data-settings-view="account" hidden>
+          <p class="eyebrow">AKUN</p>
+          <h3>Ganti kata sandi</h3>
+          <form id="settingsPasswordForm" class="settings-form">
+            <label class="group-label" for="settingsCurrentPassword">Kata sandi saat ini</label>
+            <input id="settingsCurrentPassword" name="current_password" type="password" autocomplete="current-password" required>
+            <label class="group-label" for="settingsNewPassword">Kata sandi baru</label>
+            <input id="settingsNewPassword" name="new_password" type="password" minlength="6" autocomplete="new-password" required>
+            <label class="group-label" for="settingsConfirmPassword">Konfirmasi kata sandi baru</label>
+            <input id="settingsConfirmPassword" name="confirm_password" type="password" minlength="6" autocomplete="new-password" required>
+            <p id="settingsPasswordStatus" class="settings-status" role="status" hidden></p>
+            <button id="saveSettingsPassword" class="group-submit" type="submit">Ganti kata sandi</button>
+          </form>
+        </section>
+        <section class="settings-view" data-settings-view="chat" hidden>
+          <p class="eyebrow">CHAT</p>
+          <h3>Tema komunikasi</h3>
+          <p class="settings-description">Warna diterapkan konsisten ke daftar chat, ruang percakapan, dan halaman komunikasi.</p>
+          <label class="group-label" for="communicationThemeSelect">Pilih warna tema</label>
+          <select id="communicationThemeSelect" class="settings-theme-select">
+            <option value="default">Hijau MBG</option>
+            <option value="ocean">Biru laut</option>
+            <option value="violet">Ungu</option>
+            <option value="rose">Merah muda</option>
+            <option value="amber">Amber</option>
+          </select>
+          <div class="theme-preview"><span></span><span></span><span></span><strong>Pratinjau tema chat</strong></div>
+        </section>
+        <section class="settings-view" data-settings-view="help" hidden>
+          <p class="eyebrow">BANTUAN</p>
+          <h3>Pusat Bantuan</h3>
+          <p class="settings-description">Butuh bantuan terkait komunikasi MBG Connect? Hubungi tim pengembang.</p>
+          <a class="settings-contact-link" href="tel:0895404147521"><span class="material-symbols-outlined" aria-hidden="true">call</span><span><strong>Hubungi kami</strong><small>0895404147521</small></span></a>
+          <button class="settings-shortcut-link" type="button" data-open-settings-tab="shortcuts"><span class="material-symbols-outlined" aria-hidden="true">keyboard</span>Pintasan Keyboard</button>
+        </section>
+        <section class="settings-view" data-settings-view="shortcuts" hidden>
+          <p class="eyebrow">BANTUAN</p>
+          <h3>Pintasan keyboard</h3>
+          <div class="shortcut-list">
+            <div><span>Tandai belum dibaca</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>U</kbd></div>
+            <div><span>Senyapkan chat</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>M</kbd></div>
+            <div><span>Arsipkan chat</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>E</kbd></div>
+            <div><span>Cari</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>/</kbd></div>
+            <div><span>Cari chat</span><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>F</kbd></div>
+            <div><span>Obrolan baru</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>N</kbd></div>
+            <div><span>Grup baru</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>N</kbd></div>
+            <div><span>Sematkan chat</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>P</kbd></div>
+            <div><span>Chat berikutnya</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>]</kbd></div>
+            <div><span>Chat sebelumnya</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>[</kbd></div>
+            <div><span>Tutup dialog</span><kbd>Esc</kbd></div>
+            <div><span>Tambah obrolan ke daftar</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Shift</kbd><kbd>L</kbd></div>
+            <div><span>Profil dan About</span><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>P</kbd></div>
+          </div>
+        </section>
+      </div>
+    </div>
   </dialog>
 
   <dialog id="incomingCallDialog" class="incoming-call-dialog" aria-labelledby="incomingCaller">

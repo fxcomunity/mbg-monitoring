@@ -45,7 +45,14 @@ try {
     $action = (string)($_GET['action'] ?? '');
 
     if ($method === 'GET' && $action === 'me') {
-        $respond(['status' => 'success', 'user_id' => $userId]);
+        $stmt = $pdo->prepare(
+            "SELECT u.id, u.full_name, u.email, u.role, u.sppg_name, u.avatar_url,
+                    COALESCE(p.about, '') AS about
+             FROM users u LEFT JOIN internal_chat_profiles p ON p.user_id = u.id
+             WHERE u.id = ?"
+        );
+        $stmt->execute([$userId]);
+        $respond(['status' => 'success', 'user_id' => $userId, 'data' => $stmt->fetch()]);
     }
 
     if ($method === 'GET' && $action === 'call_config') {
@@ -134,18 +141,20 @@ try {
     if ($method === 'GET' && $action === 'directory') {
         $stmt = $pdo->prepare(
             "SELECT u.id, u.full_name, u.role, u.sppg_name, u.avatar_url,
+                    COALESCE(profile.about, '') AS about,
                     p.last_seen_at,
-                    COALESCE(p.last_seen_at >= NOW() - INTERVAL '90 seconds', FALSE) AS is_online
+                    COALESCE(p.last_seen_at >= NOW() - INTERVAL '90 seconds', FALSE) AS is_online,
+                    (u.id = ?) AS is_self
              FROM users u
+             LEFT JOIN internal_chat_profiles profile ON profile.user_id = u.id
              LEFT JOIN internal_chat_presence p ON p.user_id = u.id
-             WHERE u.id <> ? AND u.deleted_at IS NULL AND u.is_active = TRUE
-               AND u.role IN ('admin', 'sppg')
-               AND (u.role <> 'sppg' OR LOWER(COALESCE(u.status_verifikasi, '')) = 'approved')
-             ORDER BY CASE u.role WHEN 'admin' THEN 0 ELSE 1 END,
+             WHERE u.deleted_at IS NULL AND u.is_active = TRUE
+               AND LOWER(u.role) IN ('admin', 'sppg')
+             ORDER BY CASE WHEN u.id = ? THEN 0 WHEN LOWER(u.role) = 'admin' THEN 1 ELSE 2 END,
                       COALESCE(u.sppg_name, u.full_name) ASC
              LIMIT 500"
         );
-        $stmt->execute([$userId]);
+        $stmt->execute([$userId, $userId]);
         $respond(['status' => 'success', 'data' => $stmt->fetchAll()]);
     }
 
@@ -165,6 +174,10 @@ try {
                      JOIN users u ON u.id = peer.user_id
                      WHERE peer.conversation_id = c.id AND peer.user_id <> ?
                      ORDER BY peer.joined_at LIMIT 1) AS peer_role,
+                    (SELECT u.avatar_url FROM internal_chat_members peer
+                     JOIN users u ON u.id = peer.user_id
+                     WHERE peer.conversation_id = c.id AND peer.user_id <> ?
+                     ORDER BY peer.joined_at LIMIT 1) AS peer_avatar_url,
                     (SELECT p.last_seen_at FROM internal_chat_members peer
                      JOIN internal_chat_presence p ON p.user_id = peer.user_id
                      WHERE peer.conversation_id = c.id AND peer.user_id <> ?
@@ -194,7 +207,7 @@ try {
              ORDER BY c.updated_at DESC, c.id DESC
              LIMIT 300"
         );
-        $stmt->execute([$userId, $userId, $userId, $userId, $userId, $userId, $userId, $archived, $userId, $archived, $userId]);
+        $stmt->execute([$userId, $userId, $userId, $userId, $userId, $userId, $userId, $userId, $archived, $userId, $archived, $userId]);
         $respond(['status' => 'success', 'data' => $stmt->fetchAll()]);
     }
 
@@ -291,6 +304,94 @@ try {
 
     if ($action === 'presence') {
         $respond(['status' => 'success']);
+    }
+
+    if ($action === 'ai_chat') {
+        $message = trim((string)($body['message'] ?? ''));
+        if ($message === '' || mb_strlen($message) > 500) {
+            $respond(['status' => 'error', 'message' => 'Pertanyaan wajib diisi dan maksimal 500 karakter.'], 400);
+        }
+        $history = [];
+        if (isset($body['history']) && is_array($body['history'])) {
+            foreach (array_slice($body['history'], -8) as $item) {
+                if (!is_array($item) || !in_array($item['role'] ?? '', ['user', 'assistant'], true) ||
+                    !is_string($item['content'] ?? null) || trim($item['content']) === '') continue;
+                $history[] = ['role' => $item['role'], 'content' => mb_substr(trim($item['content']), 0, 500)];
+            }
+        }
+
+        $apiKey = trim((string)(getenv('OPENROUTER_API_KEY') ?: ''));
+        $model = trim((string)(getenv('OPENROUTER_MODEL') ?: 'google/gemini-2.0-flash-001'));
+        $baseUrl = rtrim(trim((string)(getenv('OPENROUTER_BASE_URL') ?: 'https://openrouter.ai/api/v1')), '/');
+        if ($apiKey === '' && is_readable(__DIR__ . '/../.env')) {
+            foreach (file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+                $line = trim($line);
+                if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) continue;
+                [$key, $value] = explode('=', $line, 2);
+                $value = trim(trim($value), "\"'");
+                if ($key === 'OPENROUTER_API_KEY') $apiKey = $value;
+                elseif ($key === 'OPENROUTER_MODEL' && getenv('OPENROUTER_MODEL') === false) $model = $value;
+                elseif ($key === 'OPENROUTER_BASE_URL' && getenv('OPENROUTER_BASE_URL') === false) $baseUrl = rtrim($value, '/');
+            }
+        }
+        if ($apiKey === '') {
+            $respond(['status' => 'error', 'message' => 'Asisten AI belum dikonfigurasi. Admin perlu mengatur OPENROUTER_API_KEY di environment atau .env.'], 503);
+        }
+        $systemPrompt = 'Anda adalah AI internal MBG Connect. Jawab ringkas dan ramah dalam Bahasa Indonesia tentang penggunaan komunikasi internal, koordinasi MBG, dan informasi umum. Jangan mengarang informasi akun; pencarian Admin/SPPG dilakukan secara privat di perangkat pengguna. Jika pengguna meminta data akun, arahkan untuk memakai pencarian kontak lokal.';
+        if (!function_exists('curl_init')) {
+            $respond(['status' => 'error', 'message' => 'Ekstensi cURL PHP belum tersedia untuk layanan AI.'], 503);
+        }
+        $curl = curl_init($baseUrl . '/chat/completions');
+        if ($curl === false) {
+            $respond(['status' => 'error', 'message' => 'Asisten AI tidak dapat disiapkan saat ini.'], 503);
+        }
+        $payload = json_encode([
+            'model' => $model,
+            'messages' => array_merge(
+                [['role' => 'system', 'content' => $systemPrompt]],
+                $history,
+                [['role' => 'user', 'content' => $message]]
+            ),
+            'max_tokens' => 500,
+            'temperature' => 0.3,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        curl_setopt_array($curl, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey,
+                'HTTP-Referer: https://mbg.jack-ai.my.id',
+                'X-Title: Radar MBG Connect',
+            ],
+        ]);
+        $responseBody = curl_exec($curl);
+        $httpCode = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+        $upstream = is_string($responseBody) ? json_decode($responseBody, true) : null;
+        $reply = $upstream['choices'][0]['message']['content'] ?? null;
+        if ($responseBody === false || $httpCode < 200 || $httpCode >= 300 || !is_string($reply) || trim($reply) === '') {
+            error_log('OpenRouter communication AI request failed (HTTP ' . $httpCode . ')' . ($curlError ? ': ' . $curlError : ''));
+            $respond(['status' => 'error', 'message' => 'Asisten AI gagal menyusun jawaban. Coba lagi sebentar.'], 502);
+        }
+        $respond(['status' => 'success', 'reply' => trim($reply)]);
+    }
+
+    if ($action === 'profile_save') {
+        $about = trim((string)($body['about'] ?? ''));
+        if (mb_strlen($about) > 240 || preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $about)) {
+            $respond(['status' => 'error', 'message' => 'Deskripsi maksimal 240 karakter.'], 400);
+        }
+        $stmt = $pdo->prepare(
+            'INSERT INTO internal_chat_profiles (user_id, about, updated_at) VALUES (?, ?, NOW())
+             ON CONFLICT (user_id) DO UPDATE SET about = EXCLUDED.about, updated_at = NOW()
+             RETURNING about'
+        );
+        $stmt->execute([$userId, $about]);
+        $respond(['status' => 'success', 'data' => $stmt->fetch()]);
     }
 
     if ($action === 'archive' || $action === 'unarchive') {
@@ -524,7 +625,7 @@ try {
 
     if ($action === 'direct') {
         $peerId = filter_var($body['user_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        if (!$peerId || (int)$peerId === $userId) {
+        if (!$peerId) {
             $respond(['status' => 'error', 'message' => 'Kontak tidak valid.'], 400);
         }
         $peer = $pdo->prepare(

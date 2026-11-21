@@ -45,3 +45,5 @@ database/scripts/*_log.txt
 # ── Build artifacts ──────────────────────────────────────────
 *.apk
 *.aab
+
+.wrangler/

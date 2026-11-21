@@ -2,21 +2,29 @@
 
 ## Database
 
-Jalankan `database/neon_auth_sessions.sql` dan `database/internal_chat.sql` satu kali pada database Neon. Keduanya memerlukan tabel `users` dari schema utama. Migrasi chat mencakup percakapan, pesan, panggilan, status 24 jam, arsip per pengguna, dan komunitas beserta grup anggotanya.
+Jalankan `database/neon_auth_sessions.sql` dan `database/internal_chat.sql` pada database Neon. Keduanya memerlukan tabel `users` dari schema utama dan aman dijalankan ulang. Jika chat sudah pernah dipasang, jalankan ulang `database/internal_chat.sql` untuk membuat tabel profil "Tentang" yang baru. Migrasi chat mencakup percakapan, pesan, panggilan, status 24 jam, arsip per pengguna, profil "Tentang", dan komunitas beserta grup anggotanya.
 
 Sesi Cloudflare Pages kini disimpan di Neon pada tabel `auth_sessions`; halaman Pages tidak membutuhkan binding KV `SESSIONS`. Browser tetap menerima cookie token acak HttpOnly, sedangkan database hanya menyimpan hash token. Terapkan `database/neon_auth_sessions.sql` di Neon SQL Editor sebelum deploy versi ini agar login dan validasi sesi berfungsi.
 
 ## Halaman
 
 - `dashboard/komunikasi/chat/` — Chat dan percakapan langsung.
+- `dashboard/komunikasi/Kontak` — Daftar kontak Admin/SPPG; kata pencarian juga mencocokkan peran dan unit.
+- `dashboard/komunikasi/sebelum-baca` — Daftar percakapan yang belum dibaca.
+- `dashboard/komunikasi/pembaruan`, `dashboard/komunikasi/komunitas`, `dashboard/komunikasi/panggilan`, dan `dashboard/komunikasi/arsip` — Halaman fitur dengan URL dan direktori masing-masing.
+- `dashboard/komunikasi/ai` — Percakapan khusus dengan AI MBG; AI juga muncul sebagai kontak terpisah di daftar pesan.
+- `dashboard/komunikasi/telepon/` — Alias untuk memilih obrolan sebelum memulai panggilan; layar panggilan aktif tersedia di `dashboard/komunikasi/chat/telephone/`.
 - Grup dibuat melalui dialog di halaman chat; membuka grup mengarah ke `dashboard/komunikasi/grup/chat/{id}`.
 - `dashboard/komunikasi/chat/telephone/?conversation_id={id}` — memulai panggilan suara.
 - `dashboard/komunikasi/chat/telephone/?call_id={id}` — menerima atau melanjutkan panggilan.
-- Navigasi bawah menyediakan Chat, Pembaruan, Komunitas, Panggilan, dan Arsip.
+- Navigasi menyediakan Chat, Pembaruan, Komunitas, Panggilan, dan Arsip; AI MBG tersedia sebagai kontak khusus di daftar chat.
+- Tombol profil di kiri bawah membuka Profil/About, penggantian kata sandi, tema komunikasi, Pusat Bantuan, dan daftar pintasan keyboard. `Ctrl+Alt+Shift+U` membuka pesan belum dibaca.
 - Status pribadi dibagikan ke kontak internal dan kedaluwarsa setelah 24 jam. Status grup hanya terlihat oleh anggota grup.
-- Chat dapat diarsipkan per akun. Komunitas menyimpan anggota Admin/SPPG dan tautan ke grup koordinasi.
+- Chat dapat diarsipkan per akun; mengarsipkan percakapan pada akun Admin tidak menghapusnya dari daftar SPPG. Komunitas menyimpan anggota Admin/SPPG dan tautan ke grup koordinasi.
 
-Panggilan suara menggunakan WebRTC dan meminta izin mikrofon. Aktifkan tombol suara untuk nada panggilan masuk/notifikasi; panggilan keluar memainkan nada tunggu selama menunggu jawaban. Browser dapat meminta izin notifikasi sistem. Verifikasi peran tetap dilakukan di server/database; API chat hanya menerima Admin/SPPG. Dashboard Admin dan SPPG memperbarui presence selama sesi aktif, sehingga status berubah offline setelah heartbeat berhenti selama 90 detik.
+Panggilan suara menggunakan WebRTC dan meminta izin mikrofon. Aktifkan tombol suara untuk nada panggilan masuk/notifikasi; panggilan keluar memainkan nada tunggu selama menunggu jawaban. Menu tiga titik di header/grup menyediakan opsi suara dan bisukan nada per percakapan. Profil Admin/SPPG dapat mengatur deskripsi "Tentang" hingga 240 karakter. Browser dapat meminta izin notifikasi sistem. Verifikasi peran tetap dilakukan di server/database; API chat hanya menerima Admin/SPPG. Dashboard Admin dan SPPG memperbarui presence selama sesi aktif, sehingga status berubah offline setelah heartbeat berhenti selama 90 detik.
+
+Asisten AI MBG menggunakan OpenRouter dari server saja. Pada Cloudflare Pages, simpan key sebagai secret dengan `npx wrangler pages secret put OPENROUTER_API_KEY`; jangan menambahkan key ke `wrangler.toml` atau JavaScript browser. Untuk Laragon, set `OPENROUTER_API_KEY` di `.env` atau environment PHP. Pertanyaan umum dikirim ke OpenRouter, sedangkan pencarian nama/peran/status kontak dijalankan di browser dari direktori yang sudah boleh dilihat pengguna—data profil kontak tidak dikirim ke OpenRouter. Foto AI menggunakan `assets/images/communication-ai.png`; avatar akun mengikuti `avatar_url` yang sama dengan dashboard.
 
 ### TURN, Cloudflare Pages, dan Neon
 

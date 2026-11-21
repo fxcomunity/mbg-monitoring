@@ -34,6 +34,12 @@ CREATE TABLE IF NOT EXISTS internal_chat_presence (
   last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS internal_chat_profiles (
+  user_id    BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  about      VARCHAR(240) NOT NULL DEFAULT '',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS internal_chat_calls (
   id              BIGSERIAL PRIMARY KEY,
   conversation_id BIGINT NOT NULL REFERENCES internal_chat_conversations(id) ON DELETE CASCADE,

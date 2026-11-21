@@ -10,8 +10,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
-  <link rel="stylesheet" href="../../../../assets/css/komunikasi.css">
-  <script src="../../../../assets/js/komunikasi-telephone.js" defer></script>
+  <link rel="stylesheet" href="../../../../assets/css/komunikasi.css?v=20261122-settings-theme">
+  <script>
+    try {
+      document.documentElement.dataset.communicationTheme = localStorage.getItem('mbg-communication-theme') || 'default';
+    } catch (error) {
+      console.warn('Tema komunikasi tersimpan tidak dapat dibaca:', error.message);
+    }
+  </script>
+  <script src="../../../../assets/js/komunikasi-telephone.js?v=20261122-fast-call" defer></script>
 </head>
 <body>
   <main id="telephoneApp" class="telephone-app">

@@ -201,20 +201,24 @@
 
   function startPolling() {
     if (state.pollTimer) return;
-    state.pollTimer = window.setInterval(pollCall, 1000);
+    state.pollTimer = window.setInterval(pollCall, 500);
     pollCall();
   }
 
+  // Jalankan mic + peer connection PARALEL dengan call_start untuk memangkas waktu tunggu
   async function startOutgoingCall() {
     startRingback();
     setAction('Menghubungi...', 'call', true);
     try {
-      const result = await post('call_start', { conversation_id: state.conversationId });
+      // Paralel: minta mic & call_start bersamaan
+      const [result] = await Promise.all([
+        post('call_start', { conversation_id: state.conversationId }),
+        acquireMicrophone()
+      ]);
       state.callId = Number(result.call_id);
       const currentUrl = new URL(location.href);
       currentUrl.searchParams.set('call_id', String(state.callId));
       history.replaceState(null, '', currentUrl);
-      await acquireMicrophone();
       await createPeerConnection();
       const offer = await state.connection.createOffer();
       await state.connection.setLocalDescription(offer);
@@ -232,13 +236,17 @@
     }
   }
 
+  // Jawab: mic + call_answer paralel
   async function answerIncomingCall() {
     stopRingback();
     setAction('Menjawab...', 'call', true);
     try {
       await acquireMicrophone();
-      await createPeerConnection();
-      await post('call_answer', { call_id: state.callId });
+      // Paralel: buat peer connection & konfirmasi jawaban ke server
+      await Promise.all([
+        createPeerConnection(),
+        post('call_answer', { call_id: state.callId })
+      ]);
       showControls(true);
       setStatus('Menghubungkan audio...');
       setAction('Panggilan aktif', 'call', true);
@@ -279,7 +287,16 @@
   }
 
   async function initialize() {
-    const auth = await fetch(authUrl, { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
+    // Paralel: auth + call_state (jika ada call_id)
+    const authFetch = fetch(authUrl, { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
+
+    let callFetch = null;
+    if (state.callId) {
+      const query = new URLSearchParams({ action: 'call_state', call_id: String(state.callId), after_signal_id: '0' });
+      callFetch = request(`${apiUrl.href}?${query}`);
+    }
+
+    const auth = await authFetch;
     if (!auth.ok) {
       location.replace(new URL('auth/login.html', siteRoot));
       return;
@@ -290,16 +307,19 @@
       location.replace(new URL(role === 'user' ? 'dashboard/user/' : 'auth/login.html', siteRoot));
       return;
     }
+
     if (state.callId) {
-      const query = new URLSearchParams({ action: 'call_state', call_id: String(state.callId), after_signal_id: '0' });
-      const result = await request(`${apiUrl.href}?${query}`);
+      // Ambil call_state + identity paralel
+      const [result, identity] = await Promise.all([
+        callFetch,
+        request(new URL('?action=me', apiUrl))
+      ]);
       state.call = result.data;
       state.peer = result.data.peer_name;
+      state.userId = Number(identity.user_id);
       $('#callName').textContent = state.peer;
       $('#callAvatar').textContent = state.peer.trim().split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toUpperCase();
       $('#callAvatar').className = `avatar call-avatar ${result.data.peer_role === 'admin' ? 'avatar-admin' : 'avatar-sppg'}`;
-      const identity = await request(new URL('?action=me', apiUrl));
-      state.userId = Number(identity.user_id);
       const isCallee = Number(result.data.callee_id) === state.userId;
       if (isCallee && result.data.status === 'ringing') {
         setStatus('Panggilan masuk · izinkan mikrofon untuk menjawab.');

@@ -1,4 +1,12 @@
 RewriteEngine On
+RewriteRule ^Kontak/?$ chat/index.html?view=contacts [QSA,L]
+RewriteRule ^sebelum-baca/?$ chat/index.html?view=unread [QSA,L]
+RewriteRule ^pembaruan/?$ chat/index.html?section=updates [QSA,L]
+RewriteRule ^komunitas/?$ chat/index.html?section=communities [QSA,L]
+RewriteRule ^panggilan/?$ chat/index.html?section=calls [QSA,L]
+RewriteRule ^arsip/?$ chat/index.html?section=archives [QSA,L]
+RewriteRule ^user/?$ chat/index.html?section=users [QSA,L]
+RewriteRule ^ai/?$ chat/index.html?section=ai [QSA,L]
 RewriteRule ^grup/chat/([0-9]+)/?$ chat/index.html?conversation_id=$1 [QSA,L]
 RewriteRule ^chat/grup/([^/]+)/([0-9]+)/?$ chat/index.html?conversation_id=$2 [QSA,L]
 RewriteRule ^chat/grup/([0-9]+)/?$ chat/index.html?conversation_id=$1 [QSA,L]

@@ -45,7 +45,16 @@ export async function onRequest({ request, env }) {
     if (request.method === 'GET') {
       const url = new URL(request.url);
       const action = url.searchParams.get('action');
-      if (action === 'me') return json({ status: 'success', user_id: Number(identity.id) });
+      if (action === 'me') {
+        const rows = await dbQuery(db,
+          `SELECT u.id, u.full_name, u.email, u.role, u.sppg_name, u.avatar_url,
+                  COALESCE(p.about, '') AS about
+           FROM users u LEFT JOIN internal_chat_profiles p ON p.user_id = u.id
+           WHERE u.id = $1`,
+          [identity.id]
+        );
+        return json({ status: 'success', user_id: Number(identity.id), data: rows[0] });
+      }
       if (action === 'call_config') {
         const iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
         const turnUrl = String(env.TURN_URL || '').trim();
@@ -117,13 +126,16 @@ export async function onRequest({ request, env }) {
       if (action === 'directory') {
         const rows = await dbQuery(db,
           `SELECT u.id, u.full_name, u.role, u.sppg_name, u.avatar_url,
+                  COALESCE(profile.about, '') AS about,
                   p.last_seen_at,
-                  COALESCE(p.last_seen_at >= NOW() - INTERVAL '90 seconds', FALSE) AS is_online
-           FROM users u LEFT JOIN internal_chat_presence p ON p.user_id = u.id
-           WHERE u.id <> $1 AND u.deleted_at IS NULL AND u.is_active = TRUE
-             AND u.role IN ('admin', 'sppg')
-             AND (u.role <> 'sppg' OR LOWER(COALESCE(u.status_verifikasi, '')) = 'approved')
-           ORDER BY CASE u.role WHEN 'admin' THEN 0 ELSE 1 END,
+                  COALESCE(p.last_seen_at >= NOW() - INTERVAL '90 seconds', FALSE) AS is_online,
+                  (u.id = $1) AS is_self
+           FROM users u
+           LEFT JOIN internal_chat_profiles profile ON profile.user_id = u.id
+           LEFT JOIN internal_chat_presence p ON p.user_id = u.id
+           WHERE u.deleted_at IS NULL AND u.is_active = TRUE
+             AND LOWER(u.role) IN ('admin', 'sppg')
+           ORDER BY CASE WHEN u.id = $1 THEN 0 WHEN LOWER(u.role) = 'admin' THEN 1 ELSE 2 END,
                     COALESCE(u.sppg_name, u.full_name) ASC
            LIMIT 500`,
           [identity.id]
@@ -145,6 +157,9 @@ export async function onRequest({ request, env }) {
                   (SELECT u.role FROM internal_chat_members peer JOIN users u ON u.id = peer.user_id
                    WHERE peer.conversation_id = c.id AND peer.user_id <> $1
                    ORDER BY peer.joined_at LIMIT 1) AS peer_role,
+                  (SELECT u.avatar_url FROM internal_chat_members peer JOIN users u ON u.id = peer.user_id
+                   WHERE peer.conversation_id = c.id AND peer.user_id <> $1
+                   ORDER BY peer.joined_at LIMIT 1) AS peer_avatar_url,
                   (SELECT p.last_seen_at FROM internal_chat_members peer JOIN internal_chat_presence p ON p.user_id = peer.user_id
                    WHERE peer.conversation_id = c.id AND peer.user_id <> $1
                    ORDER BY peer.joined_at LIMIT 1) AS peer_last_seen_at,
@@ -274,6 +289,61 @@ export async function onRequest({ request, env }) {
 
     if (body.action === 'presence') return json({ status: 'success' });
 
+    if (body.action === 'ai_chat') {
+      const message = typeof body.message === 'string' ? body.message.trim() : '';
+      if (!message || message.length > 500) {
+        return json({ status: 'error', message: 'Pertanyaan wajib diisi dan maksimal 500 karakter.' }, 400);
+      }
+      const history = Array.isArray(body.history)
+        ? body.history.filter((item) => item && ['user', 'assistant'].includes(item.role)
+          && typeof item.content === 'string' && item.content.trim())
+          .slice(-8)
+          .map((item) => ({ role: item.role, content: item.content.trim().slice(0, 500) }))
+        : [];
+      const apiKey = String(env.OPENROUTER_API_KEY || '').trim();
+      if (!apiKey) {
+        return json({ status: 'error', message: 'Asisten AI belum dikonfigurasi. Admin perlu mengatur secret OPENROUTER_API_KEY.' }, 503);
+      }
+      const baseUrl = String(env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/+$/, '');
+      const model = String(env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001');
+      let upstream;
+      try {
+        upstream = await fetch(`${baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+            'HTTP-Referer': 'https://mbg.jack-ai.my.id',
+            'X-Title': 'Radar MBG Connect'
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: 'system',
+                content: 'Anda adalah AI internal MBG Connect. Jawab ringkas dan ramah dalam Bahasa Indonesia tentang penggunaan komunikasi internal, koordinasi MBG, dan informasi umum. Jangan mengarang informasi akun; pencarian Admin/SPPG dilakukan secara privat di perangkat pengguna. Jika pengguna meminta data akun, arahkan untuk memakai pencarian kontak lokal.'
+              },
+              ...history,
+              { role: 'user', content: message }
+            ],
+            max_tokens: 500,
+            temperature: 0.3
+          }),
+          signal: AbortSignal.timeout(20000)
+        });
+      } catch (error) {
+        console.error('OpenRouter communication AI request failed:', error);
+        return json({ status: 'error', message: 'Asisten AI tidak dapat dihubungi. Coba lagi sebentar.' }, 502);
+      }
+      const result = await upstream.json().catch(() => null);
+      const reply = result?.choices?.[0]?.message?.content;
+      if (!upstream.ok || typeof reply !== 'string' || !reply.trim()) {
+        console.error('OpenRouter communication AI returned an unsuccessful response:', upstream.status);
+        return json({ status: 'error', message: 'Asisten AI gagal menyusun jawaban. Coba lagi sebentar.' }, 502);
+      }
+      return json({ status: 'success', reply: reply.trim() });
+    }
+
     if (body.action === 'archive' || body.action === 'unarchive') {
       const conversationId = Number(body.conversation_id);
       if (!isValidId(conversationId) || !await isMember(db, conversationId, Number(identity.id))) {
@@ -291,6 +361,21 @@ export async function onRequest({ request, env }) {
         );
       }
       return json({ status: 'success' });
+    }
+
+    if (body.action === 'profile_save') {
+      const about = typeof body.about === 'string' ? body.about.trim() : '';
+      if (about.length > 240 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(about)) {
+        return json({ status: 'error', message: 'Deskripsi maksimal 240 karakter.' }, 400);
+      }
+      const rows = await dbQuery(db,
+        `INSERT INTO internal_chat_profiles (user_id, about, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (user_id) DO UPDATE SET about = EXCLUDED.about, updated_at = NOW()
+         RETURNING about`,
+        [identity.id, about]
+      );
+      return json({ status: 'success', data: rows[0] });
     }
 
     if (body.action === 'status_create') {
