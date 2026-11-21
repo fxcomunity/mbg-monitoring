@@ -1,0 +1,11 @@
+android/
+node_modules/
+.git/
+.github/
+.idea/
+.agents/
+uploads/
+tests/
+releases/
+database/
+docs/
