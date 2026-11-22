@@ -192,8 +192,8 @@
       let currentResults = [];
 
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const searchApi = isLocal ? 'api/sppg_search.php' : 'api/sppg_search';
-      const qrApi = isLocal ? 'api/sppg_qr.php' : 'api/sppg_qr';
+      const searchApi = isLocal ? 'api/sppg_search.php' : '/api/sppg_search';
+      const qrApi = isLocal ? 'api/sppg_qr.php' : '/api/sppg_qr';
 
       // Search tips
       document.querySelectorAll('.search-tip').forEach(btn => {
