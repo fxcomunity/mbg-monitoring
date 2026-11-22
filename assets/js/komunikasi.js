@@ -39,7 +39,9 @@
     aiHistory: [],
     pinnedIds: new Set(),
     usersFilter: 'all',
-    usersSearch: ''
+    usersSearch: '',
+    statusViewer: null,
+    statusPhoto: null
   };
 
   function escapeHtml(value) {
@@ -227,7 +229,7 @@
       const roleText = isAdmin ? 'Admin Satgas' : 'Mitra SPPG';
       return `
         <button class="contact-item" type="button" data-user-id="${Number(person.id)}">
-          <span class="avatar ${isAdmin ? 'avatar-admin' : 'avatar-sppg'}" aria-hidden="true">${escapeHtml(initials(displayName(person)))}</span>
+          <span class="avatar ${isAdmin ? 'avatar-admin' : 'avatar-sppg'}${statusRingClass(person.id, isSelf)}" aria-hidden="true">${escapeHtml(initials(displayName(person)))}</span>
           <span class="contact-copy">
             <span class="contact-topline"><span class="contact-name">${escapeHtml(name)}</span>
               <span class="presence-label ${online ? 'is-online' : ''}"><i></i>${online ? 'Online' : 'Offline'}</span>
@@ -319,7 +321,7 @@
         <div class="conversation-row">
           <button class="contact-item ${Number(conversation.id) === state.activeId ? 'is-selected' : ''}" type="button"
             aria-current="${Number(conversation.id) === state.activeId ? 'true' : 'false'}" data-conversation-id="${Number(conversation.id)}">
-          <span class="avatar ${conversation.kind === 'group' ? 'avatar-coord' : conversation.peer_role === 'admin' ? 'avatar-admin' : 'avatar-sppg'}" aria-hidden="true">
+          <span class="avatar ${conversation.kind === 'group' ? 'avatar-coord' : conversation.peer_role === 'admin' ? 'avatar-admin' : 'avatar-sppg'}${conversation.kind === 'direct' ? statusRingClass(conversation.peer_id, false) : ''}" aria-hidden="true">
             ${escapeHtml(conversation.kind === 'group' ? 'GR' : initials(name))}
           </span>
           <span class="contact-copy">
@@ -349,7 +351,7 @@
           const roleText = isAdmin ? 'Admin Satgas' : 'Mitra SPPG';
           return `
             <button class="contact-item" type="button" data-user-id="${Number(person.id)}">
-              <span class="avatar ${isAdmin ? 'avatar-admin' : 'avatar-sppg'}" aria-hidden="true">${escapeHtml(initials(displayName(person)))}</span>
+              <span class="avatar ${isAdmin ? 'avatar-admin' : 'avatar-sppg'}${statusRingClass(person.id, isSelf)}" aria-hidden="true">${escapeHtml(initials(displayName(person)))}</span>
               <span class="contact-copy">
                 <span class="contact-topline"><span class="contact-name">${escapeHtml(name)}</span>
                   <span class="presence-label ${online ? 'is-online' : ''}"><i></i>${online ? 'Online' : 'Offline'}</span>
@@ -381,21 +383,302 @@
     });
   }
 
+  /* ── Status ala WhatsApp ─────────────────────────────────
+     Status dikelompokkan per rail: "a:{author_id}" untuk status
+     pribadi dan "g:{conversation_id}" untuk status grup.
+     Ring hijau = ada status belum dilihat, abu = sudah dilihat. */
+  function statusRailKey(status) {
+    return status.conversation_id ? `g:${Number(status.conversation_id)}` : `a:${Number(status.author_id)}`;
+  }
+
+  function statusRailGroups() {
+    const groups = new Map();
+    (state.statuses || []).forEach((status) => {
+      const key = statusRailKey(status);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(status);
+    });
+    groups.forEach((items) => items.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+    return groups;
+  }
+
+  function statusIsViewed(status) {
+    return status.viewed_by_me === true || status.viewed_by_me === 't' || status.viewed_by_me === 1;
+  }
+
+  function statusUnviewedAuthors() {
+    const set = new Set();
+    (state.statuses || []).forEach((status) => {
+      if (!status.conversation_id && !statusIsViewed(status)) set.add(Number(status.author_id));
+    });
+    return set;
+  }
+
+  function statusRingClass(personId, isSelf) {
+    if (isSelf) return '';
+    return statusUnviewedAuthors().has(Number(personId)) ? ' wa-ring' : '';
+  }
+
+  function statusPerson(status) {
+    return {
+      avatar_url: status.author_avatar || '',
+      full_name: status.author_name || 'Anggota',
+      sppg_name: status.author_name || '',
+      role: status.author_role || 'user'
+    };
+  }
+
+  function renderStatusRail() {
+    const rail = $('#statusRail');
+    if (!rail) return;
+    const groups = statusRailGroups();
+    const tiles = [];
+
+    const mine = groups.get(`a:${state.userId}`) || [];
+    tiles.push(`<button class="status-tile" type="button" data-status-key="a:${state.userId}">
+      <span class="status-ring ${mine.length ? 'has-status' : ''}">
+        <span class="avatar avatar-small ${normalizedRole(state.profile) === 'admin' ? 'avatar-admin' : 'avatar-sppg'}" id="statusMyAvatar">${escapeHtml(initials(displayName(state.profile)))}</span>
+      </span>
+      <span class="status-tile-plus"><span class="material-symbols-outlined" aria-hidden="true">add</span></span>
+      <span class="status-tile-name">Status saya</span>
+      <span class="status-tile-time">${mine.length ? escapeHtml(formatTime(mine[mine.length - 1].created_at)) : 'Ketuk untuk membuat'}</span>
+    </button>`);
+
+    groups.forEach((items, key) => {
+      if (key === `a:${state.userId}`) return;
+      const latest = items[items.length - 1];
+      const unviewed = items.some((item) => !statusIsViewed(item));
+      if (key.startsWith('g:')) {
+        const conversation = state.conversations.find((item) => Number(item.id) === Number(key.slice(2)));
+        const name = conversation?.name || latest.group_name || 'Grup';
+        tiles.push(`<button class="status-tile" type="button" data-status-key="${escapeHtml(key)}">
+          <span class="status-ring ${unviewed ? 'has-status' : 'viewed'}">
+            <span class="avatar avatar-small avatar-coord" aria-hidden="true">GR</span>
+          </span>
+          <span class="status-tile-name">${escapeHtml(name)}</span>
+          <span class="status-tile-time">${escapeHtml(formatTime(latest.created_at))}</span>
+        </button>`);
+        return;
+      }
+      const person = statusPerson(latest);
+      const name = displayName(person);
+      tiles.push(`<button class="status-tile" type="button" data-status-key="${escapeHtml(key)}">
+        <span class="status-ring ${unviewed ? 'has-status' : 'viewed'}">
+          <span class="avatar avatar-small ${normalizedRole(person) === 'admin' ? 'avatar-admin' : 'avatar-sppg'}" aria-hidden="true">${escapeHtml(initials(name))}</span>
+        </span>
+        <span class="status-tile-name">${escapeHtml(name)}</span>
+        <span class="status-tile-time">${escapeHtml(formatTime(latest.created_at))}</span>
+      </button>`);
+    });
+
+    $('#statusRail').innerHTML = tiles.join('');
+
+    const myAvatar = $('#statusMyAvatar');
+    if (myAvatar) renderAvatar(myAvatar, state.profile, initials(displayName(state.profile)));
+    document.querySelectorAll('#statusRail .status-tile:not([data-status-key="a:' + state.userId + '"])').forEach((tile) => {
+      const avatar = tile.querySelector('.avatar');
+      if (!avatar || tile.dataset.statusKey.startsWith('g:')) return;
+      const authorId = Number(tile.dataset.statusKey.slice(2));
+      const person = state.directory.find((entry) => Number(entry.id) === authorId)
+        || statusPerson((groups.get(tile.dataset.statusKey) || [{}]).slice(-1)[0]);
+      renderAvatar(avatar, person, initials(displayName(person)));
+    });
+  }
+
   function renderStatuses() {
-    const list = $('#statusList');
+    const wrap = $('#statusList');
+    if (!wrap) return;
+    if (!$('#statusRail')) wrap.innerHTML = '<div id="statusRail" class="status-rail"></div>';
+    renderStatusRail();
+    let hint = wrap.querySelector('.status-empty-hint');
     if (!state.statuses.length) {
-      showError(list, 'Belum ada status. Bagikan kabar ke kontak atau grup.');
-      return;
+      if (!hint) {
+        hint = document.createElement('p');
+        hint.className = 'no-contacts status-empty-hint';
+        hint.textContent = 'Belum ada status. Bagikan kabar ke kontak atau grup.';
+        wrap.prepend(hint);
+      }
+    } else if (hint) {
+      hint.remove();
     }
-    list.innerHTML = state.statuses.map((status) => `
-      <article class="feature-card status-card">
-        <span class="avatar ${status.author_role === 'admin' ? 'avatar-admin' : 'avatar-sppg'}" aria-hidden="true">${escapeHtml(initials(status.author_name || 'MB'))}</span>
-        <div class="feature-card-copy">
-          <div class="feature-card-title"><strong>${escapeHtml(status.author_name || 'Anggota')}</strong><time>${escapeHtml(formatTime(status.created_at))}</time></div>
-          <p>${escapeHtml(status.conversation_id ? `Status grup · ${status.group_name || 'Grup'}` : 'Status kontak')}</p>
-          <div class="status-message">${escapeHtml(status.message)}</div>
-        </div>
-      </article>`).join('');
+  }
+
+  /* ── Status viewer (layar penuh ala WA) ── */
+  function statusViewerItems() {
+    const viewer = state.statusViewer;
+    if (!viewer) return [];
+    return statusRailGroups().get(viewer.key) || [];
+  }
+
+  function closeStatusViewer() {
+    const viewer = state.statusViewer;
+    if (viewer?.timer) window.clearTimeout(viewer.timer);
+    state.statusViewer = null;
+    $('#statusViewer').hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  function markStatusesViewed(items) {
+    const pending = items.filter((item) => !statusIsViewed(item));
+    if (!pending.length) return;
+    pending.forEach((item) => { item.viewed_by_me = true; });
+    pending.forEach((item) => {
+      request(chatEndpoint, { method: 'POST', body: JSON.stringify({ action: 'status_view', status_id: Number(item.id) }) })
+        .catch((error) => console.warn('Status belum ditandai dibaca:', error.message));
+    });
+    renderStatusRail();
+    renderConversations();
+    renderDirectory();
+  }
+
+  function scheduleStatusAdvance() {
+    const viewer = state.statusViewer;
+    if (!viewer) return;
+    if (viewer.timer) window.clearTimeout(viewer.timer);
+    viewer.timer = window.setTimeout(() => {
+      if (!state.statusViewer) return;
+      if (state.statusViewer.index < statusViewerItems().length - 1) showStatusItem(state.statusViewer.index + 1);
+      else closeStatusViewer();
+    }, 5000);
+  }
+
+  function showStatusItem(index) {
+    const viewer = state.statusViewer;
+    if (!viewer) return;
+    const items = statusViewerItems();
+    if (index < 0 || index >= items.length) { closeStatusViewer(); return; }
+    viewer.index = index;
+    const status = items[index];
+
+    document.querySelectorAll('#statusViewerProgress .status-progress-seg').forEach((seg, i) => {
+      const fill = seg.querySelector('i');
+      fill.style.transition = 'none';
+      fill.style.width = i < index ? '100%' : '0%';
+      void fill.offsetWidth;
+      fill.style.transition = i === index ? 'width 5s linear' : 'none';
+      if (i === index) fill.style.width = '100%';
+    });
+
+    const isMine = Number(status.author_id) === state.userId;
+    $('#statusViewerName').textContent = isMine ? 'Status saya' : (status.author_name || 'Status');
+    $('#statusViewerTime').textContent = `${isMine ? '' : (status.conversation_id ? `Grup · ${status.group_name || 'Grup'} · ` : '')}${formatTime(status.created_at)}`;
+    $('#statusViewerCount').textContent = `${index + 1}/${items.length}`;
+    $('#statusViewerDelete').hidden = !isMine;
+    $('#statusReplyForm').hidden = isMine;
+
+    const avatar = $('#statusViewerAvatar');
+    const person = statusPerson(status);
+    avatar.className = `avatar avatar-small ${normalizedRole(person) === 'admin' ? 'avatar-admin' : 'avatar-sppg'}`;
+    renderAvatar(avatar, person, initials(status.author_name || 'MB'));
+
+    const stage = $('#statusViewerStage');
+    const caption = $('#statusViewerCaption');
+    stage.innerHTML = '';
+    if (status.media_type === 'image' && status.media_url) {
+      const img = document.createElement('img');
+      img.className = 'status-viewer-media';
+      img.src = status.media_url;
+      img.alt = 'Foto status';
+      stage.append(img);
+    } else {
+      const text = document.createElement('div');
+      text.className = 'status-viewer-text';
+      const p = document.createElement('p');
+      p.textContent = status.message || '';
+      text.append(p);
+      stage.append(text);
+    }
+    if (status.message && status.media_type === 'image') {
+      caption.textContent = status.message;
+      caption.hidden = false;
+    } else {
+      caption.hidden = true;
+    }
+
+    markStatusesViewed([status]);
+    scheduleStatusAdvance();
+  }
+
+  function openStatusViewer(key) {
+    const items = (statusRailGroups().get(key) || []).slice();
+    if (!items.length) return;
+    state.statusViewer = { key, index: 0, timer: null };
+    const viewer = $('#statusViewer');
+    viewer.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    $('#statusViewerProgress').innerHTML = items.map(() =>
+      '<span class="status-progress-seg"><i></i></span>').join('');
+    showStatusItem(0);
+  }
+
+  function initStatusViewer() {
+    const viewer = $('#statusViewer');
+    if (!viewer) return;
+    $('#statusViewerClose').addEventListener('click', closeStatusViewer);
+    viewer.addEventListener('click', (event) => {
+      if (event.target === viewer) closeStatusViewer();
+    });
+    $('#statusViewerStage').addEventListener('click', (event) => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const ratio = rect.width ? (event.clientX - rect.left) / rect.width : 0.5;
+      const items = statusViewerItems();
+      if (ratio < 0.35) {
+        if (state.statusViewer.index > 0) showStatusItem(state.statusViewer.index - 1);
+      } else if (state.statusViewer.index < items.length - 1) {
+        showStatusItem(state.statusViewer.index + 1);
+      } else {
+        closeStatusViewer();
+      }
+    });
+    $('#statusViewerDelete').addEventListener('click', async () => {
+      const current = statusViewerItems()[state.statusViewer?.index];
+      if (!current) return;
+      try {
+        await request(chatEndpoint, { method: 'POST', body: JSON.stringify({ action: 'status_delete', status_id: Number(current.id) }) });
+        state.statuses = state.statuses.filter((item) => Number(item.id) !== Number(current.id));
+        const items = statusViewerItems();
+        if (!items.length) { closeStatusViewer(); renderStatusRail(); return; }
+        const progress = $('#statusViewerProgress');
+        progress.innerHTML = items.map(() => '<span class="status-progress-seg"><i></i></span>').join('');
+        showStatusItem(Math.min(state.statusViewer.index, items.length - 1));
+        renderStatusRail();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+    $('#statusReplyForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const input = $('#statusReplyInput');
+      const text = input.value.trim();
+      if (!text || !state.statusViewer) return;
+      const current = statusViewerItems()[state.statusViewer.index];
+      if (!current) return;
+      const send = event.submitter || event.target.querySelector('.send-button');
+      try {
+        let conversationId = current.conversation_id ? Number(current.conversation_id) : 0;
+        if (!conversationId) {
+          const direct = await request(chatEndpoint, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'direct', user_id: Number(current.author_id) })
+          });
+          conversationId = Number(direct.conversation_id);
+        }
+        await request(chatEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'send', conversation_id: conversationId, message: text })
+        });
+        input.value = '';
+        await refreshConversations();
+        if (state.section === 'chats') setSection('chats');
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (!state.statusViewer || event.key !== 'Escape') return;
+      closeStatusViewer();
+    });
   }
 
   function renderCommunities() {
@@ -457,7 +740,7 @@
       const roleText = isAdmin ? 'Admin Satgas' : 'Mitra SPPG';
       return `
         <article class="feature-card user-directory-card" style="display:flex; align-items:center; gap:0.75rem; padding:0.85rem; border-radius:14px; margin-bottom:0.5rem;">
-          <span class="avatar ${isAdmin ? 'avatar-admin' : 'avatar-sppg'}" aria-hidden="true">${escapeHtml(initials(displayName(person)))}</span>
+          <span class="avatar ${isAdmin ? 'avatar-admin' : 'avatar-sppg'}${statusRingClass(person.id, isSelf)}" aria-hidden="true">${escapeHtml(initials(displayName(person)))}</span>
           <div class="feature-card-copy" style="flex:1; min-width:0;">
             <div class="feature-card-title" style="display:flex; justify-content:space-between; align-items:center;">
               <strong style="font-size:0.82rem;">${escapeHtml(name)}</strong>
@@ -1463,26 +1746,76 @@
         button.disabled = false;
       }
     });
+    $('#statusList').addEventListener('click', (event) => {
+      const tile = event.target.closest('[data-status-key]');
+      if (!tile) return;
+      const key = tile.dataset.statusKey;
+      if (!(statusRailGroups().get(key) || []).length) {
+        $('#statusMessage').focus();
+        return;
+      }
+      openStatusViewer(key);
+    });
+    $('#statusPhotoButton').addEventListener('click', () => $('#statusPhotoInput').click());
+    $('#statusPhotoInput').addEventListener('change', (event) => {
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        $('#statusError').textContent = 'Format foto harus JPG, PNG, atau WebP.';
+        $('#statusError').hidden = false;
+        return;
+      }
+      if (file.size > 3 * 1024 * 1024) {
+        $('#statusError').textContent = 'Ukuran foto maksimal 3MB.';
+        $('#statusError').hidden = false;
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.statusPhoto = { dataUrl: String(reader.result) };
+        $('#statusPhotoPreviewImg').src = state.statusPhoto.dataUrl;
+        $('#statusPhotoPreview').hidden = false;
+        $('#statusError').hidden = true;
+      };
+      reader.readAsDataURL(file);
+    });
+    $('#statusPhotoRemove').addEventListener('click', () => {
+      state.statusPhoto = null;
+      $('#statusPhotoPreview').hidden = true;
+      $('#statusPhotoPreviewImg').removeAttribute('src');
+    });
     $('#statusCreateForm').addEventListener('submit', async (event) => {
       event.preventDefault();
       const error = $('#statusError');
       error.hidden = true;
+      const message = $('#statusMessage').value.trim();
+      if (!message && !state.statusPhoto) {
+        error.textContent = 'Tulis status atau pilih foto terlebih dahulu.';
+        error.hidden = false;
+        return;
+      }
       try {
         await request(chatEndpoint, {
           method: 'POST',
           body: JSON.stringify({
             action: 'status_create',
-            message: $('#statusMessage').value.trim(),
+            message,
+            media: state.statusPhoto?.dataUrl || '',
             conversation_id: $('#statusGroup').value || null
           })
         });
         $('#statusMessage').value = '';
+        state.statusPhoto = null;
+        $('#statusPhotoPreview').hidden = true;
+        $('#statusPhotoPreviewImg').removeAttribute('src');
         await loadFeatureData('updates');
       } catch (requestError) {
         error.textContent = requestError.message;
         error.hidden = false;
       }
     });
+    initStatusViewer();
     $('#refreshStatuses').addEventListener('click', () => loadFeatureData('updates').catch((error) => showError($('#statusList'), error.message)));
     $('#backToContacts').addEventListener('click', () => workspace.classList.remove('has-active-chat'));
     $('#startCallButton').addEventListener('click', () => {
@@ -1559,10 +1892,11 @@
     $('#conversationList').innerHTML = '<p class="no-contacts">Memuat percakapan...</p>';
     $('#contactList').innerHTML = '<p class="no-contacts">Memuat akun Admin/SPPG...</p>';
     try {
-      const [identity, directory, conversations] = await Promise.all([
+      const [identity, directory, conversations, statuses] = await Promise.all([
         request(`${chatEndpoint}?action=me`),
         request(`${chatEndpoint}?action=directory`),
-        request(`${chatEndpoint}?action=conversations`)
+        request(`${chatEndpoint}?action=conversations`),
+        request(`${chatEndpoint}?action=statuses`).catch(() => ({ data: [] }))
       ]);
       state.userId = Number(identity.user_id) || state.userId;
       state.profile = identity.data || { ...user, role };
@@ -1585,6 +1919,8 @@
       applyCommunicationTheme(savedTheme);
       state.directory = directory.data || [];
       state.conversations = conversations.data || [];
+      state.statuses = statuses.data || [];
+      renderStatusRail();
       renderDirectory();
       renderGroupMembers();
       renderConversations();

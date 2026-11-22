@@ -210,8 +210,14 @@ export async function onRequest({ request, env }) {
 
       if (action === 'statuses') {
         const rows = await dbQuery(db,
-          `SELECT s.id, s.author_id, s.conversation_id, s.message, s.created_at, s.expires_at,
-                  c.name AS group_name, COALESCE(u.sppg_name, u.full_name) AS author_name, u.role AS author_role
+          `SELECT s.id, s.author_id, s.conversation_id, s.message, s.media_url, s.media_type,
+                  s.created_at, s.expires_at,
+                  c.name AS group_name,
+                  COALESCE(u.sppg_name, u.full_name) AS author_name,
+                  u.role AS author_role, u.avatar_url AS author_avatar,
+                  (SELECT COUNT(*) FROM internal_chat_status_views v WHERE v.status_id = s.id) AS viewer_count,
+                  EXISTS (SELECT 1 FROM internal_chat_status_views v
+                          WHERE v.status_id = s.id AND v.user_id = $1) AS viewed_by_me
            FROM internal_chat_statuses s
            JOIN users u ON u.id = s.author_id
            LEFT JOIN internal_chat_conversations c ON c.id = s.conversation_id
@@ -396,8 +402,19 @@ export async function onRequest({ request, env }) {
       const message = typeof body.message === 'string' ? body.message.trim() : '';
       const conversationId = body.conversation_id == null || body.conversation_id === ''
         ? null : Number(body.conversation_id);
-      if (!message || message.length > 500 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(message)) {
-        return json({ status: 'error', message: 'Status wajib diisi dan maksimal 500 karakter.' }, 400);
+      const media = typeof body.media === 'string' ? body.media : '';
+      const mediaMatch = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=\s]+)$/.exec(media);
+      if (message && (message.length > 500 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(message))) {
+        return json({ status: 'error', message: 'Caption status maksimal 500 karakter.' }, 400);
+      }
+      if (!message && !mediaMatch) {
+        return json({ status: 'error', message: 'Status wajib berisi teks atau foto.' }, 400);
+      }
+      if (media && !mediaMatch) {
+        return json({ status: 'error', message: 'Foto status harus berupa gambar JPG, PNG, atau WebP.' }, 400);
+      }
+      if (mediaMatch && mediaMatch[2].replace(/\s/g, '').length > 4_600_000) {
+        return json({ status: 'error', message: 'Ukuran foto status maksimal sekitar 3MB.' }, 400);
       }
       if (conversationId !== null) {
         if (!isValidId(conversationId)) return json({ status: 'error', message: 'Grup status tidak valid.' }, 400);
@@ -410,11 +427,43 @@ export async function onRequest({ request, env }) {
         if (!group.length) return json({ status: 'error', message: 'Status hanya dapat dibuat di grup yang Anda ikuti.' }, 403);
       }
       const created = await dbQuery(db,
-        `INSERT INTO internal_chat_statuses (author_id, conversation_id, message)
-         VALUES ($1, $2, $3) RETURNING id, created_at, expires_at`,
-        [identity.id, conversationId, message]
+        `INSERT INTO internal_chat_statuses (author_id, conversation_id, message, media_url, media_type)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at, expires_at`,
+        [identity.id, conversationId, message || null, mediaMatch ? media : null, mediaMatch ? 'image' : 'text']
       );
       return json({ status: 'success', data: created[0] });
+    }
+
+    if (body.action === 'status_view') {
+      const statusId = Number(body.status_id);
+      if (!isValidId(statusId)) return json({ status: 'error', message: 'Status tidak valid.' }, 400);
+      const visible = await dbQuery(db,
+        `SELECT 1 FROM internal_chat_statuses s
+         WHERE s.id = $1 AND s.expires_at > NOW()
+           AND (s.author_id = $2 OR s.conversation_id IS NULL OR EXISTS (
+             SELECT 1 FROM internal_chat_members m
+             WHERE m.conversation_id = s.conversation_id AND m.user_id = $2
+           ))`,
+        [statusId, identity.id]
+      );
+      if (!visible.length) return json({ status: 'error', message: 'Status tidak ditemukan.' }, 404);
+      await dbQuery(db,
+        `INSERT INTO internal_chat_status_views (status_id, user_id) VALUES ($1, $2)
+         ON CONFLICT (status_id, user_id) DO NOTHING`,
+        [statusId, identity.id]
+      );
+      return json({ status: 'success' });
+    }
+
+    if (body.action === 'status_delete') {
+      const statusId = Number(body.status_id);
+      if (!isValidId(statusId)) return json({ status: 'error', message: 'Status tidak valid.' }, 400);
+      const deleted = await dbQuery(db,
+        'DELETE FROM internal_chat_statuses WHERE id = $1 AND author_id = $2 RETURNING id',
+        [statusId, identity.id]
+      );
+      if (!deleted.length) return json({ status: 'error', message: 'Status tidak ditemukan.' }, 404);
+      return json({ status: 'success' });
     }
 
     if (body.action === 'community_create') {

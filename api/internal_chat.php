@@ -218,8 +218,13 @@ try {
 
     if ($method === 'GET' && $action === 'statuses') {
         $stmt = $pdo->prepare(
-            "SELECT s.id, s.author_id, s.conversation_id, s.message, s.created_at, s.expires_at,
-                    c.name AS group_name, COALESCE(u.sppg_name, u.full_name) AS author_name, u.role AS author_role
+            "SELECT s.id, s.author_id, s.conversation_id, s.message, s.media_url, s.media_type,
+                    s.created_at, s.expires_at,
+                    c.name AS group_name, COALESCE(u.sppg_name, u.full_name) AS author_name,
+                    u.role AS author_role, u.avatar_url AS author_avatar,
+                    (SELECT COUNT(*) FROM internal_chat_status_views v WHERE v.status_id = s.id) AS viewer_count,
+                    EXISTS (SELECT 1 FROM internal_chat_status_views v
+                            WHERE v.status_id = s.id AND v.user_id = ?) AS viewed_by_me
              FROM internal_chat_statuses s
              JOIN users u ON u.id = s.author_id
              LEFT JOIN internal_chat_conversations c ON c.id = s.conversation_id
@@ -230,7 +235,7 @@ try {
                ))
              ORDER BY s.created_at DESC LIMIT 200"
         );
-        $stmt->execute([$userId, $userId]);
+        $stmt->execute([$userId, $userId, $userId]);
         $respond(['status' => 'success', 'data' => $stmt->fetchAll()]);
     }
 
@@ -420,8 +425,19 @@ try {
         $message = trim((string)($body['message'] ?? ''));
         $conversationId = isset($body['conversation_id']) && $body['conversation_id'] !== ''
             ? filter_var($body['conversation_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) : null;
-        if ($message === '' || mb_strlen($message) > 500 || preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $message)) {
-            $respond(['status' => 'error', 'message' => 'Status wajib diisi dan maksimal 500 karakter.'], 400);
+        $media = isset($body['media']) && is_string($body['media']) ? $body['media'] : '';
+        $mediaMatch = preg_match('/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=\s]+)$/', $media, $mm) ? $mm : null;
+        if ($message !== '' && (mb_strlen($message) > 500 || preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $message))) {
+            $respond(['status' => 'error', 'message' => 'Caption status maksimal 500 karakter.'], 400);
+        }
+        if ($message === '' && !$mediaMatch) {
+            $respond(['status' => 'error', 'message' => 'Status wajib berisi teks atau foto.'], 400);
+        }
+        if ($media !== '' && !$mediaMatch) {
+            $respond(['status' => 'error', 'message' => 'Foto status harus berupa gambar JPG, PNG, atau WebP.'], 400);
+        }
+        if ($mediaMatch && strlen(preg_replace('/\s+/', '', $mediaMatch[2])) > 4600000) {
+            $respond(['status' => 'error', 'message' => 'Ukuran foto status maksimal sekitar 3MB.'], 400);
         }
         if ($conversationId !== null) {
             if (!$conversationId) $respond(['status' => 'error', 'message' => 'Grup status tidak valid.'], 400);
@@ -434,11 +450,47 @@ try {
             if (!$group->fetchColumn()) $respond(['status' => 'error', 'message' => 'Status hanya dapat dibuat di grup yang Anda ikuti.'], 403);
         }
         $stmt = $pdo->prepare(
-            'INSERT INTO internal_chat_statuses (author_id, conversation_id, message)
-             VALUES (?, ?, ?) RETURNING id, created_at, expires_at'
+            'INSERT INTO internal_chat_statuses (author_id, conversation_id, message, media_url, media_type)
+             VALUES (?, ?, ?, ?, ?) RETURNING id, created_at, expires_at'
         );
-        $stmt->execute([$userId, $conversationId === null ? null : (int)$conversationId, $message]);
+        $stmt->execute([
+            $userId,
+            $conversationId === null ? null : (int)$conversationId,
+            $message === '' ? null : $message,
+            $mediaMatch ? $media : null,
+            $mediaMatch ? 'image' : 'text'
+        ]);
         $respond(['status' => 'success', 'data' => $stmt->fetch()]);
+    }
+
+    if ($action === 'status_view') {
+        $statusId = filter_var($body['status_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!$statusId) $respond(['status' => 'error', 'message' => 'Status tidak valid.'], 400);
+        $visible = $pdo->prepare(
+            "SELECT 1 FROM internal_chat_statuses s
+             WHERE s.id = ? AND s.expires_at > NOW()
+               AND (s.author_id = ? OR s.conversation_id IS NULL OR EXISTS (
+                 SELECT 1 FROM internal_chat_members m
+                 WHERE m.conversation_id = s.conversation_id AND m.user_id = ?
+               ))"
+        );
+        $visible->execute([(int)$statusId, $userId, $userId]);
+        if (!$visible->fetchColumn()) $respond(['status' => 'error', 'message' => 'Status tidak ditemukan.'], 404);
+        $stmt = $pdo->prepare(
+            'INSERT INTO internal_chat_status_views (status_id, user_id) VALUES (?, ?)
+             ON CONFLICT (status_id, user_id) DO NOTHING'
+        );
+        $stmt->execute([(int)$statusId, $userId]);
+        $respond(['status' => 'success']);
+    }
+
+    if ($action === 'status_delete') {
+        $statusId = filter_var($body['status_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!$statusId) $respond(['status' => 'error', 'message' => 'Status tidak valid.'], 400);
+        $stmt = $pdo->prepare('DELETE FROM internal_chat_statuses WHERE id = ? AND author_id = ? RETURNING id');
+        $stmt->execute([(int)$statusId, $userId]);
+        if (!$stmt->fetchColumn()) $respond(['status' => 'error', 'message' => 'Status tidak ditemukan.'], 404);
+        $respond(['status' => 'success']);
     }
 
     if ($action === 'community_create') {

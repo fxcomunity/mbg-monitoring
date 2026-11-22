@@ -1736,3 +1736,217 @@ body, .communication-app, .chat-panel, .feature-panel { background-image: none; 
   font-size: .72rem;
   font-weight: 700;
 }
+
+/* ═══ Status ala WhatsApp ═══ */
+.status-list-wrap { padding: 0 0 .5rem; }
+.status-rail {
+  display: flex;
+  gap: .9rem;
+  overflow-x: auto;
+  padding: .25rem .15rem .75rem;
+  scrollbar-width: thin;
+}
+.status-rail::-webkit-scrollbar { height: 5px; }
+.status-rail::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 99px; }
+
+.status-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .3rem;
+  width: 68px;
+  flex: 0 0 auto;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+.status-tile:focus-visible { outline: 2px solid #25d366; outline-offset: 2px; border-radius: 12px; }
+
+.status-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+}
+.status-ring .avatar { width: 50px; height: 50px; flex-basis: 50px; font-size: .72rem; position: relative; z-index: 1; }
+.status-ring.has-status {
+  background: conic-gradient(from 210deg, #25d366, #128c7e, #25d366);
+  padding: 3px;
+}
+.status-ring.viewed {
+  background: #54656f;
+  padding: 3px;
+}
+.status-ring:not(.has-status):not(.viewed) { padding: 3px; }
+.status-tile-plus {
+  position: absolute;
+  bottom: 14px;
+  right: calc(50% - 34px);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #25d366;
+  color: #0b141a;
+  border: 2px solid var(--comm-surface, #111b21);
+}
+.status-tile-plus .material-symbols-outlined { font-size: 13px; }
+.status-tile-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .62rem;
+  font-weight: 700;
+}
+.status-tile-time { font-size: .55rem; opacity: .55; }
+
+/* Ring hijau di avatar daftar chat (belum dilihat) */
+.avatar.wa-ring {
+  box-shadow: 0 0 0 2px var(--comm-surface, #111b21);
+}
+.avatar.wa-ring::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  padding: 2.5px;
+  background: linear-gradient(45deg, #25d366, #128c7e, #25d366);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.avatar { position: relative; }
+
+/* Compose status dengan foto */
+.status-compose-media { display: flex; align-items: center; gap: .5rem; margin-top: .4rem; }
+.status-photo-preview {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.15);
+}
+.status-photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.status-photo-preview .icon-button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0,0,0,.6);
+  color: #fff;
+  border-radius: 50%;
+}
+.status-photo-preview .icon-button .material-symbols-outlined { font-size: 13px; }
+
+/* Viewer status layar penuh */
+.status-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+.status-viewer[hidden] { display: none; }
+.status-viewer-top { padding: .6rem .8rem 0; }
+.status-viewer-progress {
+  display: flex;
+  gap: 4px;
+  margin-bottom: .55rem;
+}
+.status-progress-seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(255,255,255,.3);
+  overflow: hidden;
+}
+.status-progress-seg i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #fff;
+  border-radius: 99px;
+}
+.status-viewer-header {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.status-viewer-author { display: flex; align-items: center; gap: .55rem; flex: 1; min-width: 0; }
+.status-viewer-author strong { display: block; font-size: .82rem; }
+.status-viewer-author span { display: block; font-size: .62rem; opacity: .65; }
+.status-viewer-count { font-size: .62rem; opacity: .6; margin-right: .4rem; }
+.status-viewer .icon-button { color: #fff; }
+.status-viewer-delete { margin-right: .15rem; }
+.status-viewer-stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  cursor: pointer;
+  user-select: none;
+}
+.status-viewer-media {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.status-viewer-text {
+  width: min(34rem, 90vw);
+  min-height: 12rem;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  border-radius: 18px;
+  background: linear-gradient(160deg, #075e54, #128c7e 55%, #25d366);
+  box-shadow: 0 12px 40px rgba(0,0,0,.45);
+}
+.status-viewer-text p {
+  margin: 0;
+  font-size: clamp(1.05rem, 3.4vw, 1.6rem);
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.status-viewer-caption {
+  padding: .7rem 1rem .2rem;
+  font-size: .85rem;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,.6);
+}
+.status-viewer-reply {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .7rem .9rem calc(.8rem + env(safe-area-inset-bottom));
+}
+.status-viewer-reply input {
+  flex: 1;
+  border: 0;
+  border-radius: 999px;
+  padding: .65rem 1rem;
+  font: inherit;
+  font-size: .85rem;
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  outline: none;
+}
+.status-viewer-reply input::placeholder { color: rgba(255,255,255,.55); }
+.status-viewer-reply input:focus { background: rgba(255,255,255,.18); }

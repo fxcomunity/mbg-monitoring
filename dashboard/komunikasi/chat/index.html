@@ -192,19 +192,27 @@
             <div><p class="eyebrow">PEMBARUAN</p><h1>Status</h1></div>
           </div>
           <form id="statusCreateForm" class="feature-form">
-            <label for="statusMessage">Bagikan status singkat</label>
-            <textarea id="statusMessage" maxlength="500" required placeholder="Apa kabar koordinasi hari ini?"></textarea>
+            <label for="statusMessage">Bagikan status</label>
+            <textarea id="statusMessage" maxlength="500" placeholder="Tulis status atau ketuk foto untuk berbagi momen..."></textarea>
+            <div class="status-compose-media">
+              <input type="file" id="statusPhotoInput" accept="image/jpeg,image/png,image/webp" hidden>
+              <button id="statusPhotoButton" class="feature-text-button" type="button"><span class="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span>Foto</button>
+              <div id="statusPhotoPreview" class="status-photo-preview" hidden>
+                <img id="statusPhotoPreviewImg" alt="Pratinjau foto status">
+                <button id="statusPhotoRemove" class="icon-button" type="button" aria-label="Hapus foto"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+              </div>
+            </div>
             <div class="feature-form-row">
               <label class="sr-only" for="statusGroup">Bagikan ke</label>
               <select id="statusGroup">
                 <option value="">Status saya · semua kontak internal</option>
               </select>
-              <button class="feature-submit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">add_circle</span>Bagikan</button>
+              <button class="feature-submit" type="submit"><span class="material-symbols-outlined" aria-hidden="true">send</span>Bagikan</button>
             </div>
             <p id="statusError" class="feature-error" role="alert" hidden></p>
           </form>
-          <div class="feature-section-title"><h2>Status kontak &amp; grup</h2><button id="refreshStatuses" class="feature-text-button" type="button">Muat ulang</button></div>
-          <div id="statusList" class="feature-list"><p class="no-contacts">Memuat status...</p></div>
+          <div class="feature-section-title"><h2>Status terbaru</h2><button id="refreshStatuses" class="feature-text-button" type="button">Muat ulang</button></div>
+          <div id="statusList" class="status-list-wrap"><div id="statusRail" class="status-rail"></div></div>
         </section>
 
         <section id="communitiesView" class="feature-view" hidden>
@@ -494,6 +502,33 @@
       </div>
     </div>
   </dialog>
+
+  <div id="statusViewer" class="status-viewer" hidden role="dialog" aria-modal="true" aria-label="Viewer status">
+    <div class="status-viewer-top">
+      <div id="statusViewerProgress" class="status-viewer-progress"></div>
+      <div class="status-viewer-header">
+        <div class="status-viewer-author">
+          <span id="statusViewerAvatar" class="avatar avatar-small avatar-admin" aria-hidden="true">MB</span>
+          <div><strong id="statusViewerName">Status</strong><span id="statusViewerTime"></span></div>
+        </div>
+        <span id="statusViewerCount" class="status-viewer-count"></span>
+        <button id="statusViewerDelete" class="icon-button status-viewer-delete" type="button" aria-label="Hapus status" hidden>
+          <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+        </button>
+        <button id="statusViewerClose" class="icon-button" type="button" aria-label="Tutup status">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+    </div>
+    <div id="statusViewerStage" class="status-viewer-stage"></div>
+    <div id="statusViewerCaption" class="status-viewer-caption" hidden></div>
+    <form id="statusReplyForm" class="status-viewer-reply">
+      <input id="statusReplyInput" maxlength="1000" placeholder="Balas status..." autocomplete="off">
+      <button class="send-button" type="submit" aria-label="Kirim balasan status">
+        <span class="material-symbols-outlined" aria-hidden="true">send</span>
+      </button>
+    </form>
+  </div>
 
 </body>
 </html>

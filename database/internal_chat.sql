@@ -85,9 +85,19 @@ CREATE TABLE IF NOT EXISTS internal_chat_statuses (
   id              BIGSERIAL PRIMARY KEY,
   author_id       BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   conversation_id BIGINT REFERENCES internal_chat_conversations(id) ON DELETE CASCADE,
-  message         VARCHAR(500) NOT NULL CHECK (length(trim(message)) > 0),
+  message         VARCHAR(500),
+  media_url       TEXT,
+  media_type      VARCHAR(10) NOT NULL DEFAULT 'text',
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  expires_at      TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '24 hours'
+  expires_at      TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '24 hours',
+  CHECK (message IS NOT NULL OR media_url IS NOT NULL)
+);
+
+CREATE TABLE IF NOT EXISTS internal_chat_status_views (
+  status_id  BIGINT NOT NULL REFERENCES internal_chat_statuses(id) ON DELETE CASCADE,
+  user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  viewed_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (status_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS internal_chat_communities (
