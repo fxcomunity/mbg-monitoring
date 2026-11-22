@@ -41,7 +41,8 @@
     usersFilter: 'all',
     usersSearch: '',
     statusViewer: null,
-    statusPhoto: null
+    statusPhoto: null,
+    authUser: null
   };
 
   function escapeHtml(value) {
@@ -51,7 +52,7 @@
   }
 
   function displayName(person) {
-    return person.sppg_name || person.full_name || person.name || 'Akun MBG';
+    return person.sppg_name || person.full_name || person.name || person.username || 'Akun MBG';
   }
 
   function initials(name) {
@@ -63,7 +64,11 @@
   }
 
   function roleLabel(person) {
-    return normalizedRole(person) === 'admin' ? 'Admin Satgas' : 'Mitra SPPG';
+    const role = normalizedRole(person);
+    if (role === 'admin') return 'Admin Satgas';
+    if (role === 'sppg') return 'Mitra SPPG';
+    if (role === 'user') return 'Pengguna';
+    return person?.role_label || 'Akun';
   }
 
   function matchesPersonSearch(person, search) {
@@ -1195,10 +1200,10 @@
   }
 
   function openSettings(view = 'profile') {
-    const profile = state.profile || {};
+    const profile = state.profile || state.authUser || {};
     const name = displayName(profile);
     $('#settingsProfileName').textContent = name;
-    $('#settingsProfileEmail').textContent = profile.email || 'Email tidak tersedia';
+    $('#settingsProfileEmail').textContent = profile.email || '';
     $('#settingsProfileRole').textContent = roleLabel(profile);
     $('#settingsAbout').value = profile.about || '';
     $('#settingsProfileError').hidden = true;
@@ -1880,6 +1885,7 @@
   async function initialize(role, user) {
     state.role = role;
     state.userId = Number(user.id) || 0;
+    state.authUser = user || null;
     const roleLabel = role === 'admin' ? 'Admin Satgas' : 'Mitra SPPG';
     const dashboardPath = new URL(`dashboard/${role}/`, siteRoot).href;
     $('#roleBadge').textContent = roleLabel;
@@ -1893,13 +1899,13 @@
     $('#contactList').innerHTML = '<p class="no-contacts">Memuat akun Admin/SPPG...</p>';
     try {
       const [identity, directory, conversations, statuses] = await Promise.all([
-        request(`${chatEndpoint}?action=me`),
+        request(`${chatEndpoint}?action=me`).catch(() => null),
         request(`${chatEndpoint}?action=directory`),
         request(`${chatEndpoint}?action=conversations`),
         request(`${chatEndpoint}?action=statuses`).catch(() => ({ data: [] }))
       ]);
-      state.userId = Number(identity.user_id) || state.userId;
-      state.profile = identity.data || { ...user, role };
+      state.userId = Number(identity?.user_id) || state.userId;
+      state.profile = { ...user, ...(identity?.data || {}) };
       try {
         const pinnedIds = JSON.parse(localStorage.getItem(`mbg-pinned-conversations-${state.userId}`) || '[]');
         state.pinnedIds = new Set(Array.isArray(pinnedIds) ? pinnedIds.map(Number).filter(Number.isSafeInteger) : []);

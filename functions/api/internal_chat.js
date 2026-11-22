@@ -47,7 +47,7 @@ export async function onRequest({ request, env }) {
       const action = url.searchParams.get('action');
       if (action === 'me') {
         const rows = await dbQuery(db,
-          `SELECT u.id, u.full_name, u.email, u.role, u.sppg_name, u.avatar_url,
+          `SELECT u.id, u.username, u.full_name, u.email, u.role, u.sppg_name, u.avatar_url,
                   COALESCE(p.about, '') AS about
            FROM users u LEFT JOIN internal_chat_profiles p ON p.user_id = u.id
            WHERE u.id = $1`,
