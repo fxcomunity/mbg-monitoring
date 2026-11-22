@@ -29,6 +29,8 @@ if (strlen($query) < 2) {
 }
 
 try {
+    $searchTerm = '%' . $query . '%';
+
     // Get total count for pagination
     $countStmt = $pdo->prepare("
         SELECT COUNT(*) as total
