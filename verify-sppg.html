@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <link rel="stylesheet" href="assets/css/site-footer.css"/>
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .search-input:focus { outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
@@ -253,34 +254,24 @@
       <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
       <p class="text-sm text-slate-600">Mencari data SPPG...</p>
     </div>
+
+    <!-- Sample Data Section (shown before search) -->
+    <div id="sampleSection" class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#2563eb]">trending_up</span>
+          SPPG Terpopuler
+        </h3>
+        <span class="text-xs text-slate-400">10 data terbaru</span>
+      </div>
+      <div id="sampleList" class="space-y-3"></div>
+    </div>
   </main>
 
   <!-- Footer -->
-  <footer class="bg-gradient-to-r from-[#001026] to-[#134074] text-white mt-12">
-    <div class="max-w-5xl mx-auto px-4 py-8">
-      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div class="flex items-center gap-3">
-          <img src="assets/images/ic_launcher.png" alt="Logo BGN" class="h-10 w-auto"/>
-          <div>
-            <p class="font-bold text-sm">Badan Gizi Nasional RI</p>
-            <p class="text-xs text-white/60">Radar MBG Nasional</p>
-          </div>
-        </div>
-        <div class="flex flex-wrap items-center justify-center gap-4 text-xs">
-          <a href="index.html" class="hover:text-[#6ffbbe] transition-colors">Beranda</a>
-          <span class="text-white/30">•</span>
-          <a href="fitur/distribusi-sebaran-sppg.html" class="hover:text-[#6ffbbe] transition-colors">Peta SPPG</a>
-          <span class="text-white/30">•</span>
-          <a href="tim-kelompok.html" class="hover:text-[#6ffbbe] transition-colors">Tim Kelompok</a>
-          <span class="text-white/30">•</span>
-          <a href="fitur/kebijakan-privasi.html" class="hover:text-[#6ffbbe] transition-colors">Privasi</a>
-        </div>
-      </div>
-      <div class="mt-6 pt-6 border-t border-white/10 text-center">
-        <p class="text-xs text-white/50">© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi.</p>
-      </div>
-    </div>
-  </footer>
+  <div data-site-footer></div>
+
+  <script src="assets/js/site-footer.js" defer></script>
 
   <script>
     (function() {
@@ -297,6 +288,8 @@
       const pageNumbers = document.getElementById('pageNumbers');
       const prevPage = document.getElementById('prevPage');
       const nextPage = document.getElementById('nextPage');
+      const sampleSection = document.getElementById('sampleSection');
+      const sampleList = document.getElementById('sampleList');
 
       let searchTimeout = null;
       let currentResults = [];
@@ -327,6 +320,7 @@
           searchTimeout = setTimeout(() => performSearch(q, 1), 400);
         } else {
           hideAll();
+          if (q.length === 0) showSample();
         }
       });
 
@@ -334,12 +328,14 @@
         searchInput.value = '';
         clearSearch.classList.add('hidden');
         hideAll();
+        showSample();
         searchInput.focus();
       });
 
       // New search button
       document.getElementById('newSearch').addEventListener('click', () => {
         hideAll();
+        showSample();
         searchInput.value = '';
         searchInput.focus();
       });
@@ -355,7 +351,55 @@
         detailSection.classList.add('hidden');
         emptyState.classList.add('hidden');
         loadingState.classList.add('hidden');
+        sampleSection.classList.add('hidden');
       }
+
+      function showSample() {
+        sampleSection.classList.remove('hidden');
+        sampleList.innerHTML = '';
+
+        // Fetch sample data (first 10 SPPG)
+        fetch(`${searchApi}?q=SPPG&page=1&limit=10`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success' && data.data && data.data.length > 0) {
+              data.data.forEach(sppg => {
+                const item = document.createElement('button');
+                item.className = 'result-item w-full text-left p-4 bg-white rounded-xl border border-slate-200 hover:border-[#2563eb] transition-all';
+                item.innerHTML = `
+                  <div class="flex items-start gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#001026] to-[#134074] flex items-center justify-center text-white font-bold text-lg shrink-0">
+                      ${sppg.id}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-bold text-slate-800 truncate">${escapeHtml(sppg.nama)}</h4>
+                      <p class="text-sm text-slate-500 truncate">${escapeHtml(sppg.alamat || sppg.kabupaten_kota + ', ' + sppg.provinsi)}</p>
+                      <div class="flex items-center gap-3 mt-1 flex-wrap">
+                        <span class="text-xs text-slate-400">${escapeHtml(sppg.kecamatan ? sppg.kecamatan + ', ' : '')}${escapeHtml(sppg.kabupaten_kota)}, ${escapeHtml(sppg.provinsi)}</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${sppg.status_verifikasi === 'aktif' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}">
+                          ${sppg.status_verifikasi === 'aktif' ? '✓ Aktif' : 'Belum'}
+                        </span>
+                      </div>
+                      <div class="flex items-center gap-4 mt-2 text-xs">
+                        <span class="text-slate-500">Kepatuhan: <strong class="${sppg.kepatuhan_score >= 80 ? 'text-green-600' : sppg.kepatuhan_score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${sppg.kepatuhan_score}%</strong></span>
+                        <span class="text-slate-500">Antaran: <strong class="text-primary">${sppg.total_antaran}x</strong></span>
+                      </div>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-300 self-center">chevron_right</span>
+                  </div>
+                `;
+                item.addEventListener('click', () => selectSppg(sppg.id));
+                sampleList.appendChild(item);
+              });
+            }
+          })
+          .catch(err => {
+            console.error('Sample data error:', err);
+          });
+      }
+
+      // Load sample data on page load
+      showSample();
 
       function performSearch(query, page = 1) {
         hideAll();
@@ -591,6 +635,7 @@
       const params = new URLSearchParams(window.location.search);
       const directId = params.get('id');
       if (directId) {
+        sampleSection.classList.add('hidden');
         selectSppg(directId);
       }
     })();
