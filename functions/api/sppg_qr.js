@@ -21,7 +21,9 @@ export async function onRequest(context) {
   try {
     const result = await dbQuery(env.DATABASE_URL,
       `SELECT id, nama, provinsi, kabupaten_kota, alamat, nama_yayasan,
-              status, data_bulan, latitude, longitude, created_at, updated_at
+              status, data_bulan, latitude, longitude, created_at, updated_at,
+              kepatuhan_score, total_antaran, masalah_terakhir,
+              tanggal_terakhir_antaran, status_verifikasi
        FROM sppg
        WHERE id = $1`,
       [parseInt(sppgId)]
@@ -43,6 +45,11 @@ export async function onRequest(context) {
       nama_yayasan: sppg.nama_yayasan,
       status: sppg.status,
       data_bulan: sppg.data_bulan,
+      kepatuhan_score: parseInt(sppg.kepatuhan_score) || 0,
+      total_antaran: parseInt(sppg.total_antaran) || 0,
+      masalah_terakhir: sppg.masalah_terakhir,
+      tanggal_terakhir_antaran: sppg.tanggal_terakhir_antaran,
+      status_verifikasi: sppg.status_verifikasi,
       koordinat: sppg.latitude && sppg.longitude ? {
         lat: parseFloat(sppg.latitude),
         lng: parseFloat(sppg.longitude)

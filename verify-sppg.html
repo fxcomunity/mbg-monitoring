@@ -150,6 +150,50 @@
                 <p id="detailGpsText" class="text-sm text-blue-800 font-mono"></p>
               </div>
 
+              <!-- Compliance & Delivery Stats -->
+              <div id="complianceSection" class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-200">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-3 flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[16px]">analytics</span>
+                  Statistik Kepatuhan &amp; Antaran
+                </h3>
+                <div class="space-y-3">
+                  <!-- Kepatuhan Score -->
+                  <div>
+                    <div class="flex justify-between items-center mb-1">
+                      <span class="text-xs font-semibold text-slate-600">Kepatuhan SPPG</span>
+                      <span id="kepatuhanScore" class="text-sm font-bold text-emerald-700">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2">
+                      <div id="kepatuhanBar" class="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                  </div>
+
+                  <!-- Stats Grid -->
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white rounded-lg p-3 text-center">
+                      <div class="text-2xl font-bold text-primary" id="totalAntaran">0x</div>
+                      <div class="text-[10px] text-slate-500 uppercase tracking-wide">Total Antaran</div>
+                    </div>
+                    <div class="bg-white rounded-lg p-3 text-center">
+                      <div class="text-sm font-bold text-primary" id="tanggalAntaran">—</div>
+                      <div class="text-[10px] text-slate-500 uppercase tracking-wide">Antaran Terakhir</div>
+                    </div>
+                  </div>
+
+                  <!-- Masalah & Status -->
+                  <div class="space-y-2 pt-2 border-t border-emerald-200">
+                    <div class="flex justify-between items-center text-xs">
+                      <span class="text-slate-600">Masalah Terakhir:</span>
+                      <span id="masalahTerakhir" class="font-semibold text-slate-800 text-right max-w-[60%]">—</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                      <span class="text-slate-600">Status Verifikasi:</span>
+                      <span id="statusVerifikasi" class="font-semibold text-emerald-600">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div class="pt-4 border-t border-slate-200">
                 <p class="text-xs text-slate-500">
                   Diverifikasi pada <span id="detailVerified" class="font-semibold"></span>
@@ -278,9 +322,16 @@
                   <div class="flex-1 min-w-0">
                     <h4 class="font-bold text-slate-800 truncate">${escapeHtml(sppg.nama)}</h4>
                     <p class="text-sm text-slate-500 truncate">${escapeHtml(sppg.alamat || sppg.kabupaten_kota + ', ' + sppg.provinsi)}</p>
-                    <div class="flex items-center gap-3 mt-1">
+                    <div class="flex items-center gap-3 mt-1 flex-wrap">
                       <span class="text-xs text-slate-400">${escapeHtml(sppg.kabupaten_kota)}, ${escapeHtml(sppg.provinsi)}</span>
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${sppg.status_verifikasi === 'aktif' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}">
+                        ${sppg.status_verifikasi === 'aktif' ? '✓ Aktif' : 'Belum'}
+                      </span>
                       ${sppg.has_gps ? '<span class="text-xs text-green-600 flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">location_on</span>GPS</span>' : ''}
+                    </div>
+                    <div class="flex items-center gap-4 mt-2 text-xs">
+                      <span class="text-slate-500">Kepatuhan: <strong class="${sppg.kepatuhan_score >= 80 ? 'text-green-600' : sppg.kepatuhan_score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${sppg.kepatuhan_score}%</strong></span>
+                      <span class="text-slate-500">Antaran: <strong class="text-primary">${sppg.total_antaran}x</strong></span>
                     </div>
                   </div>
                   <span class="material-symbols-outlined text-slate-300 self-center">chevron_right</span>
@@ -350,6 +401,17 @@
           document.getElementById('detailGpsText').textContent = `Lat: ${sppg.koordinat.lat}, Lng: ${sppg.koordinat.lng}`;
         } else {
           document.getElementById('detailGps').classList.add('hidden');
+        }
+
+        // Compliance & Delivery Stats
+        const complianceSection = document.getElementById('complianceSection');
+        if (complianceSection) {
+          document.getElementById('kepatuhanScore').textContent = `${sppg.kepatuhan_score}%`;
+          document.getElementById('kepatuhanBar').style.width = `${sppg.kepatuhan_score}%`;
+          document.getElementById('totalAntaran').textContent = `${sppg.total_antaran}x`;
+          document.getElementById('tanggalAntaran').textContent = sppg.tanggal_terakhir_antaran || 'Belum ada';
+          document.getElementById('masalahTerakhir').textContent = sppg.masalah_terakhir || 'Tidak ada masalah tercatat';
+          document.getElementById('statusVerifikasi').textContent = sppg.status_verifikasi === 'aktif' ? 'Terverifikasi' : 'Belum diverifikasi';
         }
 
         // Generate QR

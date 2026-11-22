@@ -29,7 +29,9 @@ try {
     $searchTerm = '%' . $query . '%';
     $stmt = $pdo->prepare("
         SELECT id, nama, provinsi, kabupaten_kota, alamat, nama_yayasan,
-               status, data_bulan, latitude, longitude
+               status, data_bulan, latitude, longitude,
+               kepatuhan_score, total_antaran, masalah_terakhir,
+               tanggal_terakhir_antaran, status_verifikasi
         FROM sppg
         WHERE id::text = ?
            OR nama ILIKE ?
@@ -55,6 +57,11 @@ try {
             'nama_yayasan' => $row['nama_yayasan'],
             'status' => $row['status'],
             'data_bulan' => $row['data_bulan'],
+            'kepatuhan_score' => (int)$row['kepatuhan_score'],
+            'total_antaran' => (int)$row['total_antaran'],
+            'masalah_terakhir' => $row['masalah_terakhir'],
+            'tanggal_terakhir_antaran' => $row['tanggal_terakhir_antaran'],
+            'status_verifikasi' => $row['status_verifikasi'],
             'has_gps' => ($row['latitude'] && $row['longitude']) ? true : false
         ];
     }, $results);

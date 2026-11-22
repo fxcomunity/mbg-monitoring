@@ -23,7 +23,9 @@ export async function onRequest(context) {
     const searchTerm = `%${query}%`;
     const result = await dbQuery(env.DATABASE_URL,
       `SELECT id, nama, provinsi, kabupaten_kota, alamat, nama_yayasan,
-              status, data_bulan, latitude, longitude
+              status, data_bulan, latitude, longitude,
+              kepatuhan_score, total_antaran, masalah_terakhir,
+              tanggal_terakhir_antaran, status_verifikasi
        FROM sppg
        WHERE id::text = $1
           OR nama ILIKE $2
@@ -46,6 +48,11 @@ export async function onRequest(context) {
       nama_yayasan: row.nama_yayasan,
       status: row.status,
       data_bulan: row.data_bulan,
+      kepatuhan_score: parseInt(row.kepatuhan_score) || 0,
+      total_antaran: parseInt(row.total_antaran) || 0,
+      masalah_terakhir: row.masalah_terakhir,
+      tanggal_terakhir_antaran: row.tanggal_terakhir_antaran,
+      status_verifikasi: row.status_verifikasi,
       has_gps: (row.latitude && row.longitude) ? true : false
     }));
 
