@@ -43,6 +43,9 @@
     .member-node { transition: transform .2s ease, box-shadow .2s ease; }
     .member-node:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,16,38,.09); }
     .member-node:focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }
+    .member-avatar { position: relative; overflow: hidden; }
+    .member-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .member-avatar .member-avatar-fallback { position: relative; z-index: 0; }
     .profile-dialog { width: min(92vw, 32rem); max-height: 85vh; }
     .profile-dialog::backdrop { background: rgba(0,16,38,.68); backdrop-filter: blur(4px); }
     @media (max-width: 767px) {
@@ -144,14 +147,14 @@
         <span class="ml-auto rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-800">2 orang</span>
       </div>
       <div class="space-y-3">
-        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-blue-300 hover:bg-blue-50/60" data-member data-name="Wahyudi" data-nim="19250550" data-division="Divisi Proposal" data-description="Bertanggung jawab atas perencanaan dan penyusunan dokumen proposal, termasuk konsep, latar belakang, tujuan, ruang lingkup, serta kebutuhan proyek.">
-          <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#001026] to-[#395f95] text-sm font-bold text-white ring-4 ring-blue-50">W</span>
-          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Wahyudi</span><span class="mt-1 block text-[11px] font-semibold text-secondary">Lihat profil anggota</span></span>
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-blue-300 hover:bg-blue-50/60" data-member data-photo="assets/images/kelompok/Wahyudi.png" data-name="Wahyudi" data-nim="19250550" data-division="Divisi Proposal" data-description="Bertanggung jawab atas perencanaan dan penyusunan dokumen proposal, termasuk konsep, latar belakang, tujuan, ruang lingkup, serta kebutuhan proyek.">
+          <span class="member-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#001026] to-[#395f95] text-sm font-bold text-white ring-4 ring-blue-50"><span class="member-avatar-fallback">W</span><img src="assets/images/kelompok/Wahyudi.png" alt="Foto Wahyudi" loading="lazy" onerror="this.remove()"></span>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Wahyudi</span><span class="mt-0.5 block text-[10px] font-semibold text-slate-400">NIM 19250550</span><span class="mt-1 block text-[11px] font-semibold text-secondary">Lihat profil anggota</span></span>
           <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-blue-700" aria-hidden="true">arrow_forward</span>
         </button>
-        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-blue-300 hover:bg-blue-50/60" data-member data-name="Ahmad Rafi Baihaqi" data-nim="19251296" data-division="Divisi Proposal" data-description="Bertanggung jawab atas perencanaan dan penyusunan dokumen proposal, termasuk konsep, latar belakang, tujuan, ruang lingkup, serta kebutuhan proyek.">
-          <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#001026] to-[#395f95] text-xs font-bold text-white ring-4 ring-blue-50">AR</span>
-          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Ahmad Rafi Baihaqi</span><span class="mt-1 block text-[11px] font-semibold text-secondary">Lihat profil anggota</span></span>
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-blue-300 hover:bg-blue-50/60" data-member data-photo="assets/images/kelompok/AhmadRafiBaihaqi.png" data-name="Ahmad Rafi Baihaqi" data-nim="19251296" data-division="Divisi Proposal" data-description="Bertanggung jawab atas perencanaan dan penyusunan dokumen proposal, termasuk konsep, latar belakang, tujuan, ruang lingkup, serta kebutuhan proyek.">
+          <span class="member-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#001026] to-[#395f95] text-sm font-bold text-white ring-4 ring-blue-50"><span class="member-avatar-fallback">AR</span><img src="assets/images/kelompok/AhmadRafiBaihaqi.png" alt="Foto Ahmad Rafi Baihaqi" loading="lazy" onerror="this.remove()"></span>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Ahmad Rafi Baihaqi</span><span class="mt-0.5 block text-[10px] font-semibold text-slate-400">NIM 19251296</span><span class="mt-1 block text-[11px] font-semibold text-secondary">Lihat profil anggota</span></span>
           <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-blue-700" aria-hidden="true">arrow_forward</span>
         </button>
       </div>
@@ -167,14 +170,14 @@
         <span class="ml-auto rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800">2 orang</span>
       </div>
       <div class="space-y-3">
-        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-emerald-300 hover:bg-emerald-50/60" data-member data-name="Putra Anugrah" data-nim="19251494" data-division="Divisi Laporan Akhir" data-description="Bertanggung jawab atas penyusunan dan dokumentasi hasil proyek, mulai dari perencanaan dan pengembangan hingga pengujian dan hasil akhir.">
-          <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-900 to-emerald-600 text-sm font-bold text-white ring-4 ring-emerald-50">P</span>
-          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Putra Anugrah</span><span class="mt-1 block text-[11px] font-semibold text-emerald-700">Lihat profil anggota</span></span>
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-emerald-300 hover:bg-emerald-50/60" data-member data-photo="assets/images/kelompok/PutraAnugrah.png" data-name="Putra Anugrah" data-nim="19251494" data-division="Divisi Laporan Akhir" data-description="Bertanggung jawab atas penyusunan dan dokumentasi hasil proyek, mulai dari perencanaan dan pengembangan hingga pengujian dan hasil akhir.">
+          <span class="member-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-900 to-emerald-600 text-sm font-bold text-white ring-4 ring-emerald-50"><span class="member-avatar-fallback">P</span><img src="assets/images/kelompok/PutraAnugrah.png" alt="Foto Putra Anugrah" loading="lazy" onerror="this.remove()"></span>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Putra Anugrah</span><span class="mt-0.5 block text-[10px] font-semibold text-slate-400">NIM 19251494</span><span class="mt-1 block text-[11px] font-semibold text-emerald-700">Lihat profil anggota</span></span>
           <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-emerald-700" aria-hidden="true">arrow_forward</span>
         </button>
-        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-emerald-300 hover:bg-emerald-50/60" data-member data-name="Amanda Saptama Putri" data-nim="19250269" data-division="Divisi Laporan Akhir" data-description="Bertanggung jawab atas penyusunan dan dokumentasi hasil proyek, mulai dari perencanaan dan pengembangan hingga pengujian dan hasil akhir.">
-          <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-900 to-emerald-600 text-xs font-bold text-white ring-4 ring-emerald-50">AS</span>
-          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Amanda Saptama Putri</span><span class="mt-1 block text-[11px] font-semibold text-emerald-700">Lihat profil anggota</span></span>
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-emerald-300 hover:bg-emerald-50/60" data-member data-photo="assets/images/kelompok/AmandaSaptamaPutri.png" data-name="Amanda Saptama Putri" data-nim="19250269" data-division="Divisi Laporan Akhir" data-description="Bertanggung jawab atas penyusunan dan dokumentasi hasil proyek, mulai dari perencanaan dan pengembangan hingga pengujian dan hasil akhir.">
+          <span class="member-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-900 to-emerald-600 text-sm font-bold text-white ring-4 ring-emerald-50"><span class="member-avatar-fallback">AS</span><img src="assets/images/kelompok/AmandaSaptamaPutri.png" alt="Foto Amanda Saptama Putri" loading="lazy" onerror="this.remove()"></span>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Amanda Saptama Putri</span><span class="mt-0.5 block text-[10px] font-semibold text-slate-400">NIM 19250269</span><span class="mt-1 block text-[11px] font-semibold text-emerald-700">Lihat profil anggota</span></span>
           <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-emerald-700" aria-hidden="true">arrow_forward</span>
         </button>
       </div>
@@ -190,9 +193,9 @@
         <span class="ml-auto rounded-full bg-purple-50 px-2.5 py-1 text-[11px] font-bold text-purple-800">1 orang</span>
       </div>
       <div class="space-y-3">
-        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-purple-300 hover:bg-purple-50/60" data-member data-name="Muhammad Rizki Sumantri" data-nim="19250779" data-division="Divisi Web Development &amp; Database" data-description="Bertanggung jawab atas perancangan dan pengembangan website serta pengelolaan basis data, termasuk antarmuka, fitur, integrasi, dan kebutuhan sistem." data-photo="assets/images/kelompok/MuhammadRizkiSumantri.png">
-          <img src="assets/images/kelompok/MuhammadRizkiSumantri.png" alt="" class="h-12 w-12 shrink-0 rounded-full object-cover ring-4 ring-purple-50"/>
-          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Muhammad Rizki Sumantri</span><span class="mt-1 block text-[11px] font-semibold text-purple-700">Lihat profil anggota</span></span>
+        <button type="button" class="member-node group flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left hover:border-purple-300 hover:bg-purple-50/60" data-member data-photo="assets/images/kelompok/MuhammadRizkiSumantri.png" data-name="Muhammad Rizki Sumantri" data-nim="19250779" data-division="Divisi Web Development &amp; Database" data-description="Bertanggung jawab atas perancangan dan pengembangan website serta pengelolaan basis data, termasuk antarmuka, fitur, integrasi, dan kebutuhan sistem.">
+          <span class="member-avatar flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-900 to-purple-600 text-sm font-bold text-white ring-4 ring-purple-50"><span class="member-avatar-fallback">MRS</span><img src="assets/images/kelompok/MuhammadRizkiSumantri.png" alt="Foto Muhammad Rizki Sumantri" loading="lazy" onerror="this.remove()"></span>
+          <span class="min-w-0 flex-1"><span class="block font-bold text-primary">Muhammad Rizki Sumantri</span><span class="mt-0.5 block text-[10px] font-semibold text-slate-400">NIM 19250779</span><span class="mt-1 block text-[11px] font-semibold text-purple-700">Lihat profil anggota</span></span>
           <span class="material-symbols-outlined text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-purple-700" aria-hidden="true">arrow_forward</span>
         </button>
       </div>
