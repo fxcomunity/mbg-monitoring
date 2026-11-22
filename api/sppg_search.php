@@ -19,19 +19,34 @@ require_once __DIR__ . '/../database/db.php';
 $pdo = getDB();
 
 $query = isset($_GET['q']) ? trim($_GET['q']) : '';
+$page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
+$offset = ($page - 1) * $limit;
 
 if (strlen($query) < 2) {
-    echo json_encode(['status' => 'success', 'count' => 0, 'data' => []]);
+    echo json_encode(['status' => 'success', 'count' => 0, 'data' => [], 'page' => 1, 'total_pages' => 0, 'total' => 0]);
     exit;
 }
 
 try {
-    // Search by ID (exact), nama (partial), alamat (partial), provinsi, kabupaten
-    $searchTerm = '%' . $query . '%';
+    // Get total count for pagination
+    $countStmt = $pdo->prepare("
+        SELECT COUNT(*) as total
+        FROM sppg
+        WHERE id::text = ?
+           OR nama ILIKE ?
+           OR alamat ILIKE ?
+           OR provinsi ILIKE ?
+           OR kabupaten_kota ILIKE ?
+    ");
+    $countStmt->execute([$query, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+    $totalCount = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+    $totalPages = ceil($totalCount / $limit);
+
+    // Search with pagination
     $stmt = $pdo->prepare("
-        SELECT id, nama, provinsi, kabupaten_kota, alamat, nama_yayasan,
-               status, data_bulan, latitude, longitude,
+        SELECT id, nama, provinsi, kabupaten_kota, kecamatan, kelurahan_desa,
+               alamat, nama_yayasan, status, data_bulan, latitude, longitude,
                kepatuhan_score, total_antaran, masalah_terakhir,
                tanggal_terakhir_antaran, status_verifikasi
         FROM sppg
@@ -43,9 +58,9 @@ try {
         ORDER BY
           CASE WHEN id::text = ? THEN 0 ELSE 1 END,
           nama ASC
-        LIMIT ?
+        LIMIT ? OFFSET ?
     ");
-    $stmt->execute([$query, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $query, $limit]);
+    $stmt->execute([$query, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $query, $limit, $offset]);
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Format results
@@ -55,6 +70,8 @@ try {
             'nama' => $row['nama'],
             'provinsi' => $row['provinsi'],
             'kabupaten_kota' => $row['kabupaten_kota'],
+            'kecamatan' => $row['kecamatan'],
+            'kelurahan_desa' => $row['kelurahan_desa'],
             'alamat' => $row['alamat'],
             'nama_yayasan' => $row['nama_yayasan'],
             'status' => $row['status'],
@@ -72,7 +89,11 @@ try {
         'status' => 'success',
         'count' => count($data),
         'query' => $query,
-        'data' => $data
+        'data' => $data,
+        'page' => $page,
+        'limit' => $limit,
+        'total' => $totalCount,
+        'total_pages' => $totalPages
     ]);
 
 } catch (PDOException $e) {

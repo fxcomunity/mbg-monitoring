@@ -22,16 +22,28 @@
 </head>
 <body class="bg-surface min-h-screen">
   <!-- Header -->
-  <header class="bg-gradient-to-r from-[#001026] to-[#134074] text-white py-4 px-4 sticky top-0 z-50 shadow-lg">
-    <div class="max-w-4xl mx-auto flex items-center gap-3">
-      <a href="index.html" class="flex items-center gap-2 hover:opacity-80 transition-opacity">
-        <span class="material-symbols-outlined text-2xl text-[#6ffbbe]">arrow_back</span>
-      </a>
-      <div class="flex-1">
-        <h1 class="text-lg font-bold">Verifikasi SPPG</h1>
-        <p class="text-xs text-white/70">Radar MBG Nasional — Badan Gizi Nasional RI</p>
+  <header class="bg-gradient-to-r from-[#001026] via-[#0b2545] to-[#134074] text-white py-5 px-4 sticky top-0 z-50 shadow-xl">
+    <div class="max-w-5xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a href="index.html" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all group">
+          <span class="material-symbols-outlined text-xl text-[#6ffbbe] group-hover:-translate-x-1 transition-transform">arrow_back</span>
+          <span class="text-sm font-semibold hidden sm:inline">Beranda</span>
+        </a>
+        <div class="h-8 w-px bg-white/20 hidden sm:block"></div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-2xl text-[#6ffbbe]">verified</span>
+            <h1 class="text-xl font-bold">Verifikasi SPPG</h1>
+          </div>
+          <p class="text-xs text-white/60 mt-0.5">Radar MBG Nasional — Badan Gizi Nasional RI</p>
+        </div>
       </div>
-      <span class="material-symbols-outlined text-3xl text-[#6ffbbe]">verified</span>
+      <div class="flex items-center gap-3">
+        <span class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+          Sistem Aktif
+        </span>
+      </div>
     </div>
   </header>
 
@@ -73,11 +85,25 @@
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-sm font-bold text-slate-700">
           <span id="resultCount">0</span> hasil ditemukan
+          <span id="resultRange" class="text-slate-400 font-normal"></span>
         </h3>
         <button id="newSearch" class="text-sm text-[#2563eb] hover:underline font-medium">← Pencarian baru</button>
       </div>
 
       <div id="resultsList" class="space-y-3"></div>
+
+      <!-- Pagination -->
+      <div id="paginationSection" class="hidden mt-6 flex items-center justify-center gap-2">
+        <button id="prevPage" class="px-4 py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px]">chevron_left</span>
+          Sebelumnya
+        </button>
+        <div id="pageNumbers" class="flex items-center gap-1"></div>
+        <button id="nextPage" class="px-4 py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-1">
+          Berikutnya
+          <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+        </button>
+      </div>
     </div>
 
     <!-- Detail Section -->
@@ -133,6 +159,14 @@
                   <div class="flex justify-between">
                     <span class="text-slate-600">Alamat:</span>
                     <span id="detailAlamat" class="font-semibold text-slate-800 text-right max-w-[60%]"></span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-600">Kecamatan:</span>
+                    <span id="detailKecamatan" class="font-semibold text-slate-800 text-right"></span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-600">Kelurahan/Desa:</span>
+                    <span id="detailKelurahan" class="font-semibold text-slate-800 text-right"></span>
                   </div>
                   <div class="flex justify-between">
                     <span class="text-slate-600">Yayasan:</span>
@@ -221,6 +255,33 @@
     </div>
   </main>
 
+  <!-- Footer -->
+  <footer class="bg-gradient-to-r from-[#001026] to-[#134074] text-white mt-12">
+    <div class="max-w-5xl mx-auto px-4 py-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <img src="assets/images/ic_launcher.png" alt="Logo BGN" class="h-10 w-auto"/>
+          <div>
+            <p class="font-bold text-sm">Badan Gizi Nasional RI</p>
+            <p class="text-xs text-white/60">Radar MBG Nasional</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center justify-center gap-4 text-xs">
+          <a href="index.html" class="hover:text-[#6ffbbe] transition-colors">Beranda</a>
+          <span class="text-white/30">•</span>
+          <a href="fitur/distribusi-sebaran-sppg.html" class="hover:text-[#6ffbbe] transition-colors">Peta SPPG</a>
+          <span class="text-white/30">•</span>
+          <a href="tim-kelompok.html" class="hover:text-[#6ffbbe] transition-colors">Tim Kelompok</a>
+          <span class="text-white/30">•</span>
+          <a href="fitur/kebijakan-privasi.html" class="hover:text-[#6ffbbe] transition-colors">Privasi</a>
+        </div>
+      </div>
+      <div class="mt-6 pt-6 border-t border-white/10 text-center">
+        <p class="text-xs text-white/50">© 2026 Badan Gizi Nasional Republik Indonesia. Hak Cipta Dilindungi.</p>
+      </div>
+    </div>
+  </footer>
+
   <script>
     (function() {
       const searchInput = document.getElementById('searchInput');
@@ -231,9 +292,18 @@
       const loadingState = document.getElementById('loadingState');
       const resultsList = document.getElementById('resultsList');
       const resultCount = document.getElementById('resultCount');
+      const resultRange = document.getElementById('resultRange');
+      const paginationSection = document.getElementById('paginationSection');
+      const pageNumbers = document.getElementById('pageNumbers');
+      const prevPage = document.getElementById('prevPage');
+      const nextPage = document.getElementById('nextPage');
 
       let searchTimeout = null;
       let currentResults = [];
+      let currentQuery = '';
+      let currentPage = 1;
+      let totalPages = 0;
+      let totalResults = 0;
 
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       const searchApi = isLocal ? 'api/sppg_search.php' : '/api/sppg_search';
@@ -243,7 +313,7 @@
       document.querySelectorAll('.search-tip').forEach(btn => {
         btn.addEventListener('click', () => {
           searchInput.value = btn.dataset.q;
-          performSearch(btn.dataset.q);
+          performSearch(btn.dataset.q, 1);
         });
       });
 
@@ -254,7 +324,7 @@
 
         clearTimeout(searchTimeout);
         if (q.length >= 2) {
-          searchTimeout = setTimeout(() => performSearch(q), 400);
+          searchTimeout = setTimeout(() => performSearch(q, 1), 400);
         } else {
           hideAll();
         }
@@ -287,11 +357,13 @@
         loadingState.classList.add('hidden');
       }
 
-      function performSearch(query) {
+      function performSearch(query, page = 1) {
         hideAll();
         loadingState.classList.remove('hidden');
+        currentQuery = query;
+        currentPage = page;
 
-        fetch(`${searchApi}?q=${encodeURIComponent(query)}&limit=15`)
+        fetch(`${searchApi}?q=${encodeURIComponent(query)}&page=${page}&limit=10`)
           .then(res => res.json())
           .then(data => {
             loadingState.classList.add('hidden');
@@ -302,13 +374,19 @@
             }
 
             currentResults = data.data || [];
+            totalPages = data.total_pages || 0;
+            totalResults = data.total || 0;
 
             if (currentResults.length === 0) {
               emptyState.classList.remove('hidden');
               return;
             }
 
-            resultCount.textContent = currentResults.length;
+            resultCount.textContent = totalResults.toLocaleString('id-ID');
+            const start = (page - 1) * 10 + 1;
+            const end = Math.min(page * 10, totalResults);
+            resultRange.textContent = ` (${start}-${end})`;
+
             resultsList.innerHTML = '';
 
             currentResults.forEach((sppg, index) => {
@@ -323,7 +401,7 @@
                     <h4 class="font-bold text-slate-800 truncate">${escapeHtml(sppg.nama)}</h4>
                     <p class="text-sm text-slate-500 truncate">${escapeHtml(sppg.alamat || sppg.kabupaten_kota + ', ' + sppg.provinsi)}</p>
                     <div class="flex items-center gap-3 mt-1 flex-wrap">
-                      <span class="text-xs text-slate-400">${escapeHtml(sppg.kabupaten_kota)}, ${escapeHtml(sppg.provinsi)}</span>
+                      <span class="text-xs text-slate-400">${escapeHtml(sppg.kecamatan ? sppg.kecamatan + ', ' : '')}${escapeHtml(sppg.kabupaten_kota)}, ${escapeHtml(sppg.provinsi)}</span>
                       <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${sppg.status_verifikasi === 'aktif' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}">
                         ${sppg.status_verifikasi === 'aktif' ? '✓ Aktif' : 'Belum'}
                       </span>
@@ -342,6 +420,14 @@
             });
 
             resultsSection.classList.remove('hidden');
+
+            // Pagination
+            if (totalPages > 1) {
+              paginationSection.classList.remove('hidden');
+              renderPagination();
+            } else {
+              paginationSection.classList.add('hidden');
+            }
           })
           .catch(err => {
             loadingState.classList.add('hidden');
@@ -349,6 +435,66 @@
             console.error('Search error:', err);
           });
       }
+
+      function renderPagination() {
+        pageNumbers.innerHTML = '';
+        prevPage.disabled = currentPage <= 1;
+        nextPage.disabled = currentPage >= totalPages;
+
+        // Show page numbers with ellipsis
+        const maxVisible = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+        if (endPage - startPage < maxVisible - 1) {
+          startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        // First page
+        if (startPage > 1) {
+          addPageButton(1);
+          if (startPage > 2) addEllipsis();
+        }
+
+        // Page numbers
+        for (let i = startPage; i <= endPage; i++) {
+          addPageButton(i);
+        }
+
+        // Last page
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) addEllipsis();
+          addPageButton(totalPages);
+        }
+      }
+
+      function addPageButton(page) {
+        const btn = document.createElement('button');
+        btn.textContent = page;
+        btn.className = `w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+          page === currentPage
+            ? 'bg-[#2563eb] text-white shadow-md'
+            : 'bg-white border border-slate-200 hover:bg-slate-50 text-slate-700'
+        }`;
+        btn.addEventListener('click', () => performSearch(currentQuery, page));
+        pageNumbers.appendChild(btn);
+      }
+
+      function addEllipsis() {
+        const span = document.createElement('span');
+        span.textContent = '…';
+        span.className = 'px-2 text-slate-400';
+        pageNumbers.appendChild(span);
+      }
+
+      // Pagination event listeners
+      prevPage.addEventListener('click', () => {
+        if (currentPage > 1) performSearch(currentQuery, currentPage - 1);
+      });
+
+      nextPage.addEventListener('click', () => {
+        if (currentPage < totalPages) performSearch(currentQuery, currentPage + 1);
+      });
 
       function selectSppg(id) {
         loadingState.classList.remove('hidden');
@@ -380,6 +526,8 @@
         document.getElementById('detailId').textContent = sppg.id;
         document.getElementById('detailNamaFull').textContent = sppg.nama;
         document.getElementById('detailAlamat').textContent = sppg.alamat || '—';
+        document.getElementById('detailKecamatan').textContent = sppg.kecamatan || '—';
+        document.getElementById('detailKelurahan').textContent = sppg.kelurahan_desa || '—';
         document.getElementById('detailYayasan').textContent = sppg.nama_yayasan || '—';
         document.getElementById('detailBulan').textContent = sppg.data_bulan || '—';
         document.getElementById('detailVerified').textContent = new Date(sppg.verified_at).toLocaleString('id-ID');
