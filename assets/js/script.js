@@ -614,7 +614,7 @@ async function initUserAuthStatus() {
               <span>Dashboard ${escapeHTML(u.role.toUpperCase())}</span>
             </a>
             ${u.role === 'admin' ? `
-            <a href="${escapeHTML(appRoute('dashboard/admin/index.html#telemetry-manager'))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+            <a href="${escapeHTML(appRoute('dashboard/admin/telemetri.html'))}" class="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
               <span class="material-symbols-outlined text-[18px] text-emerald-600">monitoring</span>
               <span>Panel Input Telemetri & KPI</span>
             </a>
@@ -797,7 +797,7 @@ function initNotificationBell() {
         let itemsHtml = '';
         if (pendingLogos > 0) {
           itemsHtml += `
-            <a href="${escapeHTML(appRoute('dashboard/admin/index.html#verifikasi-logo-sppg'))}" class="block px-4 py-3 hover:bg-amber-50/70 transition-colors bg-amber-50/30">
+            <a href="${escapeHTML(appRoute('dashboard/admin/logo-sppg.html'))}" class="block px-4 py-3 hover:bg-amber-50/70 transition-colors bg-amber-50/30">
               <div class="flex items-start gap-2.5">
                 <span class="material-symbols-outlined text-amber-600 text-[20px] shrink-0">verified_user</span>
                 <div>

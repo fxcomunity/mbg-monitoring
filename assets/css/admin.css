@@ -1,0 +1,191 @@
+/**
+ * admin.css — Gaya bersama halaman dashboard/admin/* (setelah di-split per modul)
+ * Berisi: quick-nav horizontal, mobile drawer, hero halaman, kartu modul.
+ */
+
+/* ── Shell dasar ─────────────────────────────────────────── */
+html {
+  visibility: hidden;
+  scroll-padding-top: 9rem;
+}
+html.dashboard-ready {
+  visibility: visible;
+}
+
+body {
+  background-image: radial-gradient(ellipse at top right, rgba(57, 95, 149, .08), transparent 34rem);
+}
+
+#dashProfileCard {
+  display: grid;
+  gap: .75rem;
+}
+#dashProfileCard > div:first-child {
+  border-radius: 1.25rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 8px 24px rgba(11, 37, 69, .06);
+}
+
+main > .grid > * {
+  scroll-margin-top: 9rem;
+}
+main :is(section, [id]) {
+  scroll-margin-top: 6rem;
+}
+
+/* ── Header admin ────────────────────────────────────────── */
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+/* Mobile drawer */
+#dashMobileMenu {
+  top: calc(var(--mbg-header-height, 4.5rem) + 0.5rem);
+  right: 0.75rem;
+  left: auto;
+  width: min(22rem, calc(100vw - 1.5rem));
+  max-height: calc(100dvh - var(--mbg-header-height, 4.5rem) - 1.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.98);
+  transform-origin: top right;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.25) transparent;
+}
+#dashMobileMenu:not(.hidden) {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+@media (max-width: 639px) {
+  #dashMobileMenu {
+    right: 0.5rem;
+    width: calc(100vw - 1rem);
+    border-radius: 1rem;
+  }
+}
+#dashMobileMenu a {
+  text-decoration: none;
+}
+#dashMobileMenu a:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 639px) {
+  .admin-header { gap: .35rem; }
+  .admin-header-main { gap: .4rem; }
+  .admin-header-main > div:first-child { gap: .5rem; }
+  .admin-header-main img { height: 2rem; }
+  .admin-header-main > div:first-child > span { font-size: .75rem; }
+  .admin-quick-nav { display: none; }
+}
+
+/* ── Hero & kartu modul halaman index ────────────────────── */
+.admin-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: linear-gradient(120deg, #001026 0%, #103663 55%, #146b72 100%);
+  color: #fff;
+  padding: 1.5rem 1.75rem;
+}
+.admin-hero::after {
+  content: '';
+  position: absolute;
+  right: -4rem;
+  top: -4rem;
+  width: 14rem;
+  height: 14rem;
+  border-radius: 50%;
+  background: rgba(111, 251, 190, .08);
+  pointer-events: none;
+}
+.admin-hero::before {
+  content: '';
+  position: absolute;
+  right: 6rem;
+  bottom: -6rem;
+  width: 10rem;
+  height: 10rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .05);
+  pointer-events: none;
+}
+
+.module-card {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  padding: 1.1rem 1.15rem;
+  border-radius: 1.25rem;
+  background: #fff;
+  border: 1px solid rgba(226, 232, 240, .9);
+  box-shadow: 0 1px 3px rgba(11, 37, 69, .05);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  text-decoration: none;
+  color: inherit;
+}
+.module-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--module-accent, #395f95);
+  box-shadow: 0 12px 28px rgba(11, 37, 69, .12);
+}
+.module-card .module-icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: .9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--module-bg, #eff6ff);
+  color: var(--module-accent, #1d4ed8);
+}
+.module-card h3 {
+  font-size: .85rem;
+  font-weight: 800;
+  color: #0b1c30;
+  line-height: 1.25;
+}
+.module-card p {
+  font-size: .7rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+.module-card .module-arrow {
+  margin-top: auto;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--module-accent, #395f95);
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+}
+
+/* ── Util kecil ──────────────────────────────────────────── */
+.page-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .72rem;
+  color: #94a3b8;
+  margin-bottom: .9rem;
+}
+.page-breadcrumb a { color: #64748b; font-weight: 600; }
+.page-breadcrumb a:hover { color: #0b2545; }
+.page-breadcrumb .sep { opacity: .5; }
+.page-breadcrumb .current { color: #0b2545; font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+  .module-card:hover { transform: none; }
+}

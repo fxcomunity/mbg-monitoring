@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Backup Menu Harian — Admin Radar MBG</title>
+  <link rel="icon" type="image/webp" href="../../assets/images/ic_launcher.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#001026',
+            'primary-container': '#0b2545',
+            secondary: '#395f95',
+            'tertiary-fixed': '#6ffbbe',
+            surface: '#f8f9ff',
+            'surface-card': '#ffffff',
+            'status-success': '#059669',
+            'status-warning': '#f59e0b',
+            'status-error': '#ef4444'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="../../assets/css/style.css"/>
+  <link rel="stylesheet" href="../../assets/css/dashboard.css"/>
+  <link rel="stylesheet" href="../../assets/css/admin.css"/>
+  <link rel="stylesheet" href="../../assets/css/security.css"/>
+  <link rel="stylesheet" href="../../assets/css/site-footer.css"/>
+  <script src="../../assets/js/admin-auth.js"></script>
+  <script src="../../assets/js/internal-chat-presence.js" defer></script>
+  <script src="../../assets/js/admin-header.js" defer></script>
+</head>
+<body data-admin-page="backup-menu" class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
+
+  <div data-admin-header></div>
+
+  <main class="max-w-7xl mx-auto w-full p-4 sm:p-8 flex-grow">
+    <div id="dashProfileCard" class="mb-4"></div>
+
+    <nav class="page-breadcrumb" aria-label="Breadcrumb">
+      <a href="../../index.html">Beranda</a><span class="sep">/</span>
+      <a href="index.html">Dashboard Admin</a><span class="sep">/</span>
+      <span class="current">Backup Menu</span>
+    </nav>
+
+    <!-- Backup Menu Harian -->
+    <div id="menu-backup-panel" class="bg-surface-card rounded-3xl border border-teal-200/80 shadow-sm overflow-hidden mb-8">
+      <div class="p-6 bg-teal-50/50 border-b border-teal-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">backup_table</span>
+          </div>
+          <div>
+            <h1 class="text-base font-bold text-primary">Backup Menu Harian</h1>
+            <p class="text-xs text-slate-500">Data menu tersimpan otomatis setiap hari berdasarkan tanggal distribusi. Download sebagai file Excel (.xlsx) untuk arsip.</p>
+          </div>
+        </div>
+        <button onclick="downloadMenuBackupXLSX()" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all shrink-0">
+          <span class="material-symbols-outlined text-sm">download</span>
+          Download Semua Backup (Excel)
+        </button>
+      </div>
+      <div class="p-6">
+        <!-- Date filter + per-date download -->
+        <div class="flex flex-wrap items-center gap-3 mb-4">
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-slate-600 uppercase">Tanggal:</label>
+            <input type="date" id="backupDatePicker" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs" />
+          </div>
+          <button onclick="(function(){var d=document.getElementById('backupDatePicker').value;downloadMenuBackupXLSX(d||undefined);})()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">filter_alt</span> Download Tanggal Ini
+          </button>
+        </div>
+        <!-- Backup list table -->
+        <div id="backupListTable" class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[11px]">
+                <th class="py-2.5 px-3 rounded-l-lg">Tanggal</th>
+                <th class="py-2.5 px-3">Jumlah Entry</th>
+                <th class="py-2.5 px-3">Rata Kalori</th><th class="py-2.5 px-3 rounded-r-lg">Unduh</th>
+              </tr>
+            </thead>
+            <tbody id="backupListBody" class="divide-y divide-slate-100">
+              <tr><td colspan="3" class="py-4 px-3 text-slate-400 text-center">Memuat data backup...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div data-site-footer></div>
+
+  <script src="../../assets/js/site-footer.js" defer></script>
+  <script src="../../assets/js/security.js"></script>
+  <script src="../../assets/js/dashboard-common.js?v=admin-dashboard-ui-2"></script>
+  <script>
+    // Load the authoritative backup list from PostgreSQL.
+    document.addEventListener('DOMContentLoaded', function() {
+      var tbody = document.getElementById('backupListBody');
+      if (!tbody) return;
+      var isLocalPhp = /^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname);
+      var endpoint = isLocalPhp ? '../../api/menu.php?backup_action=backup_list' : '/api/menu/backup';
+      fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+        .then(function(r){ return r.json().then(function(data){ if(!r.ok) throw new Error(data.message || 'HTTP '+r.status); return data; }); })
+        .then(function(res){
+          if (res.status !== 'success' || !Array.isArray(res.data)) throw new Error(res.message || 'Format data backup tidak valid.');
+          renderRows(res.data, 'db');
+        }).catch(function(){
+          tbody.textContent = '';
+          var row = document.createElement('tr');
+          var cell = document.createElement('td');
+          cell.colSpan = 4;
+          cell.className = 'py-6 px-3 text-center text-red-600';
+          cell.textContent = 'Backup gagal dimuat dari database. Periksa koneksi dan sesi admin, lalu muat ulang halaman.';
+          row.appendChild(cell);
+          tbody.appendChild(row);
+        });
+      function renderRows(data, src) {
+        tbody.textContent = '';
+        if (!data.length) {
+          var emptyRow = document.createElement('tr');
+          var emptyCell = document.createElement('td');
+          emptyCell.colSpan = 4;
+          emptyCell.className = 'py-6 px-3 text-center text-slate-400';
+          emptyCell.textContent = 'Belum ada data backup menu.';
+          emptyRow.appendChild(emptyCell);
+          tbody.appendChild(emptyRow);
+          return;
+        }
+
+        data.forEach(function(d) {
+          var dateKey = String(d.menu_date || d.date || '').slice(0, 10);
+          var row = document.createElement('tr');
+          row.className = 'hover:bg-slate-50';
+          var dateCell = document.createElement('td');
+          dateCell.className = 'py-2.5 px-3 font-bold text-primary';
+          dateCell.textContent = dateKey || '—';
+          var badge = document.createElement('span');
+          badge.className = 'ml-1 px-1 rounded bg-emerald-100 text-emerald-700 text-[9px] font-bold';
+          badge.textContent = src === 'db' ? 'DB' : 'Lokal';
+          dateCell.appendChild(badge);
+          row.appendChild(dateCell);
+
+          var countCell = document.createElement('td');
+          countCell.className = 'py-2.5 px-3 text-slate-600';
+          countCell.textContent = String(d.total_menu || d.count || 0) + ' menu' +
+            (d.total_sppg ? ' · ' + d.total_sppg + ' SPPG' : '');
+          row.appendChild(countCell);
+
+          var caloriesCell = document.createElement('td');
+          caloriesCell.className = 'py-2.5 px-3 text-slate-500 text-xs';
+          caloriesCell.textContent = d.rata_kalori ? d.rata_kalori + ' kkal' : '—';
+          row.appendChild(caloriesCell);
+
+          var actionCell = document.createElement('td');
+          actionCell.className = 'py-2.5 px-3';
+          var downloadButton = document.createElement('button');
+          downloadButton.type = 'button';
+          downloadButton.className = 'px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold text-[11px] flex items-center gap-1';
+          downloadButton.textContent = 'Unduh Excel';
+          downloadButton.disabled = !dateKey;
+          downloadButton.addEventListener('click', function() { downloadMenuBackupXLSX(dateKey); });
+          actionCell.appendChild(downloadButton);
+          row.appendChild(actionCell);
+          tbody.appendChild(row);
+        });
+      }
+    });
+  </script>
+
+  <!--
+    ════════════════════════════════════════════════════════════════════
+    dashboard/admin/backup-menu.html — BACKUP MENU HARIAN
+    Isi: daftar backup menu per tanggal (dari PostgreSQL) + tombol unduh
+      Excel (.xlsx) per tanggal / semua.
+    Fungsi download: window.downloadMenuBackupXLSX dari dashboard-common.js
+      (lazy-load SheetJS via CDN — tidak perlu tag <script> xlsx di head).
+    Dependensi: admin-auth.js, admin-header.js, dashboard-common.js,
+      security.js.
+    Endpoint terkait: api/menu.php?backup_action=backup_list,
+      api/menu.php?backup_action=backup_export (prod: /api/menu/backup).
+    ════════════════════════════════════════════════════════════════════
+  -->
+</body>
+</html>

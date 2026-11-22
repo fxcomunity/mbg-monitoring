@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-  <title>Pusat Komando & Pengawasan Nasional (Admin Satgas) - Radar MBG</title>
+  <title>Dashboard Admin — Radar MBG</title>
   <link rel="icon" type="image/webp" href="../../assets/images/ic_launcher.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
@@ -31,281 +30,35 @@
   </script>
   <link rel="stylesheet" href="../../assets/css/style.css"/>
   <link rel="stylesheet" href="../../assets/css/dashboard.css"/>
+  <link rel="stylesheet" href="../../assets/css/admin.css"/>
   <link rel="stylesheet" href="../../assets/css/security.css"/>
   <link rel="stylesheet" href="../../assets/css/site-footer.css"/>
+  <script src="../../assets/js/admin-auth.js"></script>
   <script src="../../assets/js/internal-chat-presence.js" defer></script>
-  <style>
-    html { visibility: hidden; scroll-padding-top: 9rem; }
-    html.dashboard-ready { visibility: visible; }
-    body { background-image: radial-gradient(ellipse at top right, rgba(57,95,149,.08), transparent 34rem); }
-    #dashProfileCard { display: grid; gap: .75rem; }
-    #dashProfileCard > div:first-child { border-radius: 1.25rem; padding: 1rem 1.25rem; box-shadow: 0 8px 24px rgba(11,37,69,.06); }
-    main > .grid > * { scroll-margin-top: 9rem; }
-    .admin-header { display: flex; flex-direction: column; align-items: stretch; gap: .55rem; padding-top: .65rem; padding-bottom: .65rem; }
-    .admin-header-main { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-    .admin-header-main > div:first-child { min-width: 0; display: flex; align-items: center; gap: .75rem; }
-    .admin-header-main > div:first-child > span { line-height: 1.35; }
-    #adminQuickNav { display: none !important; }
-    #dashMobileMenu { position: fixed; top: 5.2rem; right: 1rem; left: auto; width: min(23rem, calc(100vw - 2rem)); max-height: calc(100vh - 6rem); overflow-y: auto; border: 1px solid rgba(255,255,255,.16); border-radius: 1rem; }
-    @media (max-width: 639px) {
-      .admin-header { gap: .35rem; }
-      .admin-header-main { gap: .4rem; }
-      .admin-header-main > div:first-child { gap: .5rem; }
-      .admin-header-main > div:first-child > img { height: 2rem; }
-      .admin-header-main > div:first-child > span { font-size: .75rem; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
-    }
-  </style>
-  <script>
-    (function () {
-      var sessionKey = 'mbg_session';
-      var localPhp = /^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname);
-      var authEndpoint = localPhp ? '../../api/auth_user.php' : '../../api/auth_user';
-      function clearLocalSession() {
-        try {
-          sessionStorage.removeItem(sessionKey);
-          localStorage.removeItem(sessionKey);
-        } catch (error) {
-          console.warn('Sesi lokal tidak dapat dibersihkan:', error);
-        }
-      }
-      function readCachedSession() {
-        try {
-          var cached = JSON.parse(sessionStorage.getItem(sessionKey) || localStorage.getItem(sessionKey) || 'null');
-          return cached && cached.role === 'admin' && cached.name && (!cached.exp || cached.exp > Date.now()) ? cached : null;
-        } catch (error) {
-          return null;
-        }
-      }
-      var cachedSession = readCachedSession();
-      if (cachedSession) document.documentElement.classList.add('dashboard-ready');
-      fetch(authEndpoint, {
-        credentials: 'same-origin',
-        cache: 'no-store',
-        headers: { Accept: 'application/json' }
-      }).then(function (response) {
-        if (!response.ok) throw new Error('Status autentikasi tidak tersedia.');
-        return response.json();
-      }).then(function (data) {
-        var role = data && data.logged_in && data.user && data.user.role;
-        if (['admin', 'sppg', 'user'].indexOf(role) < 0) {
-          clearLocalSession();
-          location.replace('../../auth/login.html');
-          return;
-        }
-        if (role !== 'admin') {
-          location.replace('../' + role + '/');
-          return;
-        }
-        var profile = data.user;
-        var sessionCache = {
-          name: profile.full_name || profile.username,
-          full_name: profile.full_name || profile.username,
-          username: profile.username || '',
-          role: profile.role,
-          avatar_url: profile.avatar_url || '',
-          exp: Date.now() + 30 * 24 * 60 * 60 * 1000
-        };
-        try {
-          localStorage.setItem(sessionKey, JSON.stringify(sessionCache));
-          sessionStorage.setItem(sessionKey, JSON.stringify(sessionCache));
-        } catch (error) {
-          console.warn('Sesi profil tidak dapat disimpan di browser.');
-        }
-        document.documentElement.classList.add('dashboard-ready');
-      }).catch(function (error) {
-        if (cachedSession) {
-          console.warn('Dashboard tetap ditampilkan dari cache; sesi server belum dapat diverifikasi.', error);
-          return;
-        }
-        location.replace('../../auth/login.html');
-      });
-      document.addEventListener('click', function (event) {
-        var link = event.target.closest && event.target.closest('a[href*="login.html"]');
-        if (!link) return;
-        clearLocalSession();
-        fetch(authEndpoint + '?action=logout', {
-          credentials: 'same-origin',
-          cache: 'no-store',
-          keepalive: true
-        }).catch(function (error) {
-          console.error('Sesi tidak dapat diakhiri melalui server:', error);
-        });
-      });
-      document.addEventListener('submit', function (event) {
-        var form = event.target;
-        var handledForms = ['formSatgas', 'formSppg', 'formUploadUserAvatar', 'formUploadSppgLogo', 'sppgReplyForm', 'adminReplyForm'];
-        if (!form || handledForms.indexOf(form.id) >= 0 || form.getAttribute('action') !== '#') return;
-        event.preventDefault();
-        var toast = document.getElementById('mbg-demo-toast');
-        if (toast) toast.remove();
-        toast = document.createElement('div');
-        toast.id = 'mbg-demo-toast';
-        toast.className = 'fixed left-1/2 top-20 z-[99999] -translate-x-1/2 rounded-xl border border-amber-200 bg-white px-5 py-3 text-xs font-semibold text-slate-800 shadow-xl';
-        toast.setAttribute('role', 'status');
-        toast.textContent = 'Form ini belum terhubung ke penyimpanan server; perubahan tidak disimpan.';
-        document.body.appendChild(toast);
-        window.setTimeout(function () { toast.remove(); }, 4000);
-      }, true);
-    })();
-  </script>
-  <script src="../../assets/js/site-footer.js" defer></script>
+  <script src="../../assets/js/admin-header.js" defer></script>
 </head>
-<body class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
+<body data-admin-page="index" class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
 
-  <!-- Top Navigation Bar -->
-  <header class="admin-header w-full bg-primary text-white sticky top-0 z-40 px-4 sm:px-8 shadow-md">
-    <div class="admin-header-main">
-    <div>
-      <img src="../../assets/images/ic_launcher.png" alt="Logo BGN" class="h-9 w-auto" loading="lazy">
-      <span class="font-extrabold text-sm sm:text-base tracking-tight">Pusat Komando Satgas MBG</span>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <!-- Bell notif -->
-      <div class="relative" id="mbgBellWrap">
-        <button id="mbgBellBtn" type="button" title="Notifikasi" aria-haspopup="true" aria-expanded="false" class="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all flex items-center justify-center">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-          <span id="mbgBellBadge" class="absolute -top-1 -right-1 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black border border-white">0</span>
-        </button>
-        <div id="mbgBellPanel" class="hidden absolute right-0 mt-2 w-80 max-w-[90vw] bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
-          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-            <span class="font-bold text-sm">Notifikasi Terkini</span>
-            <button id="mbgBellRead" type="button" class="text-[11px] font-semibold text-blue-700 hover:underline">Tandai dibaca</button>
-          </div>
-          <div id="mbgBellList" class="max-h-72 overflow-y-auto divide-y divide-slate-100"></div>
-        </div>
-      </div>
-      <!-- Desktop nav links -->
-      <a href="../../index.html" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white transition-all">
-        <span class="material-symbols-outlined text-sm">visibility</span>
-        <span>Web Publik</span>
-      </a>
-      <a href="../komunikasi.html" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-semibold text-white transition-all">
-        <span class="material-symbols-outlined text-sm">forum</span>
-        <span>Komunikasi</span>
-      </a>
-      <a href="../../auth/login.html?logout=1" class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-xs font-bold text-white transition-all shadow-sm">
-        <span class="material-symbols-outlined text-sm">logout</span>
-        <span>Keluar</span>
-      </a>
-      <button id="dashHamburger" type="button" aria-expanded="false" aria-label="Buka menu navigasi" class="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all flex items-center justify-center">
-        <span class="material-symbols-outlined text-xl">menu</span>
-      </button>
-    </div>
-    </div>
-    <nav id="adminQuickNav" class="admin-quick-nav rounded-xl bg-white/10 px-2 py-1" aria-label="Navigasi cepat dashboard">
-      <a href="#telemetry-manager" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-blue-50 hover:text-blue-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-blue-600">monitoring</span>
-        <span>Input Telemetri & KPI</span>
-      </a>
-      <a href="#distribusi-manager" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-emerald-50 hover:text-emerald-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-emerald-600">map</span>
-        <span>Distribusi Provinsi</span>
-      </a>
-      <a href="#menu-backup-panel" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-teal-50 hover:text-teal-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-teal-600">backup_table</span>
-        <span>Backup Menu</span>
-      </a>
-      <a href="maintenance.html" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-purple-50 hover:text-purple-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-purple-600">admin_panel_settings</span>
-        <span>Pemeliharaan Sistem</span>
-      </a>
-      <a href="#mbg-panel" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-amber-50 hover:text-amber-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-amber-600">school</span>
-        <span>Data Penerima MBG (8 Jenjang)</span>
-      </a>
-      <a href="#user-manager" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-indigo-50 hover:text-indigo-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-indigo-600">group</span>
-        <span>Manajemen Akun</span>
-      </a>
-      <a href="#aduan-manager" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-rose-50 hover:text-rose-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-rose-600">receipt_long</span>
-        <span>Laporan Aduan</span>
-      </a>
-      <a href="panel.html#security-log" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-red-50 hover:text-red-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-red-600">security</span>
-        <span>Log Keamanan</span>
-      </a>
-      <a href="../account/profile.html" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-indigo-50 hover:text-indigo-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-indigo-600">photo_camera</span>
-        <span>Atur Profil / Foto</span>
-      </a>
-      <a href="../account/password.html" class="px-3.5 py-1.5 rounded-xl bg-white/95 hover:bg-amber-50 hover:text-amber-700 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5">
-        <span class="material-symbols-outlined text-[16px] text-amber-600">key</span>
-        <span>Ganti Kata Sandi</span>
-      </a>
-    </nav>
-  </header>
-
-  <!-- Mobile Menu Drawer -->
-  <div id="dashMobileMenu" class="hidden fixed top-[52px] left-0 right-0 z-50 bg-primary border border-white/10 shadow-2xl px-4 py-4 flex flex-col gap-2">
-    <a href="#dashboard-home" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base text-cyan-300">dashboard</span> Dashboard Utama
-    </a>
-    <a href="../account/profile.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base text-emerald-300">account_circle</span> Atur Profil
-    </a>
-    <a href="../account/password.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base text-amber-300">key</span> Ganti Kata Sandi
-    </a>
-    <a href="maintenance.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base text-purple-300">build</span> Pemeliharaan Sistem
-    </a>
-    <a href="#telemetry-manager" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base">monitoring</span> Input Telemetri & KPI
-    </a>
-    <a href="#distribusi-manager" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base">map</span> Distribusi Provinsi
-    </a>
-    <a href="#menu-backup-panel" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base">backup_table</span> Backup Menu Harian
-    </a>
-    <a href="#user-manager" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base">group</span> Manajemen Akun
-    </a>
-    <a href="#aduan-manager" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base">receipt_long</span> Laporan Aduan
-    </a>
-    <a href="../komunikasi.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base">forum</span> Komunikasi Internal
-    </a>
-    <a href="#mbg-panel" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base">school</span> Data Penerima MBG
-    </a>
-    <a href="panel.html#security-log" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base">security</span> Log Keamanan
-    </a>
-    <hr class="border-white/10 my-1"/>
-    <a href="../../index.html" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-all">
-      <span class="material-symbols-outlined text-base">visibility</span> Lihat Web Publik
-    </a>
-    <a href="../../auth/login.html?logout=1" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600/80 hover:bg-red-600 text-white text-sm font-bold transition-all">
-      <span class="material-symbols-outlined text-base">logout</span> Keluar
-    </a>
-  </div>
+  <div data-admin-header></div>
 
   <!-- Main Command Center -->
   <main id="dashboard-home" class="max-w-7xl mx-auto w-full p-4 sm:p-8 flex-grow">
-    <!-- Profile Card + Clock (ganti greeting di header) -->
-    <div id="dashProfileCard" class="mb-4"></div>
-
-    <section class="mb-6 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="bg-gradient-to-r from-[#001026] via-[#103663] to-[#146b72] p-5 text-white sm:p-7">
-        <div>
-          <p class="text-[11px] font-bold uppercase tracking-[.18em] text-emerald-200">Pusat Komando Nasional</p>
-          <h1 class="mt-1 text-xl font-extrabold tracking-tight sm:text-2xl">Dashboard Operasional MBG</h1>
-          <p class="mt-2 max-w-2xl text-xs leading-5 text-slate-200 sm:text-sm">Pantau indikator nasional, distribusi, layanan publik, dan status operasional dari satu tempat.</p>
-        </div>
-      </div>
+    <!-- Hero -->
+    <section class="admin-hero mb-6">
+      <p class="text-[11px] font-bold uppercase tracking-[.18em] text-emerald-200">Pusat Komando Nasional</p>
+      <h1 class="mt-1 text-xl font-extrabold tracking-tight sm:text-2xl">Dashboard Operasional MBG</h1>
+      <p class="mt-2 max-w-2xl text-xs leading-5 text-slate-200 sm:text-sm">Pantau indikator nasional, distribusi, layanan publik, dan status operasional dari satu tempat. Pilih modul di bawah untuk membuka halaman pengelolaan.</p>
     </section>
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-         KPI NASIONAL â€” 4 Indikator Utama Radar MBG
-         Data langsung dari database telemetri_nasional
-         â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- Profile Card + Clock -->
+    <div id="dashProfileCard" class="mb-4"></div>
+
+    <nav class="page-breadcrumb" aria-label="Breadcrumb">
+      <a href="../../index.html">Beranda</a><span class="sep">/</span>
+      <span class="current">Dashboard Admin</span>
+    </nav>
+
+    <!-- KPI NASIONAL — 4 Indikator Utama Radar MBG -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
 
       <!-- Card 1: Sekolah Terlayani -->
@@ -323,13 +76,8 @@
             </span>
           </div>
           <p class="text-blue-100 text-xs font-semibold uppercase tracking-wider mb-1">Sekolah Terlayani</p>
-          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">
-            18.420
-            <span class="text-xl text-blue-200 font-bold">+</span>
-          </h2>
-          <p class="text-blue-200 text-[11px] mt-1 font-medium">
-            dari target nasional BGN 2026
-          </p>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">18.420<span class="text-xl text-blue-200 font-bold">+</span></h2>
+          <p class="text-blue-200 text-[11px] mt-1 font-medium">dari target nasional BGN 2026</p>
         </div>
       </div>
 
@@ -348,13 +96,8 @@
             </span>
           </div>
           <p class="text-emerald-100 text-xs font-semibold uppercase tracking-wider mb-1">Porsi Terdistribusi</p>
-          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">
-            4,85 Jt
-            <span class="text-xl text-emerald-200 font-bold">+</span>
-          </h2>
-          <p class="text-emerald-200 text-[11px] mt-1 font-medium">
-            porsi sajian MBG terverifikasi hari ini
-          </p>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">4,85 Jt<span class="text-xl text-emerald-200 font-bold">+</span></h2>
+          <p class="text-emerald-200 text-[11px] mt-1 font-medium">porsi sajian MBG terverifikasi hari ini</p>
         </div>
       </div>
 
@@ -373,13 +116,8 @@
             </span>
           </div>
           <p class="text-violet-100 text-xs font-semibold uppercase tracking-wider mb-1">Kepatuhan Standar Gizi</p>
-          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">
-            99,6
-            <span class="text-xl text-violet-200 font-bold">%</span>
-          </h2>
-          <p class="text-violet-200 text-[11px] mt-1 font-medium">
-            Memenuhi standar AKG Kemenkes RI
-          </p>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">99,6<span class="text-xl text-violet-200 font-bold">%</span></h2>
+          <p class="text-violet-200 text-[11px] mt-1 font-medium">Memenuhi standar AKG Kemenkes RI</p>
         </div>
       </div>
 
@@ -398,13 +136,8 @@
             </span>
           </div>
           <p class="text-amber-100 text-xs font-semibold uppercase tracking-wider mb-1">SPPG Aktif Siaga</p>
-          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">
-            1.284
-            <span class="text-xl text-amber-200 font-bold">+</span>
-          </h2>
-          <p class="text-amber-200 text-[11px] mt-1 font-medium">
-            Dapur SPPG beroperasi &amp; bersertifikat SLHS
-          </p>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight">1.284<span class="text-xl text-amber-200 font-bold">+</span></h2>
+          <p class="text-amber-200 text-[11px] mt-1 font-medium">Dapur SPPG beroperasi &amp; bersertifikat SLHS</p>
         </div>
       </div>
 
@@ -412,7 +145,7 @@
 
     <!-- Metrics Ringkas Aduan Publik -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <div class="bg-surface-card p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+      <a href="aduan.html" class="bg-surface-card p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4 hover:border-slate-300 hover:shadow-md transition-all">
         <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
           <span class="material-symbols-outlined text-slate-500 text-xl">inbox</span>
         </div>
@@ -421,8 +154,8 @@
           <span class="text-2xl font-black text-primary">12</span>
           <span class="text-[10px] text-slate-400 block">38 Provinsi</span>
         </div>
-      </div>
-      <div class="bg-surface-card p-5 rounded-2xl border border-blue-200/80 shadow-sm flex items-center gap-4">
+      </a>
+      <a href="aduan.html" class="bg-surface-card p-5 rounded-2xl border border-blue-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
         <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
           <span class="material-symbols-outlined text-blue-500 text-xl">mark_email_unread</span>
         </div>
@@ -431,8 +164,8 @@
           <span class="text-2xl font-black text-blue-600">4</span>
           <span class="text-[10px] text-blue-500 font-semibold block">Status: Masuk</span>
         </div>
-      </div>
-      <div class="bg-surface-card p-5 rounded-2xl border border-amber-200/80 shadow-sm flex items-center gap-4">
+      </a>
+      <a href="aduan.html" class="bg-surface-card p-5 rounded-2xl border border-amber-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
         <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
           <span class="material-symbols-outlined text-amber-500 text-xl">hourglass_top</span>
         </div>
@@ -441,8 +174,8 @@
           <span class="text-2xl font-black text-amber-600">5</span>
           <span class="text-[10px] text-amber-500 font-semibold block">Proses / Verifikasi</span>
         </div>
-      </div>
-      <div class="bg-surface-card p-5 rounded-2xl border border-emerald-200/80 shadow-sm flex items-center gap-4">
+      </a>
+      <a href="aduan.html" class="bg-surface-card p-5 rounded-2xl border border-emerald-200/80 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
         <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
           <span class="material-symbols-outlined text-emerald-500 text-xl">task_alt</span>
         </div>
@@ -451,967 +184,138 @@
           <span class="text-2xl font-black text-emerald-600">3</span>
           <span class="text-[10px] text-emerald-500 font-semibold block">Laporan Tuntas</span>
         </div>
-      </div>
+      </a>
     </div>
 
-    <!-- TAB 1: KELOLA TELEMETRI NASIONAL & DISTRIBUSI PROVINSI -->
-    <div id="telemetry-manager" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
-      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-        <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
-          <span class="material-symbols-outlined text-2xl">monitoring</span>
+    <!-- Grid Menu Modul -->
+    <section aria-labelledby="module-grid-title">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center">
+          <span class="material-symbols-outlined text-xl">apps</span>
         </div>
         <div>
-          <h2 class="text-lg font-bold text-primary">Manajemen Telemetri Nasional (5 KPI Utama)</h2>
-          <p class="text-xs text-slate-500">Nilai yang diubah di sini langsung terhubung ke database dan tampil secara dinamis pada halaman utama.</p>
+          <h2 id="module-grid-title" class="text-lg font-bold text-primary">Modul Pengelolaan</h2>
+          <p class="text-xs text-slate-500">Setiap modul memiliki halaman tersendiri agar lebih cepat dan terstruktur.</p>
         </div>
       </div>
 
-      <form action="#" method="POST" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <input type="hidden" name="action" value="update_telemetri">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Porsi Tersalurkan</label>
-          <input type="number" name="porsi_tersalurkan" value="4850210" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Pencapaian Target (%)</label>
-          <input type="number" step="0.1" name="persen_target" value="99.2" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">SPPG Aktif Beroperasi</label>
-          <input type="number" name="sppg_aktif" value="1284" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Sekolah Terlayani</label>
-          <input type="number" name="sekolah_terlayani" value="18420" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Kepatuhan AKG (%)</label>
-          <input type="number" step="0.1" name="kepatuhan_akg" value="99.6" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Rantai Hangat (Â°C)</label>
-          <input type="number" step="0.1" name="suhu_rata_rata" value="65.8" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">SLA Distribusi Pagi (%)</label>
-          <input type="number" step="0.1" name="sla_distribusi" value="99.8" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold">
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Teks Waktu Pembaruan</label>
-          <input type="text" name="pembaruan_teks" value="Hari ini, Pukul 11.45 WIB" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold">
-        </div>
-        <div class="col-span-full pt-2">
-          <button type="submit" class="px-5 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all">
-            <span class="material-symbols-outlined text-sm">save</span>
-            <span>Simpan Perubahan Telemetri ke Database</span>
-          </button>
-        </div>
-      </form>
-    </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 
-    <!-- TAB 2: KELOLA KEPATUHAN DISTRIBUSI PROVINSI -->
-    <div id="distribusi-manager" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
-      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-          <span class="material-symbols-outlined text-2xl">map</span>
-        </div>
-        <div>
-          <h2 class="text-lg font-bold text-primary">Kepatuhan Distribusi Per Provinsi</h2>
-          <p class="text-xs text-slate-500">Data tabel harian yang muncul di halaman beranda Radar MBG.</p>
-        </div>
+        <a class="module-card" style="--module-accent:#0284c7;--module-bg:#e0f2fe" href="telemetri.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">monitoring</span></div>
+          <h3>Telemetri &amp; KPI</h3>
+          <p>Input 5 KPI telemetri nasional yang tampil di beranda publik.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#059669;--module-bg:#d1fae5" href="distribusi.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">map</span></div>
+          <h3>Distribusi Provinsi</h3>
+          <p>Kelola kepatuhan distribusi &amp; target porsi per provinsi.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#d97706;--module-bg:#fef3c7" href="data-mbg.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">school</span></div>
+          <h3>Data Penerima MBG</h3>
+          <p>Rekap 8 jenjang pendidikan, alergi &amp; kondisi khusus.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#7c3aed;--module-bg:#ede9fe" href="pengguna.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">manage_accounts</span></div>
+          <h3>Manajemen Akun</h3>
+          <p>Daftarkan akun Admin, SPPG, dan Wali Murid.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#e11d48;--module-bg:#ffe4e6" href="aduan.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">receipt_long</span></div>
+          <h3>Laporan Aduan</h3>
+          <p>Tindak lanjuti pengaduan publik &amp; ubah status tiket.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#0284c7;--module-bg:#e0f2fe" href="chat.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">chat</span></div>
+          <h3>Live Chat</h3>
+          <p>Balas konsultasi masyarakat &amp; sekolah secara realtime.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#0d9488;--module-bg:#ccfbf1" href="logo-sppg.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">verified_user</span></div>
+          <h3>Logo SPPG</h3>
+          <p>Verifikasi permohonan pergantian logo dapur SPPG.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#4f46e5;--module-bg:#e0e7ff" href="backup-menu.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">backup_table</span></div>
+          <h3>Backup Menu</h3>
+          <p>Arsip menu harian &amp; unduh rekap dalam format Excel.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#dc2626;--module-bg:#fee2e2" href="keamanan.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">security</span></div>
+          <h3>Log Keamanan</h3>
+          <p>Audit eksploitasi XSS &amp; injeksi yang diblokir WAF.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#7c3aed;--module-bg:#ede9fe" href="pemeliharaan.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">admin_panel_settings</span></div>
+          <h3>Pemeliharaan</h3>
+          <p>Kesehatan database Neon &amp; utilitas pemeliharaan sistem.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#334155;--module-bg:#e2e8f0" href="panel.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">tune</span></div>
+          <h3>Panel Sistem</h3>
+          <p>Status SPPG, approval foto &amp; konfigurasi sistem.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#ea580c;--module-bg:#ffedd5" href="maintenance.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">build</span></div>
+          <h3>Mode Maintenance</h3>
+          <p>Aktifkan/nonaktifkan mode pemeliharaan situs publik.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
+        <a class="module-card" style="--module-accent:#059669;--module-bg:#d1fae5" href="../komunikasi.html">
+          <div class="module-icon"><span class="material-symbols-outlined text-xl">forum</span></div>
+          <h3>Komunikasi</h3>
+          <p>Ruang komunikasi internal tim &amp; satgas.</p>
+          <span class="module-arrow">Buka modul <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
+        </a>
+
       </div>
-
-      <!-- Form Tambah / Edit Provinsi -->
-      <form action="#" method="POST" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80 mb-6">
-        <input type="hidden" name="action" value="save_provinsi">
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Nama Provinsi</label>
-          <input type="text" name="provinsi" placeholder="Misal: Bali" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Target Porsi</label>
-          <input type="number" name="target_porsi" placeholder="Misal: 150000" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Ketepatan (%)</label>
-          <input type="number" step="0.1" name="ketepatan" placeholder="99.0" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Status Salur</label>
-          <select name="status" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-            <option value="Selesai Salur">Selesai Salur</option>
-            <option value="94% Salur">94% Salur</option>
-            <option value="Jalur Khusus">Jalur Khusus</option>
-            <option value="Dalam Pengantaran">Dalam Pengantaran</option>
-          </select>
-        </div>
-        <div class="flex items-end">
-          <button type="submit" class="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all">
-            <span class="material-symbols-outlined text-sm">add_circle</span>
-            <span>Simpan Provinsi</span>
-          </button>
-        </div>
-      </form>
-
-      <!-- Tabel Provinsi Saat Ini -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[11px]">
-              <th class="py-2.5 px-3 rounded-l-lg">Provinsi</th>
-              <th class="py-2.5 px-3">Target Porsi</th>
-              <th class="py-2.5 px-3">Ketepatan</th>
-              <th class="py-2.5 px-3">Status</th>
-              <th class="py-2.5 px-3 rounded-r-lg">Region Code</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td class="py-2.5 px-3 font-bold text-primary">DKI Jakarta</td>
-                <td class="py-2.5 px-3 font-mono">120000</td>
-                <td class="py-2.5 px-3 font-semibold text-emerald-600">98,5%</td>
-                <td class="py-2.5 px-3">
-                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">Diproses</span>
-                </td>
-                <td class="py-2.5 px-3 text-slate-400 font-mono">ID-01</td>
-              </tr>
-            
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td class="py-2.5 px-3 font-bold text-primary">Jawa Barat</td>
-                <td class="py-2.5 px-3 font-mono">155000</td>
-                <td class="py-2.5 px-3 font-semibold text-emerald-600">98,6%</td>
-                <td class="py-2.5 px-3">
-                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">Diproses</span>
-                </td>
-                <td class="py-2.5 px-3 text-slate-400 font-mono">ID-02</td>
-              </tr>
-            
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td class="py-2.5 px-3 font-bold text-primary">Bali</td>
-                <td class="py-2.5 px-3 font-mono">190000</td>
-                <td class="py-2.5 px-3 font-semibold text-emerald-600">98,7%</td>
-                <td class="py-2.5 px-3">
-                  <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">Diproses</span>
-                </td>
-                <td class="py-2.5 px-3 text-slate-400 font-mono">ID-03</td>
-              </tr>
-            
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB 3: MANAJEMEN PENGGUNA (USER MANAGEMENT) -->
-    <div id="user-manager" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
-      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
-          <span class="material-symbols-outlined text-2xl">manage_accounts</span>
-        </div>
-        <div>
-          <h2 class="text-lg font-bold text-primary">Manajemen Akun Pengguna & Hak Akses</h2>
-          <p class="text-xs text-slate-500">Mendaftarkan akun resmi baru untuk Admin Satgas, Mitra Dapur SPPG, dan Wali Murid.</p>
-        </div>
-      </div>
-
-      <!-- Form Tambah User -->
-      <form action="#" method="POST" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80 mb-6">
-        <input type="hidden" name="action" value="create_user">
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Username</label>
-          <input type="text" name="username" placeholder="Contoh: sppg_bali" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Email Resmi</label>
-          <input type="email" name="email" placeholder="email@bgn.go.id" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Kata Sandi</label>
-          <input type="password" name="password" placeholder="Min. 6 karakter" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-600 uppercase mb-1">Role / Peran</label>
-          <select name="role" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold">
-            <option value="sppg">SPPG (Mitra Dapur)</option>
-            <option value="admin">Admin Satgas BGN</option>
-            <option value="user">User / Wali Murid</option>
-          </select>
-        </div>
-        <div class="flex items-end">
-          <button type="submit" class="w-full py-2 px-3 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all">
-            <span class="material-symbols-outlined text-sm">person_add</span>
-            <span>Daftarkan Akun</span>
-          </button>
-        </div>
-      </form>
-
-      <!-- Tabel Pengguna Terdaftar -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[11px]">
-              <th class="py-2.5 px-3 rounded-l-lg">Username</th>
-              <th class="py-2.5 px-3">Nama Lengkap</th>
-              <th class="py-2.5 px-3">Email</th>
-              <th class="py-2.5 px-3">Role</th>
-              <th class="py-2.5 px-3">Status</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td class="py-2.5 px-3 font-bold text-primary">budi</td>
-                <td class="py-2.5 px-3">Budi Santoso</td>
-                <td class="py-2.5 px-3 text-slate-500 font-mono">budi@mail.com</td>
-                <td class="py-2.5 px-3">
-                  
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-800">user</span>
-                </td>
-                <td class="py-2.5 px-3">
-                  <span class="text-emerald-600 font-bold flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Aktif
-                  </span>
-                </td>
-              </tr>
-            
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td class="py-2.5 px-3 font-bold text-primary">rina</td>
-                <td class="py-2.5 px-3">Rina Wulandari</td>
-                <td class="py-2.5 px-3 text-slate-500 font-mono">rina@mail.com</td>
-                <td class="py-2.5 px-3">
-                  
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-800">user</span>
-                </td>
-                <td class="py-2.5 px-3">
-                  <span class="text-emerald-600 font-bold flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Aktif
-                  </span>
-                </td>
-              </tr>
-            
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td class="py-2.5 px-3 font-bold text-primary">made</td>
-                <td class="py-2.5 px-3">Made Arya</td>
-                <td class="py-2.5 px-3 text-slate-500 font-mono">made@mail.com</td>
-                <td class="py-2.5 px-3">
-                  
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-800">user</span>
-                </td>
-                <td class="py-2.5 px-3">
-                  <span class="text-emerald-600 font-bold flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Aktif
-                  </span>
-                </td>
-              </tr>
-            
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB: BACKUP MENU HARIAN -->
-    <div id="menu-backup-panel" class="bg-surface-card rounded-3xl border border-teal-200/80 shadow-sm overflow-hidden mb-8">
-      <div class="p-6 bg-teal-50/50 border-b border-teal-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center">
-            <span class="material-symbols-outlined text-2xl">backup_table</span>
-          </div>
-          <div>
-            <h2 class="text-base font-bold text-primary">Backup Menu Harian</h2>
-            <p class="text-xs text-slate-500">Data menu tersimpan otomatis setiap hari berdasarkan tanggal distribusi. Download sebagai file Excel (.xlsx) untuk arsip.</p>
-          </div>
-        </div>
-        <button onclick="downloadMenuBackupXLSX()" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all shrink-0">
-          <span class="material-symbols-outlined text-sm">download</span>
-          Download Semua Backup (Excel)
-        </button>
-      </div>
-      <div class="p-6">
-        <!-- Date filter + per-date download -->
-        <div class="flex flex-wrap items-center gap-3 mb-4">
-          <div class="flex items-center gap-2">
-            <label class="text-xs font-bold text-slate-600 uppercase">Tanggal:</label>
-            <input type="date" id="backupDatePicker" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs" />
-          </div>
-          <button onclick="(function(){var d=document.getElementById('backupDatePicker').value;downloadMenuBackupXLSX(d||undefined);})()" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1">
-            <span class="material-symbols-outlined text-sm">filter_alt</span> Download Tanggal Ini
-          </button>
-        </div>
-        <!-- Backup list table -->
-        <div id="backupListTable" class="overflow-x-auto">
-          <table class="w-full text-xs text-left">
-            <thead>
-              <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[11px]">
-                <th class="py-2.5 px-3 rounded-l-lg">Tanggal</th>
-                <th class="py-2.5 px-3">Jumlah Entry</th>
-                <th class="py-2.5 px-3">Rata Kalori</th><th class="py-2.5 px-3 rounded-r-lg">Unduh</th>
-              </tr>
-            </thead>
-            <tbody id="backupListBody" class="divide-y divide-slate-100">
-              <tr><td colspan="3" class="py-4 px-3 text-slate-400 text-center">Memuat data backup...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: PEMELIHARAAN SISTEM & KESEHATAN DATABASE -->
-    <div id="maintenance-panel" class="bg-surface-card rounded-3xl border border-purple-200/80 shadow-sm overflow-hidden mb-8">
-      <div class="p-6 bg-purple-50/50 border-b border-purple-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-700 flex items-center justify-center">
-            <span class="material-symbols-outlined text-2xl">admin_panel_settings</span>
-          </div>
-          <div>
-            <h2 class="text-base font-bold text-purple-950 flex items-center gap-2">
-              <span>Pusat Pemeliharaan Basis Data &amp; Server (Neon PostgreSQL)</span>
-              <span class="px-2 py-0.5 rounded-full bg-purple-600 text-white text-[10px] font-black uppercase tracking-wider">Neon Cloud DB</span>
-            </h2>
-            <p class="text-xs text-purple-700/80">Diagnostik performa, alokasi memori, metrik tabel, dan utilitas pemeliharaan indeks.</p>
-          </div>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <a href="maintenance.html" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1 transition-all shadow-sm">
-            <span class="material-symbols-outlined text-sm">build</span>
-            <span>Kelola Mode Maintenance</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="p-6">
-        <!-- Metric Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <div class="p-4 bg-purple-50/40 rounded-2xl border border-purple-100/80">
-            <span class="text-[11px] font-bold text-purple-600 uppercase tracking-wider block mb-1">Ukuran Basis Data</span>
-            <div class="text-xl sm:text-2xl font-black text-slate-800 font-mono">48 MB</div>
-            <span class="text-[10px] text-slate-500 font-medium">Neon PostgreSQL Cloud</span>
-          </div>
-          <div class="p-4 bg-purple-50/40 rounded-2xl border border-purple-100/80">
-            <span class="text-[11px] font-bold text-purple-600 uppercase tracking-wider block mb-1">Versi Engine DB</span>
-            <div class="text-lg sm:text-xl font-bold text-slate-800 font-mono truncate" title="PostgreSQL 16.4">PostgreSQL</div>
-            <span class="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Online (SSL Pooler)</span>
-          </div>
-          <div class="p-4 bg-purple-50/40 rounded-2xl border border-purple-100/80">
-            <span class="text-[11px] font-bold text-purple-600 uppercase tracking-wider block mb-1">Total Data MBG</span>
-            <div class="text-xl sm:text-2xl font-black text-purple-900 font-mono">1.284</div>
-            <span class="text-[10px] text-slate-500 font-medium">8 Jenjang Pendidikan</span>
-          </div>
-          <div class="p-4 bg-purple-50/40 rounded-2xl border border-purple-100/80">
-            <span class="text-[11px] font-bold text-purple-600 uppercase tracking-wider block mb-1">Dokumen Juknis</span>
-            <div class="text-xl sm:text-2xl font-black text-purple-900 font-mono">24</div>
-            <span class="text-[10px] text-slate-500 font-medium">BGN Official PDF</span>
-          </div>
-        </div>
-
-        <!-- Table Row Breakdown -->
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[15px] text-purple-600">table_chart</span>
-          <span>Kepadatan Baris Tabel Basis Data</span>
-        </h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          
-            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs">
-              <span class="font-mono text-slate-600 font-medium truncate max-w-[120px]" title="users">users</span>
-              <span class="font-bold font-mono px-2 py-0.5 rounded-md bg-white text-slate-800 border border-slate-200 shadow-2xs">120</span>
-            </div>
-          
-            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs">
-              <span class="font-mono text-slate-600 font-medium truncate max-w-[120px]" title="mbg_data">mbg_data</span>
-              <span class="font-bold font-mono px-2 py-0.5 rounded-md bg-white text-slate-800 border border-slate-200 shadow-2xs">160</span>
-            </div>
-          
-            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs">
-              <span class="font-mono text-slate-600 font-medium truncate max-w-[120px]" title="tiket">tiket</span>
-              <span class="font-bold font-mono px-2 py-0.5 rounded-md bg-white text-slate-800 border border-slate-200 shadow-2xs">200</span>
-            </div>
-          
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB: DATA PENERIMA MBG NASIONAL (8 JENJANG PENDIDIKAN) -->
-    <div id="mbg-panel" class="bg-surface-card rounded-3xl border border-amber-200/80 shadow-sm overflow-hidden mb-8">
-      <a id="paud-panel"></a>
-      <div class="p-6 bg-amber-50/50 border-b border-amber-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center">
-            <span class="material-symbols-outlined text-2xl">school</span>
-          </div>
-          <div>
-            <h2 class="text-base font-bold text-amber-950 flex items-center gap-2">
-              <span>Rekapitulasi MBG Nasional Seluruh Jenjang Pendidikan (2026)</span>
-              <span class="px-2 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-black uppercase tracking-wider">BGN Pusat Verified</span>
-            </h2>
-            <p class="text-xs text-amber-800/80">Data resmi penerima manfaat, satuan pendidikan, alergi, dan intoleransi pangan per jenjang sekolah.</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <a href="../../api/data_mbg.php?summary=1" target="_blank" class="px-3 py-1.5 rounded-xl bg-white hover:bg-amber-100 text-amber-800 font-bold text-xs flex items-center gap-1 transition-all border border-amber-300 shadow-2xs">
-            <span class="material-symbols-outlined text-sm">api</span>
-            <span>REST API MBG</span>
-          </a>
-          <a href="../../api/juknis.php" target="_blank" class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1 transition-all shadow-sm">
-            <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
-            <span>API Juknis PDF</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="p-6">
-        <!-- 4 Grand Metric Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          <div class="p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
-            <span class="text-[11px] font-bold text-blue-600 uppercase block mb-1">Satuan Pendidikan</span>
-            <div class="text-2xl font-black text-blue-950">412</div>
-            <span class="text-[10px] text-slate-500">Sekolah &amp; Lembaga Belajar</span>
-          </div>
-          <div class="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100">
-            <span class="text-[11px] font-bold text-emerald-600 uppercase block mb-1">Penerima Manfaat</span>
-            <div class="text-2xl font-black text-emerald-950">98.230</div>
-            <span class="text-[10px] text-slate-500">Siswa/Peserta Didik Aktif</span>
-          </div>
-          <div class="p-4 bg-rose-50/50 rounded-2xl border border-rose-100">
-            <span class="text-[11px] font-bold text-rose-600 uppercase block mb-1">Alergi Teridentifikasi</span>
-            <div class="text-2xl font-black text-rose-950">12.480</div>
-            <span class="text-[10px] text-rose-700 font-semibold">Tersaring Ketat Menu Diet</span>
-          </div>
-          <div class="p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
-            <span class="text-[11px] font-bold text-amber-600 uppercase block mb-1">Kondisi Khusus / Intoleransi</span>
-            <div class="text-2xl font-black text-amber-950">3.115</div>
-            <span class="text-[10px] text-amber-800 font-semibold">Protokol Dapur Khusus</span>
-          </div>
-        </div>
-
-        <!-- 8 Level Cards Breakdown -->
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-[15px] text-amber-600">bar_chart</span>
-          <span>Sebaran Menurut 8 Jenjang Pendidikan</span>
-        </h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          
-            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition-all">
-              <div class="flex items-center justify-between mb-1.5">
-                <span class="px-2 py-0.5 rounded-lg bg-amber-500 text-white font-black text-xs">Level 1</span>
-                <span class="text-[10px] text-slate-500 font-mono">900 wilayah</span>
-              </div>
-              <div class="text-base font-black text-slate-900">20000 <span class="text-[11px] font-normal text-slate-500">siswa</span></div>
-              <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 text-[10px] text-slate-600">
-                <span>80 satpen</span>
-                <span class="text-rose-600 font-bold">1200 alergi</span>
-              </div>
-            </div>
-          
-            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition-all">
-              <div class="flex items-center justify-between mb-1.5">
-                <span class="px-2 py-0.5 rounded-lg bg-amber-500 text-white font-black text-xs">Level 2</span>
-                <span class="text-[10px] text-slate-500 font-mono">1000 wilayah</span>
-              </div>
-              <div class="text-base font-black text-slate-900">25000 <span class="text-[11px] font-normal text-slate-500">siswa</span></div>
-              <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 text-[10px] text-slate-600">
-                <span>100 satpen</span>
-                <span class="text-rose-600 font-bold">1500 alergi</span>
-              </div>
-            </div>
-          
-            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition-all">
-              <div class="flex items-center justify-between mb-1.5">
-                <span class="px-2 py-0.5 rounded-lg bg-amber-500 text-white font-black text-xs">Level 3</span>
-                <span class="text-[10px] text-slate-500 font-mono">1100 wilayah</span>
-              </div>
-              <div class="text-base font-black text-slate-900">30000 <span class="text-[11px] font-normal text-slate-500">siswa</span></div>
-              <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 text-[10px] text-slate-600">
-                <span>120 satpen</span>
-                <span class="text-rose-600 font-bold">1800 alergi</span>
-              </div>
-            </div>
-          
-        </div>
-
-        <!-- Highest Beneficiaries Sample Table -->
-        <div class="border border-slate-200 rounded-2xl overflow-hidden">
-          <div class="p-3 bg-slate-100/70 border-b border-slate-200 flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-sm text-blue-600">visibility</span>
-              <span>15 Wilayah Kabupaten/Kota dengan Penerima Manfaat Terbanyak</span>
-            </span>
-            <span class="text-[11px] text-slate-500 font-medium">Sumber: BGN Pusat (Tahun 2026)</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr class="bg-slate-50 text-slate-600 font-bold text-[11px] uppercase border-b border-slate-200">
-                  <th class="py-2.5 px-3">Jenjang</th>
-                  <th class="py-2.5 px-3">Kabupaten / Kota</th>
-                  <th class="py-2.5 px-3 text-right">Satpen</th>
-                  <th class="py-2.5 px-3 text-right">Penerima</th>
-                  <th class="py-2.5 px-3 text-right">Alergi</th>
-                  <th class="py-2.5 px-3 text-right">Kondisi Khusus</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100">
-                
-                  <tr class="hover:bg-slate-50/60 transition-colors">
-                    <td class="py-2.5 px-3">
-                      <span class="px-2 py-0.5 rounded-md bg-slate-200 text-slate-800 font-bold text-[10px]">Level 1</span>
-                    </td>
-                    <td class="py-2.5 px-3 font-semibold text-slate-800">Menteng</td>
-                    <td class="py-2.5 px-3 text-right font-mono text-slate-600">80</td>
-                    <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">20000</td>
-                    <td class="py-2.5 px-3 text-right font-mono text-rose-600">1200</td>
-                    <td class="py-2.5 px-3 text-right font-mono text-amber-700">300</td>
-                  </tr>
-                
-                  <tr class="hover:bg-slate-50/60 transition-colors">
-                    <td class="py-2.5 px-3">
-                      <span class="px-2 py-0.5 rounded-md bg-slate-200 text-slate-800 font-bold text-[10px]">Level 2</span>
-                    </td>
-                    <td class="py-2.5 px-3 font-semibold text-slate-800">Sukajadi</td>
-                    <td class="py-2.5 px-3 text-right font-mono text-slate-600">100</td>
-                    <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">25000</td>
-                    <td class="py-2.5 px-3 text-right font-mono text-rose-600">1500</td>
-                    <td class="py-2.5 px-3 text-right font-mono text-amber-700">350</td>
-                  </tr>
-                
-                  <tr class="hover:bg-slate-50/60 transition-colors">
-                    <td class="py-2.5 px-3">
-                      <span class="px-2 py-0.5 rounded-md bg-slate-200 text-slate-800 font-bold text-[10px]">Level 3</span>
-                    </td>
-                    <td class="py-2.5 px-3 font-semibold text-slate-800">Denpasar</td>
-                    <td class="py-2.5 px-3 text-right font-mono text-slate-600">120</td>
-                    <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">30000</td>
-                    <td class="py-2.5 px-3 text-right font-mono text-rose-600">1800</td>
-                    <td class="py-2.5 px-3 text-right font-mono text-amber-700">400</td>
-                  </tr>
-                
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 4: PERINGATAN EKSPLOITASI KEAMANAN (WAF LOGS) -->
-    <div class="bg-surface-card rounded-3xl border border-red-200/80 shadow-sm overflow-hidden mb-8">
-      <div class="p-6 bg-red-50/50 border-b border-red-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-red-500/20 text-red-600 flex items-center justify-center">
-            <span class="material-symbols-outlined text-2xl">security</span>
-          </div>
-          <div>
-            <h2 class="text-base font-bold text-red-950 flex items-center gap-2">
-              <span>BGN Shield: Audit Eksploitasi XSS &amp; Injeksi Input</span>
-              <span class="px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-wider">WAF Aktif</span>
-            </h2>
-            <p class="text-xs text-red-700/80">Riwayat serangan dan upaya manipulasi form yang berhasil diblokir secara otomatis.</p>
-          </div>
-        </div>
-        <form action="#" method="POST" onsubmit="return confirm('Kosongkan riwayat exploit logs?');">
-          <input type="hidden" name="action" value="clear_exploit_logs">
-          <button type="submit" class="px-3 py-1.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-800 font-bold text-xs flex items-center gap-1 transition-all">
-            <span class="material-symbols-outlined text-sm">delete_sweep</span>
-            <span>Bersihkan Log</span>
-          </button>
-        </form>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="bg-red-50/70 text-red-900 text-[11px] font-bold uppercase tracking-wider border-b border-red-100">
-              <th class="py-3 px-4">Waktu</th>
-              <th class="py-3 px-4">IP Address</th>
-              <th class="py-3 px-4">Tipe Ancaman</th>
-              <th class="py-3 px-4">Field Input</th>
-              <th class="py-3 px-4">Sampel Muatan (Payload) Terdeteksi</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            
-              <tr>
-                <td colspan="5" class="py-8 text-center text-slate-400">
-                  <span class="material-symbols-outlined text-3xl text-emerald-500 block mb-1">verified_user</span>
-                  Tidak ada rekaman exploit. Sistem aman terlindungi.
-                </td>
-              </tr>
-            
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- TAB 5: MANAJEMEN LAPORAN ADUAN PUBLIK -->
-    <div id="aduan-manager" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden mb-8">
-      <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-base font-bold text-primary flex items-center gap-2">Daftar Seluruh Pengaduan MBG Masuk
-            <span id="aduanReportCount" class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">?</span>
-          </h2>
-          <p class="text-xs text-slate-500">Data langsung dari server; daftar dibatasi 100 aduan terbaru. Perubahan status dicatat dalam audit pengaduan.</p>
-        </div>
-        <button id="aduanRefreshButton" type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">
-          <span class="material-symbols-outlined text-base">refresh</span> Muat ulang
-        </button>
-      </div>
-      <p id="aduanLoadMessage" role="status" aria-live="polite" class="px-6 py-3 text-xs text-slate-500">Memuat data pengaduan dari server...</p>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead><tr class="bg-slate-50 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200/80">
-            <th class="py-3.5 px-4">Tiket</th><th class="py-3.5 px-4">Pelapor</th><th class="py-3.5 px-4">Sekolah Sasaran</th>
-            <th class="py-3.5 px-4">Detail Aduan</th><th class="py-3.5 px-4">Status &amp; Prioritas</th><th class="py-3.5 px-4">Tindakan Satgas</th>
-          </tr></thead>
-          <tbody id="aduanReportRows" class="divide-y divide-slate-100"><tr><td colspan="6" class="py-8 text-center text-slate-400">Menunggu data server...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- VERIFIKASI LOGO SPPG (SPPG Logo Approval) -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-    <!-- KOTAK MASUK LIVE CHAT SATGAS BGN (DUAL-WAY REPLY) -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-    <div id="live-chat-admin-panel" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center">
-            <span class="material-symbols-outlined text-2xl">chat</span>
-          </div>
-          <div>
-            <h2 class="text-lg font-bold text-primary flex items-center gap-2">
-              <span>Live Chat Konsultasi Satgas BGN</span>
-              <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">2-Way Active</span>
-            </h2>
-            <p class="text-xs text-slate-500">Balas chat langsung dari masyarakat, wali murid, dan pihak sekolah secara realtime.</p>
-          </div>
-        </div>
-        <button type="button" onclick="loadAdminChatSessions()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5 self-start sm:self-auto">
-          <span class="material-symbols-outlined text-sm">refresh</span>
-          <span>Segarkan Pesan</span>
-        </button>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[460px]">
-        <!-- Sesi Chat Masuk (List) -->
-        <div class="lg:col-span-4 border border-slate-200/90 rounded-2xl p-3 bg-slate-50/70 flex flex-col h-[460px]">
-          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
-            <span>Daftar Sesi Masuk:</span>
-            <span id="adminSessionCountBadge" class="px-1.5 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[10px]">0</span>
-          </div>
-          <div id="adminChatSessionsList" class="flex-grow overflow-y-auto space-y-2 pr-1">
-            <p class="text-xs text-slate-400 p-4 text-center">Memuat daftar sesi...</p>
-          </div>
-        </div>
-
-        <!-- Ruang Percakapan & Reply Box -->
-        <div class="lg:col-span-8 border border-slate-200/90 rounded-2xl bg-white flex flex-col h-[460px] overflow-hidden">
-          <!-- Room Header -->
-          <div id="adminChatRoomHeader" class="p-3.5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-            <div>
-              <p id="adminChatActiveUser" class="text-xs font-bold text-slate-900">Pilih sesi chat di sebelah kiri</p>
-              <p id="adminChatActiveSub" class="text-[10px] text-slate-400">Pesan dari portal publik</p>
-            </div>
-            <span id="adminChatTargetBadge" class="hidden px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">Satgas BGN</span>
-          </div>
-
-          <!-- Messages Stream -->
-          <div id="adminChatTranscript" class="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50/40 text-xs">
-            <div class="h-full flex items-center justify-center text-center text-slate-400">
-              <div>
-                <span class="material-symbols-outlined text-4xl block mb-2 text-slate-300">forum</span>
-                <p class="text-xs">Klik salah satu pengguna di sebelah kiri untuk melihat percakapan dan membalas.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Reply Form -->
-          <form id="adminReplyForm" onsubmit="sendAdminReply(event)" class="p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0">
-            <input type="hidden" id="adminReplySessionId" value="">
-            <input type="text" id="adminReplyInput" disabled placeholder="Pilih sesi terlebih dahulu untuk membalas..."
-                   class="flex-grow px-3.5 py-2.5 bg-slate-100 text-slate-900 placeholder:text-slate-400 rounded-xl text-xs border border-transparent focus:bg-white focus:border-blue-600 focus:outline-none transition-all">
-            <button type="submit" id="adminReplyBtn" disabled class="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-container disabled:opacity-40 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all">
-              <span class="material-symbols-outlined text-sm">send</span>
-              <span>Kirim</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-    <div id="verifikasi-logo-sppg" class="bg-surface-card rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 mb-8">
-      <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
-          <span class="material-symbols-outlined text-2xl">verified_user</span>
-        </div>
-        <div>
-          <h2 class="text-lg font-bold text-primary">Verifikasi Logo Dapur SPPG</h2>
-          <p class="text-xs text-slate-500">Konfirmasi atau tolak permohonan pergantian logo/foto profil dari mitra Dapur SPPG.</p>
-        </div>
-        
-      </div>
-
-      
-        <div class="py-10 text-center text-slate-400">
-          <span class="material-symbols-outlined text-4xl block mb-2 text-slate-300">check_circle</span>
-          <p class="text-sm font-medium">Semua logo SPPG sudah terverifikasi. Tidak ada permohonan baru.</p>
-        </div>
-      
-    </div>
-
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    </section>
   </main>
 
   <!-- Footer Mini -->
   <div data-site-footer></div>
 
-<script>
-  let currentAdminSessionId = '';
+  <script src="../../assets/js/site-footer.js" defer></script>
+  <script src="../../assets/js/security.js"></script>
+  <script src="../../assets/js/dashboard-common.js?v=admin-dashboard-ui-2"></script>
+  <script src="../../assets/js/live_chat.js"></script>
 
-  async function loadAdminChatSessions() {
-    const listEl = document.getElementById('adminChatSessionsList');
-    const badgeEl = document.getElementById('adminSessionCountBadge');
-    if (!listEl) return;
-    try {
-      const res = await fetch('../../api/live_chat.php?action=admin_sessions');
-      const json = await res.json();
-      if (json.status === 'success' && json.data) {
-        if (badgeEl) badgeEl.textContent = json.data.length;
-        if (json.data.length === 0) {
-          listEl.innerHTML = '<p class="text-xs text-slate-400 p-4 text-center">Belum ada sesi percakapan masuk.</p>';
-          return;
-        }
-        listEl.innerHTML = '';
-        json.data.forEach(s => {
-          const item = document.createElement('div');
-          const isSelected = s.session_id === currentAdminSessionId;
-          item.className = `p-3 rounded-xl border transition-all cursor-pointer ${isSelected ? 'bg-blue-50 border-blue-400 shadow-sm' : 'bg-white border-slate-200/80 hover:bg-slate-100'}`;
-          item.onclick = () => selectAdminSession(s.session_id, s.user_name || 'Pengguna Publik');
-          item.innerHTML = `
-            <div class="flex items-center justify-between gap-1 mb-1">
-              <span class="font-bold text-xs text-slate-900 truncate">${escapeHtml(s.user_name || 'Masyarakat')}</span>
-              <span class="text-[9px] text-slate-400">${formatTimeChat(s.last_time)}</span>
-            </div>
-            <p class="text-[11px] text-slate-600 truncate">${escapeHtml(s.last_message || '-')}</p>
-            <div class="flex items-center justify-between mt-1 text-[9px] text-slate-400">
-              <span>${s.total_messages} Pesan</span>
-              <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-mono">${s.session_id.substring(0, 14)}...</span>
-            </div>
-          `;
-          listEl.appendChild(item);
-        });
-      }
-    } catch (e) {
-      if (listEl) listEl.innerHTML = '<p class="text-xs text-red-500 p-2">Gagal memuat sesi chat.</p>';
-    }
-  }
-
-  async function selectAdminSession(sessionId, userName) {
-    currentAdminSessionId = sessionId;
-    document.getElementById('adminReplySessionId').value = sessionId;
-    document.getElementById('adminChatActiveUser').textContent = userName;
-    document.getElementById('adminChatActiveSub').textContent = `Sesi ID: ${sessionId}`;
-    document.getElementById('adminChatTargetBadge').classList.remove('hidden');
-
-    const input = document.getElementById('adminReplyInput');
-    const btn = document.getElementById('adminReplyBtn');
-    input.disabled = false;
-    btn.disabled = false;
-    input.placeholder = `Balas ke ${userName} sebagai Satgas BGN...`;
-    input.focus();
-
-    await loadAdminSessionTranscript(sessionId);
-    loadAdminChatSessions();
-  }
-
-  async function loadAdminSessionTranscript(sessionId) {
-    const box = document.getElementById('adminChatTranscript');
-    if (!box) return;
-    box.innerHTML = '<p class="text-xs text-slate-400 p-4 text-center">Memuat riwayat percakapan...</p>';
-    try {
-      const res = await fetch(`../../api/live_chat.php?action=history&session_id=${encodeURIComponent(sessionId)}&target_type=admin`);
-      const json = await res.json();
-      if (json.status === 'success' && json.messages) {
-        box.innerHTML = '';
-        json.messages.forEach(m => {
-          const isUser = m.sender_type === 'user';
-          const div = document.createElement('div');
-          div.className = isUser ? 'flex items-start gap-2' : 'flex items-start justify-end gap-2';
-          div.innerHTML = `
-            <div class="${isUser ? 'bg-white text-slate-800 rounded-tl-none border border-slate-200' : 'bg-[#001026] text-white rounded-tr-none'} p-3 rounded-2xl shadow-sm max-w-[80%] text-xs">
-              <div class="flex items-center gap-1.5 mb-1 ${isUser ? '' : 'justify-end'}">
-                <span class="font-bold text-[11px] ${isUser ? 'text-blue-700' : 'text-[#6ffbbe]'}">${escapeHtml(m.sender_name)}</span>
-                <span class="text-[9px] ${isUser ? 'text-slate-400' : 'text-slate-300'}">${m.sender_type}</span>
-              </div>
-              <p class="leading-relaxed whitespace-pre-wrap">${escapeHtml(m.message)}</p>
-              <span class="text-[9px] ${isUser ? 'text-slate-400' : 'text-slate-300'} mt-1 block text-right">${formatTimeChat(m.created_at)}</span>
-            </div>
-          `;
-          box.appendChild(div);
-        });
-        box.scrollTop = box.scrollHeight;
-      }
-    } catch (e) {
-      box.innerHTML = '<p class="text-xs text-red-500 p-2">Gagal memuat pesan.</p>';
-    }
-  }
-
-  async function sendAdminReply(e) {
-    e.preventDefault();
-    const sessionId = document.getElementById('adminReplySessionId').value;
-    const input = document.getElementById('adminReplyInput');
-    const msg = input.value.trim();
-    if (!sessionId || !msg) return;
-
-    input.value = '';
-    input.disabled = true;
-
-    try {
-      const fd = new FormData();
-      fd.append('action', 'reply');
-      fd.append('session_id', sessionId);
-      fd.append('message', msg);
-      fd.append('target_type', 'admin');
-
-      const res = await fetch('../../api/live_chat.php', { method: 'POST', body: fd });
-      const json = await res.json();
-      if (json.status === 'success') {
-        await loadAdminSessionTranscript(sessionId);
-        loadAdminChatSessions();
-      } else {
-        alert(json.message || 'Gagal mengirim balasan.');
-      }
-    } catch (err) {
-      alert('Koneksi gagal saat mengirim balasan.');
-    } finally {
-      input.disabled = false;
-      input.focus();
-    }
-  }
-
-  function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function formatTimeChat(isoStr) {
-    if (!isoStr) return '';
-    try {
-      const d = new Date(isoStr);
-      return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    } catch (e) { return ''; }
-  }
-
-  document.addEventListener('DOMContentLoaded', loadAdminChatSessions);
-</script>
-
-<script src="../../assets/js/security.js"></script>
-<script src="../../assets/js/live_chat.js"></script>
-<script>
-(function(){
-  var N=[];
-  var wrap=document.getElementById('mbgBellWrap'),btn=document.getElementById('mbgBellBtn'),panel=document.getElementById('mbgBellPanel'),badge=document.getElementById('mbgBellBadge'),list=document.getElementById('mbgBellList');
-  if(!wrap)return;
-  var unread=N.length;
-  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-  function render(){
-    badge.textContent=unread;badge.style.display=unread>0?'':'none';
-    list.innerHTML=N.length?N.map(function(n,i){var dot=i<unread?'<span class="w-2 h-2 rounded-full bg-red-500 shrink-0 mt-1.5"></span>':'<span class="w-2 h-2 shrink-0"></span>';
-      var tag=n[4]?'a href="'+n[4]+'"':'div';var end=n[4]?'a':'div';
-      return '<'+tag+' class="flex gap-3 px-4 py-3 hover:bg-slate-50 text-left">'+dot+'<span class="material-symbols-outlined text-[20px] text-slate-500 shrink-0">'+n[0]+'</span><span class="flex-1 min-w-0"><span class="block text-xs font-bold">'+esc(n[1])+'</span><span class="block text-[11px] text-slate-500">'+esc(n[2])+'</span><span class="block text-[10px] text-slate-400 mt-0.5">'+esc(n[3])+'</span></span></'+end+'>';}).join(''):'<p class="px-4 py-5 text-xs text-slate-500">Belum ada notifikasi terbaru.</p>';
-  }
-  btn.addEventListener('click',function(e){e.stopPropagation();var open=panel.classList.toggle('hidden')===false;btn.setAttribute('aria-expanded',open)});
-  panel.addEventListener('click',function(e){e.stopPropagation();if(e.target.closest('a'))panel.classList.add('hidden')});
-  document.getElementById('mbgBellRead').addEventListener('click',function(){unread=0;render()});
-  document.addEventListener('click',function(){panel.classList.add('hidden')});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')panel.classList.add('hidden')});
-  render();
-})();
-</script>  <script src="../../assets/js/dashboard-common.js?v=admin-dashboard-ui-2"></script>
-  <script src="../../assets/js/admin-reports.js?v=server-complaints-1"></script>
-  <script>
-    // Load the authoritative backup list from PostgreSQL.
-    document.addEventListener('DOMContentLoaded', function() {
-      var tbody = document.getElementById('backupListBody');
-      if (!tbody) return;
-      var isLocalPhp = /^(localhost|127\.0\.0\.1|::1)$/.test(location.hostname);
-      var endpoint = isLocalPhp ? '../../api/menu.php?backup_action=backup_list' : '/api/menu/backup';
-      fetch(endpoint, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
-        .then(function(r){ return r.json().then(function(data){ if(!r.ok) throw new Error(data.message || 'HTTP '+r.status); return data; }); })
-        .then(function(res){
-          if (res.status !== 'success' || !Array.isArray(res.data)) throw new Error(res.message || 'Format data backup tidak valid.');
-          renderRows(res.data, 'db');
-        }).catch(function(){
-          tbody.textContent = '';
-          var row = document.createElement('tr');
-          var cell = document.createElement('td');
-          cell.colSpan = 4;
-          cell.className = 'py-6 px-3 text-center text-red-600';
-          cell.textContent = 'Backup gagal dimuat dari database. Periksa koneksi dan sesi admin, lalu muat ulang halaman.';
-          row.appendChild(cell);
-          tbody.appendChild(row);
-        });
-      function renderRows(data, src) {
-        tbody.textContent = '';
-        if (!data.length) {
-          var emptyRow = document.createElement('tr');
-          var emptyCell = document.createElement('td');
-          emptyCell.colSpan = 4;
-          emptyCell.className = 'py-6 px-3 text-center text-slate-400';
-          emptyCell.textContent = 'Belum ada data backup menu.';
-          emptyRow.appendChild(emptyCell);
-          tbody.appendChild(emptyRow);
-          return;
-        }
-
-        data.forEach(function(d) {
-          var dateKey = String(d.menu_date || d.date || '').slice(0, 10);
-          var row = document.createElement('tr');
-          row.className = 'hover:bg-slate-50';
-          var dateCell = document.createElement('td');
-          dateCell.className = 'py-2.5 px-3 font-bold text-primary';
-          dateCell.textContent = dateKey || '—';
-          var badge = document.createElement('span');
-          badge.className = 'ml-1 px-1 rounded bg-emerald-100 text-emerald-700 text-[9px] font-bold';
-          badge.textContent = src === 'db' ? 'DB' : 'Lokal';
-          dateCell.appendChild(badge);
-          row.appendChild(dateCell);
-
-          var countCell = document.createElement('td');
-          countCell.className = 'py-2.5 px-3 text-slate-600';
-          countCell.textContent = String(d.total_menu || d.count || 0) + ' menu' +
-            (d.total_sppg ? ' · ' + d.total_sppg + ' SPPG' : '');
-          row.appendChild(countCell);
-
-          var caloriesCell = document.createElement('td');
-          caloriesCell.className = 'py-2.5 px-3 text-slate-500 text-xs';
-          caloriesCell.textContent = d.rata_kalori ? d.rata_kalori + ' kkal' : '—';
-          row.appendChild(caloriesCell);
-
-          var actionCell = document.createElement('td');
-          actionCell.className = 'py-2.5 px-3';
-          var downloadButton = document.createElement('button');
-          downloadButton.type = 'button';
-          downloadButton.className = 'px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold text-[11px] flex items-center gap-1';
-          downloadButton.textContent = 'Unduh Excel';
-          downloadButton.disabled = !dateKey;
-          downloadButton.addEventListener('click', function() { downloadMenuBackupXLSX(dateKey); });
-          actionCell.appendChild(downloadButton);
-          row.appendChild(actionCell);
-          tbody.appendChild(row);
-        });
-      }
-    });
-  </script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script>
-    const adminQuickNav = document.getElementById('adminQuickNav');
-    if (adminQuickNav) {
-      adminQuickNav.addEventListener('wheel', (event) => {
-        if (Math.abs(event.deltaY) > Math.abs(event.deltaX)) {
-          adminQuickNav.scrollLeft += event.deltaY;
-          event.preventDefault();
-        }
-      }, { passive: false });
-    }
-  </script>
+  <!--
+    ════════════════════════════════════════════════════════════════════
+    dashboard/admin/index.html — HALAMAN UTAMA (OVERVIEW)
+    Isi: profil & jam, hero, 4 KPI nasional, ringkasan aduan, grid modul.
+    Modul detail dipindah ke halaman terpisah:
+      telemetri.html · distribusi.html · data-mbg.html · pengguna.html
+      aduan.html · chat.html · logo-sppg.html · backup-menu.html
+      keamanan.html · pemeliharaan.html
+    Dependensi: admin-auth.js, admin-header.js, dashboard-common.js,
+      admin-reports.js (tidak dipakai di sini), live_chat.js, security.js.
+    Endpoint terkait: api/auth_user, api/tiket (via aduan.html).
+    ════════════════════════════════════════════════════════════════════
+  -->
 </body>
 </html>

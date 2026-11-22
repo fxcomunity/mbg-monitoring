@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Log Keamanan — Admin Radar MBG</title>
+  <link rel="icon" type="image/webp" href="../../assets/images/ic_launcher.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#001026',
+            'primary-container': '#0b2545',
+            secondary: '#395f95',
+            'tertiary-fixed': '#6ffbbe',
+            surface: '#f8f9ff',
+            'surface-card': '#ffffff',
+            'status-success': '#059669',
+            'status-warning': '#f59e0b',
+            'status-error': '#ef4444'
+          },
+          fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="../../assets/css/style.css"/>
+  <link rel="stylesheet" href="../../assets/css/dashboard.css"/>
+  <link rel="stylesheet" href="../../assets/css/admin.css"/>
+  <link rel="stylesheet" href="../../assets/css/security.css"/>
+  <link rel="stylesheet" href="../../assets/css/site-footer.css"/>
+  <script src="../../assets/js/admin-auth.js"></script>
+  <script src="../../assets/js/internal-chat-presence.js" defer></script>
+  <script src="../../assets/js/admin-header.js" defer></script>
+</head>
+<body data-admin-page="keamanan" class="bg-surface font-sans text-primary min-h-screen flex flex-col justify-between">
+
+  <div data-admin-header></div>
+
+  <main class="max-w-7xl mx-auto w-full p-4 sm:p-8 flex-grow">
+    <div id="dashProfileCard" class="mb-4"></div>
+
+    <nav class="page-breadcrumb" aria-label="Breadcrumb">
+      <a href="../../index.html">Beranda</a><span class="sep">/</span>
+      <a href="index.html">Dashboard Admin</a><span class="sep">/</span>
+      <span class="current">Log Keamanan</span>
+    </nav>
+
+    <!-- Peringatan Eksploitasi Keamanan (WAF Logs) -->
+    <div class="bg-surface-card rounded-3xl border border-red-200/80 shadow-sm overflow-hidden mb-8">
+      <div class="p-6 bg-red-50/50 border-b border-red-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-red-500/20 text-red-600 flex items-center justify-center">
+            <span class="material-symbols-outlined text-2xl">security</span>
+          </div>
+          <div>
+            <h1 class="text-base font-bold text-red-950 flex items-center gap-2">
+              <span>BGN Shield: Audit Eksploitasi XSS &amp; Injeksi Input</span>
+              <span class="px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-wider">WAF Aktif</span>
+            </h1>
+            <p class="text-xs text-red-700/80">Riwayat serangan dan upaya manipulasi form yang berhasil diblokir secara otomatis.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="panel.html#security-log" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs flex items-center gap-1 transition-all">
+            <span class="material-symbols-outlined text-sm">monitor_heart</span>
+            <span>Log Keamanan Lengkap</span>
+          </a>
+          <form action="#" method="POST" onsubmit="return confirm('Kosongkan riwayat exploit logs?');">
+            <input type="hidden" name="action" value="clear_exploit_logs">
+            <button type="submit" class="px-3 py-1.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-800 font-bold text-xs flex items-center gap-1 transition-all">
+              <span class="material-symbols-outlined text-sm">delete_sweep</span>
+              <span>Bersihkan Log</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="bg-red-50/70 text-red-900 text-[11px] font-bold uppercase tracking-wider border-b border-red-100">
+              <th class="py-3 px-4">Waktu</th>
+              <th class="py-3 px-4">IP Address</th>
+              <th class="py-3 px-4">Tipe Ancaman</th>
+              <th class="py-3 px-4">Field Input</th>
+              <th class="py-3 px-4">Sampel Muatan (Payload) Terdeteksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+
+              <tr>
+                <td colspan="5" class="py-8 text-center text-slate-400">
+                  <span class="material-symbols-outlined text-3xl text-emerald-500 block mb-1">verified_user</span>
+                  Tidak ada rekaman exploit. Sistem aman terlindungi.
+                </td>
+              </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div data-site-footer></div>
+
+  <script src="../../assets/js/site-footer.js" defer></script>
+  <script src="../../assets/js/security.js"></script>
+  <script src="../../assets/js/dashboard-common.js?v=admin-dashboard-ui-2"></script>
+
+  <!--
+    ════════════════════════════════════════════════════════════════════
+    dashboard/admin/keamanan.html — LOG KEAMANAN & AUDIT WAF
+    Isi: tabel exploit logs (XSS/injeksi yang diblokir BGN Shield)
+      + tautan ke panel.html#security-log untuk log keamanan lengkap.
+    Form clear_exploit_logs masih demo (action="#") — ditahan admin-auth.js.
+    Dependensi: admin-auth.js, admin-header.js, dashboard-common.js,
+      security.js.
+    Endpoint terkait: api/security/log (panel.html), WAF server-side.
+    ════════════════════════════════════════════════════════════════════
+  -->
+</body>
+</html>

@@ -43,7 +43,9 @@ try {
     $gpsRows = $gpsStmt->fetchAll();
 
     $approximateStmt = $pdo->prepare("
-        SELECT provinsi, kabupaten_kota, COUNT(*) AS sppg_count
+        SELECT provinsi, kabupaten_kota, COUNT(*) AS sppg_count,
+               COUNT(DISTINCT NULLIF(TRIM(nama_yayasan::text), '')) AS yayasan_count,
+               MAX(data_bulan) AS data_bulan
         FROM sppg
         WHERE {$baseWhere} AND (latitude IS NULL OR longitude IS NULL)
         GROUP BY provinsi, kabupaten_kota
@@ -52,6 +54,28 @@ try {
     ");
     $approximateStmt->execute($params);
     $approximateRows = $approximateStmt->fetchAll();
+
+    // Ringkasan status SPPG per kabupaten/kota untuk titik perkiraan (opsional; jika gagal peta tetap tampil)
+    $statusByGroup = [];
+    try {
+        $statusStmt = $pdo->prepare("
+            SELECT provinsi, kabupaten_kota,
+                   COALESCE(NULLIF(TRIM(status::text), ''), 'Tidak diketahui') AS status_label,
+                   COUNT(*) AS total
+            FROM sppg
+            WHERE {$baseWhere} AND (latitude IS NULL OR longitude IS NULL)
+            GROUP BY provinsi, kabupaten_kota, COALESCE(NULLIF(TRIM(status::text), ''), 'Tidak diketahui')
+            LIMIT 200000
+        ");
+        $statusStmt->execute($params);
+        foreach ($statusStmt->fetchAll() as $sr) {
+            $groupKey = ($sr['provinsi'] ?? '') . '|' . ($sr['kabupaten_kota'] ?? '');
+            $statusByGroup[$groupKey][$sr['status_label']] = (int)$sr['total'];
+        }
+    } catch (Throwable $statusError) {
+        Security::logFailure('sppg_map.php (status summary)', $statusError);
+        $statusByGroup = [];
+    }
 
     $centroidFile = __DIR__ . '/../database/data/indonesia-city-centroids.json';
     $centroidJson = file_get_contents($centroidFile);
@@ -180,12 +204,30 @@ try {
                     'location_accuracy' => 'approximate',
                     'location_label' => $locationLabel,
                     'sppg_count' => 0,
+                    'yayasan_count' => 0,
+                    'status_counts' => new stdClass(),
                     'sample_names' => [],
                 ],
             ];
         }
         $featureIndex = $approximateFeatureIndexes[$featureKey];
         $features[$featureIndex]['properties']['sppg_count'] += $groupCount;
+        $features[$featureIndex]['properties']['yayasan_count'] += (int)($r['yayasan_count'] ?? 0);
+        if (!empty($r['data_bulan'])) {
+            $currentMonth = $features[$featureIndex]['properties']['data_bulan'];
+            if ($currentMonth === null || strcmp((string)$r['data_bulan'], (string)$currentMonth) > 0) {
+                $features[$featureIndex]['properties']['data_bulan'] = $r['data_bulan'];
+            }
+        }
+        $groupKey = ($r['provinsi'] ?? '') . '|' . ($r['kabupaten_kota'] ?? '');
+        if (!empty($statusByGroup[$groupKey])) {
+            $counts = (array)$features[$featureIndex]['properties']['status_counts'];
+            foreach ($statusByGroup[$groupKey] as $label => $total) {
+                $counts[$label] = ($counts[$label] ?? 0) + $total;
+            }
+            arsort($counts);
+            $features[$featureIndex]['properties']['status_counts'] = $counts;
+        }
     }
 
     echo json_encode([

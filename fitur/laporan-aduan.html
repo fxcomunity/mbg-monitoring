@@ -52,7 +52,30 @@
     #uploadDropzone:focus-visible { outline: 3px solid rgba(57,95,149,.35); outline-offset: 3px; }
     #uploadDropzone.is-dragging { border-color: #395f95; background: #e5eeff; }
   </style>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+main{background:linear-gradient(180deg,#f8f9ff 0%,#eaf1fc 100%)}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+.rise{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both}.rise-2{animation-delay:.12s}.rise-3{animation-delay:.24s}
+.hero-stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);transition:transform .2s,background .2s}
+.hero-stat:hover{transform:translateY(-3px);background:rgba(255,255,255,.14)}
+.sec-title{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:.8rem;color:#0b2545;text-transform:uppercase;letter-spacing:.06em;padding-top:.5rem}
+.sec-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#d7e1ef,transparent)}
+.sec-title b{display:inline-flex;width:24px;height:24px;border-radius:9999px;background:#0b2545;color:#fff;align-items:center;justify-content:center;font-size:.7rem}
+.step .dot{display:inline-flex;width:26px;height:26px;border-radius:9999px;align-items:center;justify-content:center;background:#fff;color:#74777f;border:1.5px solid #d7e1ef;font-size:.7rem;font-weight:700;transition:all .3s}
+.step{color:#74777f;transition:color .3s}
+.step.active{color:#0b2545}.step.active .dot{background:#0b2545;color:#fff;border-color:#0b2545;box-shadow:0 0 0 4px rgba(11,37,69,.12)}
+.step.done{color:#059669}.step.done .dot{background:#059669;color:#fff;border-color:#059669}
+.tl>div{position:relative}.tl>div:not(:last-child)::before{content:"";position:absolute;left:11px;top:28px;bottom:-14px;width:2px;background:linear-gradient(#395f95,#d7e1ef)}
+#btnSubmitComplaint{background:linear-gradient(135deg,#0b2545,#134074);transition:transform .15s,box-shadow .2s,filter .2s}
+#btnSubmitComplaint:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 24px rgba(11,37,69,.28);filter:brightness(1.08)}
+#btnSubmitComplaint:disabled{opacity:.7;cursor:wait}
+#uploadDropzone{background-image:linear-gradient(#f7faff,#f7faff)}
+#ticketModal>div{animation:popIn .35s cubic-bezier(.2,.8,.2,1) both}
+.side-card{transition:transform .2s,box-shadow .2s}.side-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,16,38,.09)}
+@media (prefers-reduced-motion:reduce){.rise,#ticketModal>div{animation:none}}
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
   <script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "background": "#f8f9ff", "on-tertiary-fixed-variant": "#005236", "surface": "#f8f9ff", "surface-container-lowest": "#ffffff", "surface-container": "#e5eeff", "border-subtle": "#E2E8F0", "on-error": "#ffffff", "primary": "#001026", "on-primary-container": "#778db2", "tertiary-fixed": "#6ffbbe", "tertiary-container": "#002b1b", "on-secondary": "#ffffff", "on-primary-fixed": "#001c3b", "on-error-container": "#93000a", "inverse-on-surface": "#eaf1ff", "border-focus": "#134074", "status-error": "#EF4444", "surface-container-low": "#eff4ff", "on-tertiary-container": "#009f6e", "secondary-fixed": "#d5e3ff", "inverse-surface": "#213145", "inverse-primary": "#b1c7f0", "on-tertiary-fixed": "#002113", "on-secondary-fixed": "#001c3b", "surface-tint": "#495f82", "outline-variant": "#c4c6cf", "on-primary": "#ffffff", "secondary-fixed-dim": "#a7c8ff", "on-background": "#0b1c30", "status-success": "#059669", "tertiary": "#00130a", "surface-card": "#FFFFFF", "surface-canvas": "#F8FAFC", "surface-variant": "#d3e4fe", "on-primary-fixed-variant": "#314769", "primary-fixed-dim": "#b1c7f0", "surface-container-high": "#dce9ff", "outline": "#74777f", "on-secondary-container": "#274f84", "on-surface": "#0b1c30", "error-container": "#ffdad6", "surface-dim": "#cbdbf5", "tertiary-fixed-dim": "#4edea3", "surface-bright": "#f8f9ff", "on-surface-variant": "#44474e", "surface-container-highest": "#d3e4fe", "on-secondary-fixed-variant": "#1d477c", "status-warning": "#F59E0B", "secondary-container": "#9dc3ff", "primary-container": "#0b2545", "secondary": "#395f95", "on-tertiary": "#ffffff", "error": "#ba1a1a", "primary-fixed": "#d5e3ff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-md": "1rem", "margin": "2rem", "space-xl": "2.5rem", "space-xs": "0.25rem", "space-lg": "1.5rem", "gutter-sm": "1rem", "gutter": "1.5rem", "margin-sm": "1rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-xl-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-xl": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"] } } } };</script>
 <link rel="stylesheet" href="../assets/css/style.css"/>
 <link rel="stylesheet" href="../assets/css/security.css"/>
@@ -177,21 +200,28 @@
 <main class="w-full pt-20 bg-surface min-h-[calc(100vh-20rem)]">
   <div class="flex flex-col w-full">
     <!-- Hero Banner -->
-    <section class="w-full bg-primary text-on-primary py-space-xl px-space-md sm:px-space-lg relative overflow-hidden">
-      <div class="max-w-7xl mx-auto flex flex-col gap-space-md relative z-10">
-        <div class="flex items-center gap-space-xs">
+    <section class="w-full bg-gradient-to-br from-primary via-primary-container to-[#134074] text-on-primary py-space-xl px-space-md sm:px-space-lg relative overflow-hidden">
+      <div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-tertiary-fixed/10 blur-3xl"></div>
+      <div class="absolute -bottom-32 -left-16 w-96 h-96 rounded-full bg-secondary-container/10 blur-3xl"></div>
+      <div class="max-w-7xl mx-auto flex flex-col gap-space-lg relative z-10 rise">
+        <div class="flex flex-wrap items-center gap-space-xs">
           <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-lowest/10 backdrop-blur-md">
             <span class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed animate-ping"></span>
             <span class="font-label-sm text-label-sm text-surface-container-high tracking-wider uppercase">Layanan Aduan Siaga 24 Jam</span>
           </span>
           <span class="font-label-sm text-label-sm text-surface-container-high">• Respons Satgas &lt; 120 Menit</span>
         </div>
-        <h1 class="font-headline-xl text-headline-xl sm:text-[36px] font-bold tracking-tight">
-          Pusat Pengaduan &amp; Aduan Partisipatif MBG Nasional
+        <h1 class="font-headline-xl text-headline-xl sm:text-[38px] sm:leading-[46px] font-bold tracking-tight max-w-4xl">
+          Pusat Pengaduan &amp; Aduan <span class="text-tertiary-fixed">Partisipatif</span> MBG Nasional
         </h1>
         <p class="font-body-lg text-body-lg text-surface-container-high/90 max-w-3xl leading-relaxed">
           Saluran pengawasan publik resmi Badan Gizi Nasional (BGN). Laporkan segala bentuk ketidaksesuaian menu, keterlambatan distribusi, kualitas cita rasa, maupun kecurigaan pelanggaran sanitasi SPPG. Identitas pelapor dilindungi penuh.
         </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md max-w-3xl">
+          <div class="hero-stat rounded-2xl p-4 flex items-center gap-3"><span class="material-symbols-outlined text-tertiary-fixed text-[28px]">bolt</span><div><div class="font-headline-md text-headline-md font-bold leading-none">&lt; 120 mnt</div><div class="font-label-sm text-label-sm text-surface-container-high mt-1">Respons Satgas</div></div></div>
+          <div class="hero-stat rounded-2xl p-4 flex items-center gap-3"><span class="material-symbols-outlined text-tertiary-fixed text-[28px]">schedule</span><div><div class="font-headline-md text-headline-md font-bold leading-none">24 Jam</div><div class="font-label-sm text-label-sm text-surface-container-high mt-1">Layanan Siaga</div></div></div>
+          <div class="hero-stat rounded-2xl p-4 flex items-center gap-3"><span class="material-symbols-outlined text-tertiary-fixed text-[28px]">shield_lock</span><div><div class="font-headline-md text-headline-md font-bold leading-none">100%</div><div class="font-label-sm text-label-sm text-surface-container-high mt-1">Identitas Dilindungi</div></div></div>
+        </div>
       </div>
     </section>
 
@@ -199,7 +229,7 @@
     <section class="w-full px-space-md sm:px-space-lg py-space-xl max-w-7xl mx-auto">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
         <!-- Form Aduan (7 Cols) -->
-        <div class="lg:col-span-7 bg-surface-card p-space-lg sm:p-space-xl rounded-3xl shadow-lg shadow-slate-900/5 border border-border-subtle flex flex-col gap-space-md">
+        <div class="lg:col-span-7 rise rise-2 bg-surface-card p-space-lg sm:p-space-xl rounded-3xl shadow-xl shadow-slate-900/5 border border-border-subtle flex flex-col gap-space-md">
           <div class="flex items-center justify-between pb-space-sm border-b border-border-subtle">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-primary-container text-tertiary-fixed flex items-center justify-center">
@@ -212,14 +242,17 @@
             </div>
             <span class="px-2.5 py-1 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm font-semibold">Tersandikan SSL</span>
           </div>
-          <div class="grid grid-cols-3 gap-2 rounded-2xl bg-surface-container-low p-3" aria-label="Tahapan pengisian laporan">
-            <div class="flex items-center gap-2 text-[11px] font-semibold text-primary"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">1</span>Identitas</div>
-            <div class="flex items-center gap-2 text-[11px] font-semibold text-primary"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">2</span>Kejadian</div>
-            <div class="flex items-center gap-2 text-[11px] font-semibold text-primary"><span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white">3</span>Bukti &amp; kirim</div>
+          <div class="rounded-2xl bg-surface-container-low p-3.5" aria-label="Tahapan pengisian laporan">
+            <div class="h-1.5 rounded-full bg-white overflow-hidden mb-3"><div id="stepBar" class="h-full rounded-full bg-gradient-to-r from-secondary to-status-success transition-all duration-500" style="width:8%"></div></div>
+            <div class="grid grid-cols-3 gap-2 text-[11px] font-semibold">
+              <div class="step active flex items-center gap-2" data-step="1"><span class="dot">1</span>Identitas</div>
+              <div class="step flex items-center gap-2" data-step="2"><span class="dot">2</span>Kejadian</div>
+              <div class="step flex items-center gap-2" data-step="3"><span class="dot">3</span>Bukti &amp; kirim</div>
+            </div>
           </div>
 
           <form id="complaintForm" class="flex flex-col gap-space-md" enctype="multipart/form-data">
-            <!-- 1. Kategori Pelapor -->
+            <div class="sec-title"><b>1</b>Identitas Pelapor</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
               <div class="flex flex-col gap-1.5">
                 <label for="reporterName" class="font-label-md text-label-md text-primary font-semibold">Nama Lengkap / Inisial <span class="text-red-600">*</span></label>
@@ -231,7 +264,7 @@
               </div>
             </div>
 
-            <!-- 2. Peran & Kategori Aduan -->
+            <div class="sec-title"><b>2</b>Detail Kejadian</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
               <div class="flex flex-col gap-1.5">
                 <label for="reporterRole" class="font-label-md text-label-md text-primary font-semibold">Status / Peran Pelapor <span class="text-red-600">*</span></label>
@@ -272,9 +305,10 @@
             <div class="flex flex-col gap-1.5">
               <label for="reportDescription" class="font-label-md text-label-md text-primary font-semibold">Deskripsi Rinci Laporan <span class="text-red-600">*</span></label>
               <textarea required id="reportDescription" name="description" rows="4" class="px-3.5 py-2.5 rounded-xl bg-surface-container-low text-on-surface border border-border-subtle focus:ring-2 focus:ring-border-focus focus:outline-none" placeholder="Ceritakan kronologi, kondisi sajian, atau foto bukti nomor batch wadah..."></textarea>
+              <div class="flex justify-between text-[11px] text-on-surface-variant"><span>Minimal 10 karakter agar mudah diverifikasi</span><span id="descCount">0 karakter</span></div>
             </div>
 
-            <!-- 5. Upload File / Foto -->
+            <div class="sec-title"><b>3</b>Bukti Pendukung</div>
             <div class="p-5 sm:p-6 rounded-2xl bg-surface-container-low border-2 border-dashed border-border-subtle flex flex-col items-center justify-center text-center gap-2 cursor-pointer hover:bg-surface-container transition-colors focus-visible:ring-2 focus-visible:ring-border-focus" id="uploadDropzone" role="button" tabindex="0" aria-label="Pilih foto bukti makanan">
               <span class="material-symbols-outlined text-[32px] text-secondary">add_a_photo</span>
               <div class="flex flex-col">
@@ -302,9 +336,9 @@
         </div>
 
         <!-- Sidebar Bantuan & Saluran Alternatif (5 Cols) -->
-        <div class="lg:col-span-5 flex flex-col gap-space-lg">
+        <div class="lg:col-span-5 rise rise-3 flex flex-col gap-space-lg lg:sticky lg:top-24 lg:self-start">
           <!-- WhatsApp Card -->
-          <div class="bg-surface-card p-space-lg rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
+          <div class="side-card bg-surface-card p-space-lg rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-status-success/15 text-status-success flex items-center justify-center">
                 <span class="material-symbols-outlined text-[24px]">chat</span>
@@ -324,7 +358,7 @@
           </div>
 
           <!-- Hotline Call Card -->
-          <div class="bg-surface-card p-space-lg rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
+          <div class="side-card bg-surface-card p-space-lg rounded-3xl shadow-sm border border-border-subtle flex flex-col gap-space-md">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center">
                 <span class="material-symbols-outlined text-[24px]">call</span>
@@ -349,7 +383,7 @@
               <span class="material-symbols-outlined text-secondary text-[20px]">timeline</span>
               Alur Penanganan Laporan Satgas
             </h4>
-            <div class="flex flex-col gap-3 pt-2">
+            <div class="tl flex flex-col gap-4 pt-2">
               <div class="flex items-start gap-3">
                 <span class="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center text-xs font-bold shrink-0">1</span>
                 <p class="font-body-sm text-body-sm text-on-surface-variant"><strong>Verifikasi Awal (&lt;15 mnt):</strong> Sistem memvalidasi identitas sekolah dan SPPG penyedia yang bertugas.</p>
@@ -385,6 +419,7 @@
       <span id="ticketNumberDisplay" class="font-headline-sm font-bold text-primary font-mono">TKT-BGN-20261013-8821</span>
       <span class="text-xs text-status-success font-semibold mt-1">Estimasi Respon Pertama: &lt; 45 Menit</span>
     </div>
+    <button type="button" id="btnCopyTicket" class="w-full py-2.5 rounded-xl bg-surface-container text-primary font-label-md font-semibold hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-[18px]">content_copy</span><span id="copyTicketText">Salin Nomor Tiket</span></button>
     <button id="btnCloseTicketModal" class="w-full py-3 rounded-xl bg-primary text-on-primary font-label-md font-semibold hover:bg-primary-container transition-colors">
       Selesai &amp; Kembali
     </button>
@@ -582,6 +617,33 @@
       });
     }
   });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+  const f=document.getElementById('complaintForm'); if(!f) return;
+  const $=id=>document.getElementById(id), steps=[...document.querySelectorAll('.step')], bar=$('stepBar');
+  function update(){
+    const v=n=>(f.elements[n]?.value||'').trim();
+    const s1=v('reporter_name').length>1&&v('reporter_phone').replace(/\D/g,'').length>=9;
+    const s2=v('school_target').length>1&&!!v('incident_date')&&v('description').length>=10;
+    const s3=s1&&s2&&!!$('photoInput').files.length;
+    const done=[s1,s2,s3], cur=done.indexOf(false);
+    steps.forEach((el,i)=>{el.classList.toggle('done',done[i]);el.classList.toggle('active',i===cur);
+      el.querySelector('.dot').textContent=done[i]?'✓':i+1});
+    bar.style.width=[8,38,68,100][done.filter(Boolean).length]+'%';
+    $('descCount').textContent=v('description').length+' karakter';
+  }
+  f.addEventListener('input',update);f.addEventListener('change',update);
+  f.addEventListener('reset',()=>setTimeout(update,0));
+  new MutationObserver(update).observe($('fileChosenLabel'),{attributes:true,childList:true});
+  update();
+  const cp=$('btnCopyTicket');
+  if(cp) cp.addEventListener('click',async()=>{
+    try{await navigator.clipboard.writeText($('ticketNumberDisplay').textContent.trim());$('copyTicketText').textContent='Tersalin ✓'}
+    catch(e){$('copyTicketText').textContent='Salin manual dari kotak di atas'}
+    setTimeout(()=>$('copyTicketText').textContent='Salin Nomor Tiket',2000);
+  });
+});
 </script>
 <div data-site-footer></div>
 <script>

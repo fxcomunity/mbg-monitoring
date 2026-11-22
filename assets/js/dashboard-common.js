@@ -91,20 +91,31 @@
       }
       var roleLabel = { admin: 'Admin Satgas BGN', sppg: 'Mitra Dapur SPPG', user: 'Wali Murid / Publik' };
       var roleBg = { admin: 'bg-red-100 text-red-800', sppg: 'bg-blue-100 text-blue-800', user: 'bg-emerald-100 text-emerald-800' };
+      var roleIcon = { admin: 'admin_panel_settings', sppg: 'kitchen', user: 'person' };
       var role = ['admin', 'sppg', 'user'].indexOf(s.role) >= 0 ? s.role : null;
       var profileName = String(s.name || '—');
+      var avatarUrl = s.avatar_url || '';
+      var avatarHtml = avatarUrl
+        ? '<img src="' + escHTML(avatarUrl) + '" alt="Avatar" class="w-12 h-12 rounded-2xl object-cover shadow-md">'
+        : '<div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-xl shadow-md">' +
+          escHTML(profileName.charAt(0).toUpperCase()) +
+        '</div>';
       card.innerHTML =
-        '<div class="flex items-center gap-3 p-4 bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/80 shadow-sm">' +
-          '<div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-base shrink-0">' +
-            escHTML(profileName.charAt(0).toUpperCase()) +
+        '<div class="flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">' +
+          avatarHtml +
+          '<div class="min-w-0 flex-1">' +
+            '<p class="font-bold text-base text-primary truncate">' + escHTML(profileName) + '</p>' +
+            '<div class="flex items-center gap-2 mt-1">' +
+              '<span class="material-symbols-outlined text-sm ' + (role === 'admin' ? 'text-red-600' : role === 'sppg' ? 'text-blue-600' : 'text-emerald-600') + '">' + (roleIcon[role] || 'person') + '</span>' +
+              '<span class="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full ' + (roleBg[role] || 'bg-slate-100 text-slate-700') + '">' +
+                escHTML(role ? roleLabel[role] : s.role) +
+              '</span>' +
+            '</div>' +
           '</div>' +
-          '<div class="min-w-0">' +
-            '<p class="font-bold text-sm text-primary truncate">' + escHTML(profileName) + '</p>' +
-            '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ' + (roleBg[role] || 'bg-slate-100 text-slate-700') + '">' +
-              escHTML(role ? roleLabel[role] : s.role) +
-            '</span>' +
+          '<div class="hidden sm:flex flex-col items-end gap-1 pl-4 border-l border-slate-200">' +
+            '<div id="mbgDashClock" class="text-right text-sm font-bold text-slate-600 leading-tight"></div>' +
+            '<span class="text-[10px] text-slate-400 font-medium">Waktu lokal</span>' +
           '</div>' +
-          '<div id="mbgDashClock" class="ml-auto text-right text-xs text-slate-600 shrink-0 leading-tight"></div>' +
         '</div>' +
         accountLinks;
       startClock('mbgDashClock');
@@ -128,15 +139,32 @@
     btn.setAttribute('aria-controls', menu.id);
     menu.setAttribute('role', 'navigation');
     menu.setAttribute('aria-label', 'Navigasi dashboard');
+
+    var backdrop = document.getElementById('dashMenuBackdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.id = 'dashMenuBackdrop';
+      backdrop.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(backdrop);
+    }
+    backdrop.style.cssText = 'position:fixed;inset:0;z-index:45;background:rgba(2,6,23,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s ease;';
+
     function setOpen(open, restoreFocus) {
       menu.classList.toggle('hidden', !open);
       btn.setAttribute('aria-expanded', String(open));
       btn.setAttribute('aria-label', open ? 'Tutup navigasi' : 'Buka navigasi');
       var icon = btn.querySelector('.material-symbols-outlined');
-      if (icon) icon.textContent = open ? 'close' : 'menu';
+      if (icon) {
+        icon.textContent = open ? 'close' : 'menu';
+        icon.style.transition = 'transform .25s ease, opacity .2s ease';
+        icon.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
+      }
+      backdrop.style.opacity = open ? '1' : '0';
+      backdrop.style.pointerEvents = open ? 'auto' : 'none';
       if (restoreFocus) btn.focus();
     }
     setOpen(false);
+    backdrop.addEventListener('click', function () { setOpen(false); });
     btn.addEventListener('click', function () {
       setOpen(menu.classList.contains('hidden'));
     });

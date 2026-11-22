@@ -46,6 +46,40 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="../assets/js/site-footer.js" defer></script>
+<style id="map-ux-styles">
+/* ===== Peta: tampilan Leaflet (warna tetap sesuai palet situs) ===== */
+.leaflet-container{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#c9e6ed}
+.leaflet-popup-content-wrapper{border-radius:16px;box-shadow:0 12px 28px rgba(0,16,38,.18)}
+.leaflet-popup-content{margin:12px 14px}
+.leaflet-popup-tip{box-shadow:none}
+.leaflet-control-zoom{border:none!important;border-radius:14px!important;overflow:hidden;box-shadow:0 4px 14px rgba(0,16,38,.15)!important}
+.leaflet-control-zoom a{width:36px!important;height:36px!important;line-height:36px!important;color:#001026!important}
+.leaflet-control-attribution{font-size:10px;border-radius:8px 0 0 0}
+.sppg-custom-pin>div{transition:transform .15s ease}
+.sppg-custom-pin:hover>div{transform:scale(1.14)}
+.sppg-custom-pin.is-selected>div{outline:3px solid #2563EB;outline-offset:2px;transform:scale(1.14)}
+@media (max-width:639px){.leaflet-control-zoom{display:none}}
+
+/* ===== Layar penuh ===== */
+#mapShell{isolation:isolate}
+#mapShell.map-fs{position:fixed!important;inset:0;z-index:9500;width:100vw;height:100vh;height:100dvh!important;border-radius:0!important;border:none}
+body.map-fs-lock{overflow:hidden}
+
+/* ===== Tombol filter lapisan ===== */
+#toggle-layer[aria-pressed="true"]{background:#0b2545;color:#ffffff}
+
+/* ===== Hasil pencarian ===== */
+.sppg-opt{display:flex;align-items:flex-start;gap:.6rem;width:100%;padding:.55rem .75rem;text-align:left;cursor:pointer;transition:background .12s}
+.sppg-opt:hover,.sppg-opt[aria-selected="true"]{background:#eff4ff}
+
+/* ===== Animasi muncul saat scroll ===== */
+.reveal{transition:opacity .55s ease,transform .55s ease}
+.reveal.reveal-hidden{opacity:0;transform:translateY(16px)}
+@media (prefers-reduced-motion:reduce){
+  .reveal,.reveal.reveal-hidden{transition:none;opacity:1;transform:none}
+  .sppg-custom-pin>div{transition:none}
+}
+</style>
 </head><body class="bg-surface font-body-md text-on-surface antialiased selection:bg-secondary-container selection:text-on-secondary-container"><script>
 /* Maintenance check */
 (function() {
@@ -174,21 +208,25 @@
 <p class="text-body-lg font-body-lg text-on-surface-variant">
           Pusat pemantauan spasial Satuan Pelayanan Pemenuhan Gizi (SPPG), kepatuhan standar higienis termal, dan keterhubungan rantai pasok pangan lokal ke 42.000+ sekolah penerima manfaat.
         </p>
+<div class="flex flex-wrap items-center gap-2 pt-1">
+<span id="lastSyncChip" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-label-sm font-label-sm"><span class="material-symbols-outlined text-[14px] text-secondary">schedule</span>Menunggu data...</span>
+<a href="#peta-sppg" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-secondary hover:bg-surface-container-high text-label-sm font-label-sm transition-colors"><span class="material-symbols-outlined text-[14px]">south</span>Langsung ke peta</a>
+</div>
 </div>
 <div class="flex items-center gap-3 self-start md:self-auto bg-surface-container-low p-2 rounded-xl">
 <button class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container font-label-md text-label-md shadow-sm transition-colors" id="btn-export-gis">
 <span class="material-symbols-outlined text-[18px]">download</span>
 <span>Unduh Data Spasial</span>
 </button>
-<button class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md shadow-sm transition-colors" id="btn-sync-telemetri">
+<button class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md shadow-sm transition-colors" id="btn-sync-telemetri" title="Ambil ulang data lokasi SPPG dari database">
 <span class="material-symbols-outlined text-[18px]">sync</span>
-<span>Sinkronisasi Satelit</span>
+<span>Muat Ulang Data</span>
 </button>
 </div>
 </section>
 <!-- Quick Stat Bar (Cards Bento) -->
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-<div class="p-6 rounded-2xl bg-surface-card shadow-sm space-y-4">
+<section class="reveal grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="p-6 rounded-2xl bg-surface-card shadow-sm space-y-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
 <div class="flex items-center justify-between">
 <span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Dapur Aktif Siaga</span>
 <div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-secondary">
@@ -203,7 +241,7 @@
 </p>
 </div>
 </div>
-<div class="p-6 rounded-2xl bg-surface-card shadow-sm space-y-4">
+<div class="p-6 rounded-2xl bg-surface-card shadow-sm space-y-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
 <div class="flex items-center justify-between">
 <span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Sertifikasi SLHS &amp; Halal</span>
 <div class="w-9 h-9 rounded-xl bg-tertiary-container flex items-center justify-center text-tertiary-fixed">
@@ -217,7 +255,7 @@
           </p>
 </div>
 </div>
-<div class="p-6 rounded-2xl bg-surface-card shadow-sm space-y-4">
+<div class="p-6 rounded-2xl bg-surface-card shadow-sm space-y-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
 <div class="flex items-center justify-between">
 <span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Radius Rata-rata</span>
 <div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-secondary">
@@ -231,7 +269,7 @@
           </p>
 </div>
 </div>
-<div class="p-6 rounded-2xl bg-surface-card shadow-sm space-y-4">
+<div class="p-6 rounded-2xl bg-surface-card shadow-sm space-y-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
 <div class="flex items-center justify-between">
 <span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Ketepatan Tepat Waktu</span>
 <div class="w-9 h-9 rounded-xl bg-surface-container-high flex items-center justify-center text-primary-container">
@@ -248,151 +286,207 @@
 </div>
 </section>
 <!-- Peta GIS Interaktif Section -->
-<section class="rounded-3xl bg-surface-card p-6 lg:p-8 shadow-sm space-y-6">
-<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-<div>
+<section id="peta-sppg" class="reveal rounded-3xl bg-surface-card p-5 sm:p-6 lg:p-8 shadow-sm space-y-5">
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+<div class="max-w-2xl">
 <div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-secondary text-[22px]">public</span>
+<span class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[22px]">public</span>
+</span>
 <h2 class="text-headline-lg font-headline-lg text-primary">Peta Lokasi SPPG</h2>
 </div>
-<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-2">
             Titik lokasi ditampilkan dari database SPPG. Titik perkiraan wilayah dibedakan dari koordinat GPS terdaftar.
           </p>
 </div>
 <!-- Filter Controls -->
-<div class="flex flex-wrap items-center gap-2 sm:gap-3">
+<div class="flex flex-wrap items-center gap-2 p-2 rounded-2xl bg-surface-container-low/70 border border-border-subtle/60">
+<div class="relative">
+<span class="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary text-[18px]">map</span>
+<select class="appearance-none pl-8 pr-8 py-2 bg-surface-container-lowest text-on-surface font-label-md text-label-md rounded-xl border border-border-subtle hover:border-secondary-fixed-dim focus:outline-none focus:ring-2 focus:ring-border-focus transition-all cursor-pointer max-w-[190px]" id="filter-provinsi" aria-label="Filter provinsi">
+<option value="all">Memuat provinsi...</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">expand_more</span>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary text-[18px]">flag</span>
+<select class="appearance-none pl-8 pr-8 py-2 bg-surface-container-lowest text-on-surface font-label-md text-label-md rounded-xl border border-border-subtle hover:border-secondary-fixed-dim focus:outline-none focus:ring-2 focus:ring-border-focus transition-all cursor-pointer max-w-[190px]" id="filter-status" aria-label="Filter status SPPG">
+<option value="all">Semua Status</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">expand_more</span>
+</div>
+<button type="button" aria-pressed="true" class="px-3 py-2 bg-surface-container text-secondary font-label-md text-label-md rounded-xl hover:bg-surface-container-high transition-colors flex items-center gap-1.5 border border-transparent focus:outline-none focus:ring-2 focus:ring-border-focus" id="toggle-layer">
+<span class="material-symbols-outlined text-[16px]">layers</span>
+<span>Titik perkiraan wilayah</span>
+</button>
+<button type="button" id="btnResetMapFilter" class="px-2.5 py-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-xl transition-colors flex items-center gap-1 font-label-md text-label-md focus:outline-none focus:ring-2 focus:ring-border-focus" title="Reset semua filter peta">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+<span class="hidden sm:inline">Reset</span>
+</button>
 <a id="btnFilterMapLink" href="https://www.google.com/maps/search/?api=1&query=SPPG+Indonesia" target="_blank" rel="noopener" class="px-3.5 py-2 bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md rounded-xl transition-colors flex items-center gap-1.5 shadow-sm">
   <span class="material-symbols-outlined text-[16px]">map</span>
   <span id="btnFilterMapLinkText">Buka Wilayah di Google Maps</span>
   <span class="material-symbols-outlined text-[14px]">open_in_new</span>
 </a>
-<select class="px-3 py-2 bg-surface-container-low text-on-surface font-label-md text-label-md rounded-xl focus:outline-none focus:ring-2 focus:ring-border-focus" id="filter-provinsi" aria-label="Filter provinsi">
-<option value="all">Memuat provinsi...</option>
-</select>
-<select class="px-3 py-2 bg-surface-container-low text-on-surface font-label-md text-label-md rounded-xl focus:outline-none focus:ring-2 focus:ring-border-focus" id="filter-status" aria-label="Filter status SPPG">
-<option value="all">Semua Status</option>
-</select>
-<button class="px-3 py-2 bg-surface-container text-secondary font-label-md text-label-md rounded-xl hover:bg-surface-container-high transition-colors flex items-center gap-1.5" id="toggle-layer">
-<span class="material-symbols-outlined text-[16px]">layers</span>
-<span>Titik perkiraan wilayah</span>
-</button>
 </div>
 </div>
-<p id="sppgMapStatus" class="text-xs text-on-surface-variant" role="status" aria-live="polite">Memuat lokasi dari database...</p>
+
+<div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container-low/60">
+<span class="relative flex h-2.5 w-2.5 shrink-0">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-60"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-status-success"></span>
+</span>
+<p id="sppgMapStatus" class="text-xs font-medium text-on-surface-variant" role="status" aria-live="polite">Memuat lokasi dari database...</p>
+</div>
 
 <!-- Map Display Container with Leaflet, OpenStreetMap, OSRM & Browser Geolocation -->
-<div class="relative w-full h-[520px] lg:h-[600px] rounded-3xl overflow-hidden shadow-inner border border-slate-200">
+<div id="mapShell" class="relative w-full h-[560px] lg:h-[640px] rounded-3xl overflow-hidden shadow-inner border border-slate-200 bg-surface-container-low">
   <!-- Interactive Leaflet Map Div -->
   <div id="distribusiLeafletMap" class="w-full h-full z-0"></div>
 
-  <!-- Realtime GPS Control & Status Overlay (Top Left) -->
-  <div class="absolute top-4 left-4 z-[400] flex flex-col gap-2 pointer-events-auto max-w-[280px] sm:max-w-xs">
-    <button type="button" id="btnDetectGPS" onclick="detectUserLocationRealtime(true)" 
-            class="px-3.5 py-2.5 rounded-2xl bg-white/95 backdrop-blur-md hover:bg-slate-50 text-primary border border-slate-200 shadow-md text-xs font-bold flex items-center gap-2 transition-all group">
-      <span class="relative flex h-3 w-3">
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-600"></span>
-      </span>
-      <span class="material-symbols-outlined text-sm text-blue-600 group-hover:scale-110 transition-transform">my_location</span>
-      <span id="btnDetectGPSText">Lokasi Saya &amp; Estimasi Rute</span>
-    </button>
+  <!-- Loading overlay (otomatis hilang saat data database selesai dimuat) -->
+  <div id="mapLoading" class="absolute inset-0 z-[300] flex items-center justify-center bg-white/60 backdrop-blur-sm pointer-events-none transition-opacity duration-300" aria-hidden="true">
+    <div class="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white shadow-lg border border-slate-200">
+      <span class="material-symbols-outlined text-secondary text-[22px] animate-spin">progress_activity</span>
+      <span class="text-xs font-bold text-primary">Memuat peta &amp; lokasi SPPG...</span>
+    </div>
+  </div>
+
+  <!-- Search + GPS + Toolbar (Top Left) -->
+  <div class="absolute top-3 left-3 sm:top-4 sm:left-4 z-[400] flex flex-col gap-2 w-[calc(100%-1.5rem)] sm:w-80 pointer-events-none">
+    <div class="relative pointer-events-auto">
+      <span class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+      <input id="sppgSearch" type="search" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="sppgSearchResults" aria-autocomplete="list" placeholder="Cari SPPG, kab/kota, provinsi..." class="w-full pl-10 pr-3 py-2.5 rounded-2xl bg-white/95 backdrop-blur-md text-primary placeholder:text-outline border border-slate-200 shadow-md text-xs font-medium focus:outline-none focus:ring-2 focus:ring-border-focus"/>
+      <ul id="sppgSearchResults" role="listbox" class="hidden absolute mt-1.5 w-full max-h-64 overflow-y-auto rounded-2xl bg-white shadow-xl border border-slate-200 py-1 text-xs"></ul>
+    </div>
+    <div class="flex items-stretch gap-2 pointer-events-auto">
+      <button type="button" id="btnDetectGPS" onclick="detectUserLocationRealtime(true)" 
+              class="min-w-0 flex-1 px-3.5 py-2.5 rounded-2xl bg-white/95 backdrop-blur-md hover:bg-slate-50 text-primary border border-slate-200 shadow-md text-xs font-bold flex items-center gap-2 transition-all group focus:outline-none focus:ring-2 focus:ring-border-focus">
+        <span class="relative flex h-3 w-3 shrink-0">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-600"></span>
+        </span>
+        <span class="material-symbols-outlined text-sm text-blue-600 group-hover:scale-110 transition-transform">my_location</span>
+        <span id="btnDetectGPSText" class="truncate">Lokasi Saya &amp; Estimasi Rute</span>
+      </button>
+      <button type="button" id="btnMapReset" title="Lihat seluruh Indonesia" aria-label="Lihat seluruh Indonesia" class="w-10 shrink-0 rounded-2xl bg-white/95 backdrop-blur-md hover:bg-slate-50 text-primary border border-slate-200 shadow-md flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-border-focus">
+        <span class="material-symbols-outlined text-[20px]">zoom_out_map</span>
+      </button>
+      <button type="button" id="btnMapFullscreen" title="Layar penuh" aria-label="Layar penuh" aria-pressed="false" class="w-10 shrink-0 rounded-2xl bg-white/95 backdrop-blur-md hover:bg-slate-50 text-primary border border-slate-200 shadow-md flex items-center justify-center transition-all focus:outline-none focus:ring-2 focus:ring-border-focus">
+        <span class="material-symbols-outlined text-[20px]">fullscreen</span>
+      </button>
+    </div>
     <div id="gpsStatusCard" class="hidden px-3.5 py-2 rounded-2xl bg-[#001026]/90 text-white backdrop-blur-md text-[11px] font-medium shadow-md">
       <span id="gpsStatusText">Lokasi GPS hanya dipakai untuk mencari rute dan estimasi waktu tempuh.</span>
     </div>
   </div>
 
-  <!-- Route Info HUD: OSRM Road Routing Engine (Top Right) -->
-  <div id="osrmRouteHud" class="hidden absolute top-4 right-4 z-[400] w-72 sm:w-80 bg-white/95 backdrop-blur-md p-4 rounded-3xl border border-slate-200 shadow-xl text-xs space-y-2.5 pointer-events-auto">
-    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-      <div class="flex items-center gap-1.5">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
-          <span class="material-symbols-outlined text-[16px]">alt_route</span>
-        </span>
-        <span class="font-bold text-slate-900 text-[11px]">Estimasi Perjalanan</span>
-      </div>
-      <span id="osrmBadge" class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Rute Aktif</span>
-    </div>
-    <div class="grid grid-cols-2 gap-2 text-center">
-      <div class="p-2.5 rounded-2xl bg-slate-50 border border-slate-100">
-        <span class="text-[10px] text-slate-400 block font-semibold uppercase">Jarak Tempuh</span>
-        <span id="osrmDistance" class="text-base font-extrabold text-primary">-</span>
-      </div>
-      <div class="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-100">
-        <span class="text-[10px] text-emerald-700 block font-semibold uppercase">Estimasi Waktu</span>
-        <span id="osrmDuration" class="text-base font-extrabold text-emerald-700">-</span>
-      </div>
-    </div>
-    <div class="text-[11px] text-slate-600 flex items-center justify-between pt-1">
-      <span class="truncate">Tujuan: <strong id="osrmTargetSppg" class="text-slate-900">-</strong></span>
-      <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold shrink-0">Hot Chain</span>
-    </div>
-  </div>
+  <!-- Panel kanan/bawah: Estimasi Rute (OSRM) + Kartu SPPG terpilih -->
+  <div class="absolute z-[400] inset-x-3 bottom-7 sm:inset-x-auto sm:right-4 sm:bottom-8 sm:w-80 flex flex-col gap-2 pointer-events-none">
 
-  <!-- Pinned SPPG Card Overlay on Map (Bottom Right) -->
-  <div class="absolute bottom-16 right-4 z-[400] max-w-sm w-[90%] sm:w-full bg-surface-card/95 backdrop-blur-md p-4 rounded-3xl shadow-xl space-y-3 pointer-events-auto border border-slate-200">
-    <div class="flex items-start justify-between">
-      <div>
-        <span id="pinnedSppgCode" class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary-fixed text-label-sm font-label-sm">Pilih lokasi</span>
-        <h3 id="pinnedSppgTitle" class="text-headline-sm font-headline-sm text-primary mt-1">Data SPPG</h3>
-        <span id="pinnedSppgAddress" class="text-xs text-on-surface-variant block mt-0.5">Lokasi akan dimuat dari database.</span>
+    <!-- Route Info HUD: OSRM Road Routing Engine -->
+    <div id="osrmRouteHud" class="hidden pointer-events-auto bg-white/95 backdrop-blur-md p-4 rounded-3xl border border-slate-200 shadow-xl text-xs space-y-2.5">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div class="flex items-center gap-1.5">
+          <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+            <span class="material-symbols-outlined text-[16px]">alt_route</span>
+          </span>
+          <span class="font-bold text-slate-900 text-[11px]">Estimasi Perjalanan</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span id="osrmBadge" class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Rute Aktif</span>
+          <button type="button" id="btnCloseRoute" title="Hapus rute" aria-label="Hapus rute" class="w-6 h-6 rounded-lg hover:bg-slate-100 text-slate-500 flex items-center justify-center transition-colors">
+            <span class="material-symbols-outlined text-[16px]">close</span>
+          </button>
+        </div>
       </div>
-      <span class="material-symbols-outlined text-status-success text-[24px]">verified</span>
+      <div class="grid grid-cols-2 gap-2 text-center">
+        <div class="p-2.5 rounded-2xl bg-slate-50 border border-slate-100">
+          <span class="text-[10px] text-slate-400 block font-semibold uppercase">Jarak Tempuh</span>
+          <span id="osrmDistance" class="text-base font-extrabold text-primary">-</span>
+        </div>
+        <div class="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-100">
+          <span class="text-[10px] text-emerald-700 block font-semibold uppercase">Estimasi Waktu</span>
+          <span id="osrmDuration" class="text-base font-extrabold text-emerald-700">-</span>
+        </div>
+      </div>
+      <div class="text-[11px] text-slate-600 flex items-center justify-between gap-2 pt-1">
+        <span class="truncate">Tujuan: <strong id="osrmTargetSppg" class="text-slate-900">-</strong></span>
+        <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold shrink-0">Hot Chain</span>
+      </div>
     </div>
-    <div class="text-body-sm font-body-sm text-on-surface-variant space-y-1">
-      <div class="flex justify-between">
-        <span>Akurasi lokasi:</span>
-        <span id="pinnedSppgRadius" class="font-semibold text-primary">—</span>
-      </div>
-      <div class="flex justify-between">
-        <span>Status database:</span>
-        <span id="pinnedSppgTemp" class="font-semibold text-status-success">—</span>
-      </div>
-      <div class="flex justify-between">
-        <span>Yayasan:</span>
-        <span id="pinnedSppgDietitian" class="font-semibold text-primary">—</span>
-      </div>
-    </div>
-    <div class="flex gap-2">
-      <button type="button" id="btnRouteToSppg" onclick="routeToCurrentSppg()" class="flex-1 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm">
-        <span class="material-symbols-outlined text-[16px]">directions</span>
-        <span>Rute &amp; Waktu Tempuh</span>
-      </button>
-      <a id="pinnedSppgMapLink" href="#" target="_blank" rel="noopener" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-label-sm text-label-sm font-semibold flex items-center justify-center transition-all" title="Buka Google Maps">
-        <span class="material-symbols-outlined text-[16px]">open_in_new</span>
-      </a>
-    </div>
-  </div>
 
-  <!-- Mini Legend on Bottom Left -->
-  <div class="absolute bottom-4 left-4 z-[400] pointer-events-auto bg-surface-card/90 backdrop-blur-md p-3 rounded-2xl shadow-md space-y-1.5 text-label-sm font-label-sm border border-slate-200 hidden sm:block">
-    <div class="flex items-center gap-2 text-on-surface">
-      <span class="w-3 h-3 rounded-full bg-status-success"></span>
-      <span>Koordinat GPS terdaftar</span>
-    </div>
-    <div class="flex items-center gap-2 text-on-surface">
-      <span class="w-3 h-3 rounded-full bg-blue-600"></span>
-      <span>Lokasi GPS Pengguna</span>
-    </div>
-    <div class="flex items-center gap-2 text-on-surface">
-      <span class="w-3 h-3 rounded-full bg-amber-400"></span>
-      <span>Perkiraan pusat wilayah</span>
+    <!-- Pinned SPPG Card -->
+    <div class="pointer-events-auto bg-surface-card/95 backdrop-blur-md p-4 rounded-3xl shadow-xl border border-slate-200">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <span id="pinnedSppgCode" class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary-fixed text-label-sm font-label-sm">Pilih lokasi</span>
+          <h3 id="pinnedSppgTitle" class="text-headline-sm font-headline-sm text-primary mt-1 truncate">Data SPPG</h3>
+          <span id="pinnedSppgAddress" class="text-xs text-on-surface-variant block mt-0.5 line-clamp-2">Lokasi akan dimuat dari database.</span>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <span class="material-symbols-outlined text-status-success text-[24px]">verified</span>
+          <button type="button" id="btnTogglePinned" aria-expanded="true" aria-controls="pinnedSppgBody" title="Ciutkan / buka kartu" aria-label="Ciutkan atau buka kartu" class="w-7 h-7 rounded-lg hover:bg-slate-100 text-slate-500 flex items-center justify-center transition-colors">
+            <span class="material-symbols-outlined text-[20px] transition-transform">expand_more</span>
+          </button>
+        </div>
+      </div>
+      <div id="pinnedSppgBody" class="space-y-3 mt-3">
+        <div class="text-body-sm font-body-sm text-on-surface-variant space-y-1.5">
+          <div class="flex justify-between gap-3">
+            <span>Akurasi lokasi:</span>
+            <span id="pinnedSppgRadius" class="font-semibold text-primary text-right">—</span>
+          </div>
+          <div class="flex justify-between gap-3">
+            <span class="shrink-0">Status SPPG:</span>
+            <span id="pinnedSppgTemp" class="font-semibold text-status-success text-right break-words">—</span>
+          </div>
+          <div class="flex justify-between gap-3">
+            <span>Yayasan:</span>
+            <span id="pinnedSppgDietitian" class="font-semibold text-primary text-right truncate max-w-[60%]">—</span>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" id="btnRouteToSppg" onclick="routeToCurrentSppg()" class="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.98]">
+            <span class="material-symbols-outlined text-[16px]">directions</span>
+            <span>Rute &amp; Waktu Tempuh</span>
+          </button>
+          <a id="pinnedSppgMapLink" href="#" target="_blank" rel="noopener" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-label-sm text-label-sm font-semibold flex items-center justify-center transition-all" title="Buka Google Maps" aria-label="Buka di Google Maps">
+            <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-<div class="flex items-center gap-2 text-on-surface">
-<span class="material-symbols-outlined text-secondary text-[18px]">local_shipping</span>
-<span>Armada Van Termal</span>
-<span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[9px] font-black tracking-wide">SIMULASI</span>
-</div>
-<div class="flex items-center gap-2 text-on-surface">
-<span class="w-3 h-3 rounded-full bg-status-warning"></span>
-<span>Sekolah Penerima (Menunggu Pengiriman)</span>
-</div>
-</div>
+
+<!-- Legenda Peta -->
+<div class="flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-label-sm font-label-sm text-on-surface-variant" aria-label="Legenda peta">
+  <div class="flex items-center gap-2 text-on-surface">
+    <span class="w-3 h-3 rounded-full bg-status-success"></span>
+    <span>Koordinat GPS terdaftar</span>
+  </div>
+  <div class="flex items-center gap-2 text-on-surface">
+    <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+    <span>Lokasi GPS Pengguna</span>
+  </div>
+  <div class="flex items-center gap-2 text-on-surface">
+    <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+    <span>Perkiraan pusat wilayah</span>
+  </div>
+  <div class="flex items-center gap-2 text-on-surface">
+    <span class="material-symbols-outlined text-secondary text-[18px]">local_shipping</span>
+    <span>Armada Van Termal</span>
+    <span class="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[9px] font-black tracking-wide">SIMULASI</span>
+  </div>
+  <div class="flex items-center gap-2 text-on-surface">
+    <span class="w-3 h-3 rounded-full bg-status-warning"></span>
+    <span>Sekolah Penerima (Menunggu Pengiriman)</span>
+  </div>
 </div>
 </section>
 <!-- Direktori & Daftar SPPG Terverifikasi -->
-<section class="space-y-4">
+<section class="reveal space-y-4">
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 <div>
 <h2 class="text-headline-lg font-headline-lg text-primary">Direktori Satuan Pelayanan (SPPG) Terdaftar</h2>
@@ -400,14 +494,18 @@
             Data audit higienitas, kapasitas porsi, dan daftar sekolah binaan yang diperbarui setiap 24 jam.
           </p>
 </div>
-<div class="flex items-center gap-2">
-<span class="text-label-sm font-label-sm text-on-surface-variant">Menampilkan 4 dari 842 Dapur</span>
+<div class="flex flex-col sm:flex-row sm:items-center gap-2">
+<div class="relative">
+<span class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input id="directorySearch" type="search" autocomplete="off" placeholder="Cari nama, kode, atau kota dapur..." aria-label="Cari di direktori SPPG" class="w-full sm:w-72 pl-10 pr-3 py-2 bg-surface-container-lowest text-on-surface placeholder:text-outline text-xs rounded-xl border border-border-subtle focus:outline-none focus:ring-2 focus:ring-border-focus transition-all"/>
+</div>
+<span id="directoryCount" class="text-label-sm font-label-sm text-on-surface-variant whitespace-nowrap">Menampilkan 4 dari 842 Dapur</span>
 </div>
 </div>
 <!-- Table Container -->
 <div class="bg-surface-card rounded-2xl shadow-sm overflow-hidden">
 <div class="overflow-x-auto">
-<table class="w-full text-left text-body-md font-body-md">
+<table id="directoryTable" class="w-full min-w-[900px] text-left text-body-md font-body-md">
 <thead class="bg-surface-container-low text-on-surface font-label-md text-label-md uppercase tracking-wider">
 <tr>
 <th class="py-4 px-6">ID &amp; Lokasi Dapur</th>
@@ -557,6 +655,7 @@
                   </button>
 </td>
 </tr>
+<tr id="directoryEmpty" class="hidden"><td colspan="6" class="py-10 px-6 text-center text-on-surface-variant"><span class="material-symbols-outlined text-[28px] text-outline block mb-1">search_off</span>Tidak ada dapur yang cocok dengan pencarian.</td></tr>
 </tbody>
 </table>
 </div>
@@ -565,7 +664,7 @@
 <!-- Two-Column Asymmetric: Rantai Pasok Lokal & Live Telemetri Log -->
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 <!-- Monitoring Rantai Pasok Pangan Lokal (7 Cols) -->
-<section class="lg:col-span-7 bg-surface-card p-6 lg:p-8 rounded-3xl shadow-sm space-y-6">
+<section class="reveal lg:col-span-7 bg-surface-card p-6 lg:p-8 rounded-3xl shadow-sm space-y-6">
 <div>
 <div class="flex items-center gap-2">
 <span class="material-symbols-outlined text-secondary text-[22px]">agriculture</span>
@@ -577,7 +676,7 @@
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 <!-- Card 1: Beras Biofortifikasi -->
-<div class="p-4 rounded-2xl bg-surface-container-low space-y-3">
+<div class="p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors space-y-3">
 <div class="flex items-center justify-between">
 <span class="text-label-sm font-label-sm px-2.5 py-0.5 rounded-full bg-surface-card text-primary font-semibold">Beras Biofortifikasi Zn</span>
 <span class="text-label-sm font-label-sm text-status-success font-semibold">100% Terserap</span>
@@ -597,7 +696,7 @@
 </div>
 </div>
 <!-- Card 2: Sayuran Segar Organik -->
-<div class="p-4 rounded-2xl bg-surface-container-low space-y-3">
+<div class="p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors space-y-3">
 <div class="flex items-center justify-between">
 <span class="text-label-sm font-label-sm px-2.5 py-0.5 rounded-full bg-surface-card text-primary font-semibold">Sayur &amp; Daun Segar</span>
 <span class="text-label-sm font-label-sm text-status-success font-semibold">100% Terserap</span>
@@ -617,7 +716,7 @@
 </div>
 </div>
 <!-- Card 3: Telur Ayam Segar -->
-<div class="p-4 rounded-2xl bg-surface-container-low space-y-3">
+<div class="p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors space-y-3">
 <div class="flex items-center justify-between">
 <span class="text-label-sm font-label-sm px-2.5 py-0.5 rounded-full bg-surface-card text-primary font-semibold">Telur Omega-3 Segar</span>
 <span class="text-label-sm font-label-sm text-status-success font-semibold">100% Terserap</span>
@@ -637,7 +736,7 @@
 </div>
 </div>
 <!-- Card 4: Susu Perah Segar -->
-<div class="p-4 rounded-2xl bg-surface-container-low space-y-3">
+<div class="p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors space-y-3">
 <div class="flex items-center justify-between">
 <span class="text-label-sm font-label-sm px-2.5 py-0.5 rounded-full bg-surface-card text-primary font-semibold">Susu Sapi Pasteurisasi</span>
 <span class="text-label-sm font-label-sm text-status-success font-semibold">100% Terserap</span>
@@ -667,7 +766,7 @@
 </div>
 </section>
 <!-- Live Log Pengiriman Termal (5 Cols) -->
-<section class="lg:col-span-5 bg-surface-card p-6 lg:p-8 rounded-3xl shadow-sm space-y-6">
+<section class="reveal lg:col-span-5 bg-surface-card p-6 lg:p-8 rounded-3xl shadow-sm space-y-6">
 <div class="flex items-center justify-between">
 <div>
 <div class="flex items-center gap-2">
@@ -685,7 +784,7 @@
 <!-- Telemetry Log Feed -->
 <div class="space-y-4">
 <!-- Log 1 -->
-<div class="p-4 rounded-2xl bg-surface-container-low space-y-2">
+<div class="p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors space-y-2">
 <div class="flex items-center justify-between">
 <span class="font-label-md text-label-md text-primary font-semibold">Armada BGN-VAN-081</span>
 <span class="px-2 py-0.5 rounded-full bg-tertiary-container text-tertiary-fixed text-label-sm font-label-sm">Selesai Tiba</span>
@@ -701,7 +800,7 @@
 </div>
 </div>
 <!-- Log 2 -->
-<div class="p-4 rounded-2xl bg-surface-container-low space-y-2">
+<div class="p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors space-y-2">
 <div class="flex items-center justify-between">
 <span class="font-label-md text-label-md text-primary font-semibold">Armada BGN-VAN-104</span>
 <span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-sm font-label-sm">Dalam Perjalanan</span>
@@ -717,7 +816,7 @@
 </div>
 </div>
 <!-- Log 3 -->
-<div class="p-4 rounded-2xl bg-surface-container-low space-y-2">
+<div class="p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors space-y-2">
 <div class="flex items-center justify-between">
 <span class="font-label-md text-label-md text-primary font-semibold">Armada BGN-VAN-052</span>
 <span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-label-sm font-label-sm">Dalam Perjalanan</span>
@@ -733,7 +832,7 @@
 </div>
 </div>
 <!-- Log 4 -->
-<div class="p-4 rounded-2xl bg-surface-container-low space-y-2">
+<div class="p-4 rounded-2xl bg-surface-container-low hover:bg-surface-container transition-colors space-y-2">
 <div class="flex items-center justify-between">
 <span class="font-label-md text-label-md text-primary font-semibold">Armada BGN-VAN-149</span>
 <span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-label-sm font-label-sm">Loading Wadah Termal</span>
@@ -756,7 +855,7 @@
 </section>
 </div>
 <!-- Banner Keterbukaan & Verifikasi Pengawas -->
-<section class="rounded-3xl bg-primary text-on-primary p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
+<section class="reveal rounded-3xl bg-primary text-on-primary p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md">
 <div class="space-y-2 max-w-2xl">
 <div class="inline-flex items-center gap-2 text-tertiary-fixed font-label-sm text-label-sm">
 <span class="material-symbols-outlined text-[18px]">policy</span>
@@ -779,46 +878,8 @@
 </div>
 </section>
 </div>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const syncBtn = document.getElementById('btn-sync-telemetri');
-      if (syncBtn) {
-        syncBtn.addEventListener('click', () => {
-          const icon = syncBtn.querySelector('.material-symbols-outlined');
-          if (icon) {
-            icon.classList.add('animate-spin');
-            setTimeout(() => {
-              icon.classList.remove('animate-spin');
-              alert('Data spasial dan telemetri armada berhasil disinkronkan dengan satelit pusat.');
-            }, 1000);
-          }
-        });
-      }
-
-      const exportBtn = document.getElementById('btn-export-gis');
-      if (exportBtn) {
-        exportBtn.addEventListener('click', () => {
-          alert('Mengunduh paket data GeoJSON Sebaran SPPG Nasional (Format Shapefile / GeoJSON)...');
-        });
-      }
-
-      const filterProv = document.getElementById('filter-provinsi');
-      const filterStatus = document.getElementById('filter-status');
-      const toggleLayer = document.getElementById('toggle-layer');
-
-      if (toggleLayer) {
-        let active = true;
-        toggleLayer.addEventListener('click', () => {
-          active = !active;
-          toggleLayer.classList.toggle('bg-primary-container', active);
-          toggleLayer.classList.toggle('text-on-primary', active);
-          toggleLayer.classList.toggle('bg-surface-container', !active);
-          toggleLayer.classList.toggle('text-secondary', !active);
-        });
-      }
-    });
-  </script>
 </div></main>
+<div id="toastHost" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[9800] flex flex-col gap-2 items-center pointer-events-none" aria-live="polite"></div>
 <div id="mapTutorial" class="hidden fixed inset-0 z-[10000] items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="mapTutorialTitle">
   <div class="w-full max-w-lg overflow-hidden rounded-3xl border border-white/40 bg-white shadow-2xl">
     <div class="flex items-start justify-between gap-4 bg-gradient-to-r from-[#001026] to-[#134074] p-6 text-white">
@@ -880,6 +941,32 @@
   let userGpsCircle = null;
   let activeRouteLine = null;
   let currentUserCoords = null; // [lat, lng]
+  let routeRequestId = 0;            // cegah hasil rute lama menimpa yang baru
+  const sppgMarkerIndex = new Map(); // sppg -> marker (untuk highlight)
+
+  // Padding agar titik tidak tertutup kartu/HUD di sisi kanan peta
+  function mapFocusPadding() {
+    const wide = window.innerWidth >= 1024;
+    return { paddingTopLeft: [60, 60], paddingBottomRight: [wide ? 400 : 60, 60] };
+  }
+
+  // Arahkan peta ke SPPG terpilih
+  function focusSppg(sppg) {
+    if (!mapDistribusi || !sppg) return;
+    const zoom = sppg.location_accuracy === 'approximate' ? 11 : 15;
+    mapDistribusi.fitBounds(
+      L.latLngBounds([[sppg.latitude, sppg.longitude]]).pad(0.0001),
+      { ...mapFocusPadding(), maxZoom: zoom }
+    );
+  }
+
+  // Tandai marker yang sedang dipilih di kartu
+  function highlightSelectedMarker(sppg) {
+    sppgMarkerIndex.forEach((marker, item) => {
+      const el = marker.getElement && marker.getElement();
+      if (el) el.classList.toggle('is-selected', item === sppg);
+    });
+  }
   let currentSelectedSppg = null;
   let showApproximateLocations = true;
   let indonesiaPolygons = [];
@@ -1027,6 +1114,22 @@
     );
   }
 
+  // Ringkasan status/yayasan untuk titik perkiraan wilayah (data agregat dari database)
+  function summarizeSppgStatus(sppg) {
+    if (sppg.status) return sppg.status;
+    const entries = Object.entries(sppg.status_counts || {})
+      .filter(([, total]) => Number(total) > 0)
+      .sort((a, b) => b[1] - a[1]);
+    if (!entries.length) return '';
+    return entries.map(([label, total]) => label + ' ' + Number(total).toLocaleString('id-ID')).join(' · ');
+  }
+
+  function summarizeSppgYayasan(sppg) {
+    if (sppg.nama_yayasan) return sppg.nama_yayasan;
+    if (sppg.yayasan_count > 0) return sppg.yayasan_count.toLocaleString('id-ID') + ' yayasan mitra';
+    return '';
+  }
+
   function escapeMapHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({
       '&': '&amp;',
@@ -1121,6 +1224,7 @@
   function renderAllSppgPoints() {
     if (!mapDistribusi) return;
     sppgMarkersLayer.clearLayers();
+    sppgMarkerIndex.clear();
     const province = document.getElementById('filter-provinsi')?.value || 'all';
     const status = document.getElementById('filter-status')?.value || 'all';
     const visibleLocations = sppgData.filter(sppg =>
@@ -1143,6 +1247,7 @@
       });
 
       const marker = L.marker([sppg.latitude, sppg.longitude], { icon }).addTo(sppgMarkersLayer);
+      sppgMarkerIndex.set(sppg, marker);
       const address = sppg.alamat ? `<p style="margin:0 0 6px 0;font-size:11px;color:#64748b;">${escapeMapHtml(sppg.alamat)}</p>` : '';
       const locationCount = sppg.sppg_count > 1
         ? `<div style="font-size:11px;color:#334155;margin:4px 0;">${sppg.sppg_count.toLocaleString('id-ID')} dapur di titik perkiraan wilayah</div>`
@@ -1162,7 +1267,8 @@
           ${sppg.nama_yayasan ? `<div style="font-size:10px;color:#64748b;margin-bottom:3px;">Yayasan: ${escapeMapHtml(sppg.nama_yayasan)}</div>` : ''}
           ${locationCount}${samples}${accuracy}
           <div style="font-size:11px; color:#334155; line-height:1.5; border-top:1px solid #f1f5f9; padding-top:4px;">
-            <div>Status: <strong>${escapeMapHtml(sppg.status || '—')}</strong></div>
+            <div>Status: <strong>${escapeMapHtml(summarizeSppgStatus(sppg) || '—')}</strong></div>
+            ${summarizeSppgYayasan(sppg) && !sppg.nama_yayasan ? `<div>Yayasan: <strong>${escapeMapHtml(summarizeSppgYayasan(sppg))}</strong></div>` : ''}
             <div>Data: ${escapeMapHtml(sppg.data_bulan || '—')}</div>
           </div>
           <button type="button" class="route-to-sppg" style="margin-top:8px;width:100%;padding:6px 8px;border-radius:8px;background:#2563EB;color:#fff;font-size:11px;font-weight:700;border:none;cursor:pointer;">
@@ -1186,6 +1292,7 @@
       });
     });
 
+    highlightSelectedMarker(currentSelectedSppg);
     setSppgMapStatus(`${visibleLocations.reduce((sum, item) => sum + item.sppg_count, 0).toLocaleString('id-ID')} SPPG ditampilkan dari database · ${visibleLocations.length.toLocaleString('id-ID')} titik peta`);
   }
 
@@ -1308,6 +1415,8 @@
           location_label: properties.location_label || '',
           sppg_count: Math.max(1, Number(properties.sppg_count) || 1),
           sample_names: Array.isArray(properties.sample_names) ? properties.sample_names : [],
+          yayasan_count: Math.max(0, Number(properties.yayasan_count) || 0),
+          status_counts: (properties.status_counts && typeof properties.status_counts === 'object') ? properties.status_counts : {},
           latitude,
           longitude
         };
@@ -1408,6 +1517,7 @@
         const targetSppg = destination || findNearestSppg(lat, lng) || findNearestSppg(lat, lng, true);
         if (targetSppg && isCoordinateInIndonesia(targetSppg.latitude, targetSppg.longitude)) {
           updatePinnedCard(targetSppg);
+          focusSppg(targetSppg);
           const targetName = targetSppg.location_accuracy === 'approximate'
             ? `${targetSppg.nama} — pusat wilayah (perkiraan)`
             : targetSppg.nama;
@@ -1455,6 +1565,7 @@
   // 5. OSRM: Menghitung Rute Mengikuti Jalan Nyata
   async function calculateAndDrawOsrmRoute(fromLat, fromLng, toLat, toLng, targetName) {
     const url = `https://router.project-osrm.org/route/v1/driving/${fromLng},${fromLat};${toLng},${toLat}?overview=full&geometries=geojson`;
+    const reqId = ++routeRequestId;
     const hud = document.getElementById('osrmRouteHud');
     const distEl = document.getElementById('osrmDistance');
     const durEl = document.getElementById('osrmDuration');
@@ -1467,6 +1578,7 @@
     try {
       const res = await fetch(url);
       const data = await res.json();
+      if (reqId !== routeRequestId) return;
       if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
         const route = data.routes[0];
         // Konversi GeoJSON [lng, lat] ke Leaflet [lat, lng]
@@ -1490,7 +1602,10 @@
           lineJoin: 'round'
         }).addTo(mapDistribusi);
 
-        mapDistribusi.fitBounds(activeRouteLine.getBounds(), { padding: [60, 60] });
+        mapDistribusi.fitBounds(
+          activeRouteLine.getBounds().extend([toLat, toLng]).extend([fromLat, fromLng]),
+          mapFocusPadding()
+        );
 
         // Tampilkan HUD statistik
         if (hud) hud.classList.remove('hidden');
@@ -1503,12 +1618,14 @@
         if (distEl) distEl.textContent = '—';
         if (durEl) durEl.textContent = 'Rute tidak tersedia';
         setSppgMapStatus('Rute jalan tidak ditemukan untuk lokasi ini.');
+        focusSppg(currentSelectedSppg);
       }
     } catch (e) {
       console.warn('Gagal menghitung rute OSRM:', e);
       if (distEl) distEl.textContent = '—';
       if (durEl) durEl.textContent = 'Gagal menghitung';
       setSppgMapStatus('Estimasi rute gagal dimuat. Lokasi peta tetap dibatasi di Indonesia.');
+      focusSppg(currentSelectedSppg);
     }
   }
 
@@ -1520,6 +1637,7 @@
       return;
     }
 
+    focusSppg(sppg);
     const targetName = sppg.location_accuracy === 'approximate'
       ? `${sppg.nama} — pusat wilayah (perkiraan)`
       : sppg.nama;
@@ -1538,6 +1656,7 @@
   function updatePinnedCard(sppg) {
     if (!sppg) return;
     currentSelectedSppg = sppg;
+    highlightSelectedMarker(sppg);
 
     const pinnedCode = document.getElementById('pinnedSppgCode');
     const pinnedTitle = document.getElementById('pinnedSppgTitle');
@@ -1554,12 +1673,15 @@
       ? (sppg.location_label || 'Perkiraan pusat wilayah')
       : 'Koordinat GPS terdaftar';
 
-    if (pinnedCode) pinnedCode.textContent = `ID Database: ${sppg.id || '—'}`;
+    const isApproximate = sppg.location_accuracy === 'approximate';
+    if (pinnedCode) pinnedCode.textContent = isApproximate
+      ? `${Number(sppg.sppg_count || 0).toLocaleString('id-ID')} SPPG di wilayah ini`
+      : `ID Database: ${sppg.id || '—'}`;
     if (pinnedTitle) pinnedTitle.textContent = sppg.nama;
     if (pinnedAddr) pinnedAddr.textContent = [sppg.alamat, sppg.kabupaten_kota, sppg.provinsi].filter(Boolean).join(', ') || 'Alamat belum tersedia';
     if (pinnedRadius) pinnedRadius.textContent = locationLabel;
-    if (pinnedTemp) pinnedTemp.textContent = sppg.status || 'Tidak tersedia';
-    if (pinnedDietitian) pinnedDietitian.textContent = sppg.nama_yayasan || 'Tidak tersedia';
+    if (pinnedTemp) pinnedTemp.textContent = summarizeSppgStatus(sppg) || 'Tidak tersedia';
+    if (pinnedDietitian) pinnedDietitian.textContent = summarizeSppgYayasan(sppg) || 'Tidak tersedia';
     if (pinnedLink) pinnedLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(coordinates);
     if (filterMapLink) filterMapLink.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(sppg.provinsi || coordinates);
     if (filterMapText) filterMapText.textContent = 'Buka ' + (sppg.provinsi || 'lokasi') + ' di Maps';
@@ -1627,6 +1749,326 @@
       });
     }
   });
+</script>
+<script>
+// =========================================================================
+// UX TAMBAHAN HALAMAN DISTRIBUSI (additif — tidak mengubah logika database/peta)
+// Memakai global yang sudah ada: sppgData, mapDistribusi, loadSppgLocations,
+// renderAllSppgPoints, updatePinnedCard, showApproximateLocations, activeRouteLine
+// =========================================================================
+(function () {
+  const $ = id => document.getElementById(id);
+
+  function toast(message, type) {
+    const host = $('toastHost');
+    if (!host) return;
+    const el = document.createElement('div');
+    el.className = 'pointer-events-auto px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 translate-y-2 ' +
+      (type === 'error' ? 'bg-error text-on-error' : 'bg-primary text-on-primary');
+    el.innerHTML = '<span class="material-symbols-outlined text-[16px]">' + (type === 'error' ? 'error' : 'check_circle') + '</span><span></span>';
+    el.lastChild.textContent = message;
+    host.appendChild(el);
+    requestAnimationFrame(() => el.classList.remove('opacity-0', 'translate-y-2'));
+    setTimeout(() => {
+      el.classList.add('opacity-0', 'translate-y-2');
+      setTimeout(() => el.remove(), 300);
+    }, 3400);
+  }
+
+  function mapReady() {
+    return typeof mapDistribusi !== 'undefined' && mapDistribusi;
+  }
+
+  function visibleSppg() {
+    if (typeof sppgData === 'undefined' || !Array.isArray(sppgData)) return [];
+    const p = ($('filter-provinsi') || {}).value || 'all';
+    const s = ($('filter-status') || {}).value || 'all';
+    return sppgData.filter(x =>
+      (p === 'all' || x.provinsi === p) &&
+      (s === 'all' || x.status === s) &&
+      (typeof showApproximateLocations === 'undefined' || showApproximateLocations || x.location_accuracy !== 'approximate')
+    );
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    /* ---------- Posisi zoom Leaflet (tidak menabrak toolbar) ---------- */
+    if (mapReady() && mapDistribusi.zoomControl) mapDistribusi.zoomControl.setPosition('bottomleft');
+
+    /* ---------- Overlay loading + chip waktu muat ---------- */
+    const statusEl = $('sppgMapStatus');
+    const loadingEl = $('mapLoading');
+    const chip = $('lastSyncChip');
+    let wasLoading = true;
+    function onStatusChange() {
+      const text = (statusEl.textContent || '').trim();
+      const loading = /^Memuat/i.test(text);
+      if (loadingEl) {
+        loadingEl.classList.toggle('opacity-0', !loading);
+        loadingEl.classList.toggle('opacity-100', loading);
+      }
+      if (wasLoading && !loading && chip && !/gagal|Belum ada/i.test(text)) {
+        const t = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace('.', ':');
+        chip.textContent = 'Data dimuat ' + t + ' WIB';
+      }
+      wasLoading = loading;
+    }
+    if (statusEl) {
+      new MutationObserver(onStatusChange).observe(statusEl, { childList: true, characterData: true, subtree: true });
+      onStatusChange();
+    }
+    setTimeout(() => {
+      if (typeof L === 'undefined' && statusEl) {
+        statusEl.textContent = 'Peta tidak dapat dimuat. Periksa koneksi internet lalu muat ulang halaman.';
+      }
+      if (loadingEl && typeof L === 'undefined') loadingEl.classList.add('opacity-0');
+    }, 20000);
+
+    /* ---------- Reset tampilan ke seluruh Indonesia ---------- */
+    const btnReset = $('btnMapReset');
+    if (btnReset) btnReset.addEventListener('click', () => {
+      if (!mapReady()) return;
+      mapDistribusi.fitBounds([[-11.2, 94.5], [6.2, 141.2]], { padding: [12, 12], maxZoom: 5 });
+    });
+
+    /* ---------- Layar penuh ---------- */
+    const shell = $('mapShell');
+    const btnFs = $('btnMapFullscreen');
+    function setFullscreen(on) {
+      if (!shell || !btnFs) return;
+      shell.classList.toggle('map-fs', on);
+      document.body.classList.toggle('map-fs-lock', on);
+      btnFs.setAttribute('aria-pressed', String(on));
+      btnFs.title = on ? 'Keluar layar penuh' : 'Layar penuh';
+      btnFs.querySelector('.material-symbols-outlined').textContent = on ? 'fullscreen_exit' : 'fullscreen';
+      setTimeout(() => { if (mapReady()) mapDistribusi.invalidateSize(); }, 80);
+    }
+    if (btnFs) btnFs.addEventListener('click', () => setFullscreen(!shell.classList.contains('map-fs')));
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && shell && shell.classList.contains('map-fs')) setFullscreen(false);
+    });
+
+    /* ---------- Tutup rute ---------- */
+    const btnCloseRoute = $('btnCloseRoute');
+    if (btnCloseRoute) btnCloseRoute.addEventListener('click', () => {
+      if (mapReady() && typeof activeRouteLine !== 'undefined' && activeRouteLine) {
+        mapDistribusi.removeLayer(activeRouteLine);
+        activeRouteLine = null;
+      }
+      const hud = $('osrmRouteHud');
+      if (hud) hud.classList.add('hidden');
+    });
+
+    /* ---------- Kartu SPPG: ciutkan / buka (default ciut di HP) ---------- */
+    const tb = $('btnTogglePinned');
+    const body = $('pinnedSppgBody');
+    function setPinned(open) {
+      if (!tb || !body) return;
+      body.classList.toggle('hidden', !open);
+      tb.setAttribute('aria-expanded', String(open));
+      tb.querySelector('.material-symbols-outlined').style.transform = open ? '' : 'rotate(180deg)';
+    }
+    if (tb && body) {
+      tb.addEventListener('click', () => setPinned(body.classList.contains('hidden')));
+      if (window.innerWidth < 640) setPinned(false);
+    }
+
+    /* ---------- Tombol lapisan titik perkiraan: sinkron status ---------- */
+    const toggleLayer = $('toggle-layer');
+    function syncToggle() {
+      if (!toggleLayer) return;
+      const on = typeof showApproximateLocations === 'undefined' ? true : !!showApproximateLocations;
+      toggleLayer.setAttribute('aria-pressed', String(on));
+      toggleLayer.classList.toggle('opacity-60', false);
+    }
+    if (toggleLayer) {
+      toggleLayer.addEventListener('click', syncToggle); // terdaftar setelah handler peta → nilai sudah terbaru
+      syncToggle();
+    }
+
+    /* ---------- Reset semua filter ---------- */
+    const btnResetFilter = $('btnResetMapFilter');
+    if (btnResetFilter) btnResetFilter.addEventListener('click', () => {
+      const prov = $('filter-provinsi');
+      const stat = $('filter-status');
+      if (stat) stat.value = 'all';
+      if (prov) {
+        prov.value = 'all';
+        prov.dispatchEvent(new Event('change'));
+      }
+      const q = $('sppgSearch');
+      if (q) { q.value = ''; q.dispatchEvent(new Event('input')); }
+    });
+
+    /* ---------- Pencarian SPPG (dari data yang sudah dimuat dari database) ---------- */
+    const input = $('sppgSearch');
+    const list = $('sppgSearchResults');
+    let items = [];
+    let active = -1;
+    let timer = null;
+    function closeList() {
+      if (!list || !input) return;
+      list.classList.add('hidden');
+      input.setAttribute('aria-expanded', 'false');
+      active = -1;
+    }
+    function highlight(i) {
+      active = i;
+      list.querySelectorAll('.sppg-opt').forEach((el, idx) => el.setAttribute('aria-selected', String(idx === i)));
+    }
+    function renderList(q) {
+      const tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+      if (!tokens.length || typeof sppgData === 'undefined' || !Array.isArray(sppgData)) { closeList(); return; }
+      items = sppgData.filter(s => {
+        const hay = [s.nama, s.kabupaten_kota, s.provinsi, s.nama_yayasan].join(' ').toLowerCase();
+        return tokens.every(t => hay.includes(t));
+      }).slice(0, 8);
+      if (!items.length) {
+        list.innerHTML = '<li class="px-3 py-3 text-on-surface-variant">Tidak ada lokasi yang cocok.</li>';
+      } else {
+        list.innerHTML = items.map((s, i) =>
+          '<li role="option" aria-selected="false" class="sppg-opt" data-i="' + i + '">' +
+          '<span class="mt-1 w-2.5 h-2.5 rounded-full shrink-0 ' + (s.location_accuracy === 'approximate' ? 'bg-amber-400' : 'bg-status-success') + '"></span>' +
+          '<span class="min-w-0"><strong class="block text-primary truncate">' + escapeMapHtml(s.nama) + '</strong>' +
+          '<span class="block text-on-surface-variant truncate">' + escapeMapHtml([s.kabupaten_kota, s.provinsi].filter(Boolean).join(', ')) +
+          (s.location_accuracy === 'approximate' ? ' · perkiraan wilayah' : '') + '</span></span></li>'
+        ).join('');
+      }
+      list.classList.remove('hidden');
+      input.setAttribute('aria-expanded', 'true');
+      active = -1;
+    }
+    function pick(i) {
+      const s = items[i];
+      if (!s || !mapReady()) return;
+      input.value = s.nama;
+      closeList();
+      // pastikan titik terlihat (filter yang menyembunyikannya direset)
+      const prov = $('filter-provinsi');
+      const stat = $('filter-status');
+      let needRender = false;
+      if (prov && prov.value !== 'all' && prov.value !== s.provinsi) { prov.value = 'all'; needRender = true; }
+      if (stat && stat.value !== 'all' && stat.value !== s.status) { stat.value = 'all'; needRender = true; }
+      if (s.location_accuracy === 'approximate' && typeof showApproximateLocations !== 'undefined' && !showApproximateLocations) {
+        showApproximateLocations = true;
+        syncToggle();
+        needRender = true;
+      }
+      if (needRender && typeof renderAllSppgPoints === 'function') renderAllSppgPoints();
+      mapDistribusi.flyTo([s.latitude, s.longitude], s.location_accuracy === 'approximate' ? 10 : 14, { duration: 1.1 });
+      if (typeof updatePinnedCard === 'function') updatePinnedCard(s);
+      if (body && body.classList.contains('hidden') && window.innerWidth >= 640) setPinned(true);
+      const ring = L.circleMarker([s.latitude, s.longitude], { radius: 20, color: '#059669', weight: 3, fillOpacity: 0, interactive: false }).addTo(mapDistribusi);
+      setTimeout(() => mapDistribusi.removeLayer(ring), 2600);
+    }
+    if (input && list) {
+      input.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => renderList(input.value.trim()), 120);
+      });
+      input.addEventListener('focus', () => { if (input.value.trim()) renderList(input.value.trim()); });
+      input.addEventListener('keydown', e => {
+        const opts = list.querySelectorAll('.sppg-opt');
+        if (e.key === 'ArrowDown' && opts.length) { e.preventDefault(); highlight((active + 1) % opts.length); }
+        else if (e.key === 'ArrowUp' && opts.length) { e.preventDefault(); highlight((active - 1 + opts.length) % opts.length); }
+        else if (e.key === 'Enter') { e.preventDefault(); pick(active >= 0 ? active : 0); }
+        else if (e.key === 'Escape') { closeList(); }
+      });
+      list.addEventListener('mousedown', e => {
+        const li = e.target.closest('.sppg-opt');
+        if (li) { e.preventDefault(); pick(Number(li.dataset.i)); }
+      });
+      document.addEventListener('click', e => { if (!e.target.closest('#sppgSearch, #sppgSearchResults')) closeList(); });
+    }
+
+    /* ---------- Unduh data spasial (GeoJSON dari data yang sedang tampil) ---------- */
+    const btnExport = $('btn-export-gis');
+    if (btnExport) btnExport.addEventListener('click', () => {
+      const rows = visibleSppg();
+      if (!rows.length) { toast('Belum ada data lokasi untuk diunduh.', 'error'); return; }
+      const fc = {
+        type: 'FeatureCollection',
+        features: rows.map(s => ({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [s.longitude, s.latitude] },
+          properties: {
+            id: s.id, nama: s.nama, provinsi: s.provinsi, kabupaten_kota: s.kabupaten_kota,
+            alamat: s.alamat, nama_yayasan: s.nama_yayasan, status: s.status, data_bulan: s.data_bulan,
+            location_accuracy: s.location_accuracy, sppg_count: s.sppg_count
+          }
+        }))
+      };
+      const blob = new Blob([JSON.stringify(fc)], { type: 'application/geo+json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sebaran-sppg-' + new Date().toISOString().slice(0, 10) + '.geojson';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast('GeoJSON diunduh: ' + rows.length.toLocaleString('id-ID') + ' titik lokasi.');
+    });
+
+    /* ---------- Muat ulang data dari database ---------- */
+    const btnSync = $('btn-sync-telemetri');
+    if (btnSync) btnSync.addEventListener('click', async () => {
+      if (typeof loadSppgLocations !== 'function') return;
+      if (typeof indonesiaPolygons === 'undefined' || !indonesiaPolygons.length) {
+        toast('Batas peta belum siap, coba lagi sebentar.', 'error');
+        return;
+      }
+      const icon = btnSync.querySelector('.material-symbols-outlined');
+      btnSync.disabled = true;
+      btnSync.classList.add('opacity-70', 'cursor-wait');
+      if (icon) icon.classList.add('animate-spin');
+      try {
+        await loadSppgLocations();
+        const failed = /gagal/i.test((statusEl && statusEl.textContent) || '');
+        if (failed) toast('Data gagal dimuat ulang.', 'error');
+        else toast('Data lokasi SPPG diperbarui dari database.');
+      } finally {
+        btnSync.disabled = false;
+        btnSync.classList.remove('opacity-70', 'cursor-wait');
+        if (icon) icon.classList.remove('animate-spin');
+      }
+    });
+
+    /* ---------- Pencarian direktori SPPG (tabel) ---------- */
+    const dirInput = $('directorySearch');
+    const dirCount = $('directoryCount');
+    const dirEmpty = $('directoryEmpty');
+    if (dirInput) {
+      const rows = Array.from(document.querySelectorAll('#directoryTable tbody tr:not(#directoryEmpty)'));
+      dirInput.addEventListener('input', () => {
+        const tokens = dirInput.value.toLowerCase().split(/\s+/).filter(Boolean);
+        let shown = 0;
+        rows.forEach(r => {
+          const match = tokens.every(t => r.textContent.toLowerCase().includes(t));
+          r.classList.toggle('hidden', !match);
+          if (match) shown++;
+        });
+        if (dirCount) dirCount.textContent = 'Menampilkan ' + shown + ' dari 842 Dapur';
+        if (dirEmpty) dirEmpty.classList.toggle('hidden', shown !== 0);
+      });
+    }
+
+    /* ---------- Animasi muncul saat scroll (tanpa kedip di area atas) ---------- */
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(en => {
+          if (en.isIntersecting) { en.target.classList.remove('reveal-hidden'); io.unobserve(en.target); }
+        });
+      }, { threshold: 0.08 });
+      document.querySelectorAll('.reveal').forEach(el => {
+        if (el.getBoundingClientRect().top > window.innerHeight * 0.9) {
+          el.classList.add('reveal-hidden');
+          io.observe(el);
+        }
+      });
+    }
+  });
+})();
 </script>
 <script src="../assets/js/security.js"></script>
 <script src="../assets/js/api.js"></script>

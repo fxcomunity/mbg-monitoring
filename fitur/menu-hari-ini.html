@@ -316,136 +316,235 @@
 })();
 </script>
 </section>
-<!-- Interactive Hierarchical Filter Panel (Redesign of Reference "Pilih Instansi") -->
+<!-- ═══════════════════════════════════════════════════════════════════
+     PILIH INSTANSI & LOKASI — REDESAIN
+     Ganti seluruh <section> filter lama (dari komentar "Interactive Hierarchical
+     Filter Panel" sampai penutup </section>-nya) dengan blok ini.
+     Semua ID yang dipakai JS/database dipertahankan:
+     dbConnectionTag, dbConnectionText, filterForm, filterProvinsi, filterKota,
+     filterJenjang, schoolSelect, schoolStatusTag, .quick-school-btn[data-school],
+     btnResetFilter, btnApplyFilter, breadcrumbStrip, routeProvinsi, routeKota,
+     routeKecamatan, breadcrumbSchool, btnResetLocRoute, btnApplyFilter2
+     ═══════════════════════════════════════════════════════════════════ -->
+<style>
+  .flt-field{position:relative}
+  .flt-field .flt-icon{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#395f95;font-size:20px;pointer-events:none;transition:color .2s}
+  .flt-select{width:100%;appearance:none;-webkit-appearance:none;background:#fff;color:#001026;border:1.5px solid #E2E8F0;border-radius:.9rem;padding:.8rem 2.4rem .8rem 2.6rem;font-size:14px;font-weight:500;transition:all .2s;cursor:pointer;box-shadow:0 1px 2px rgba(0,16,38,.04)}
+  .flt-select:hover{border-color:#a7c8ff}
+  .flt-select:focus{outline:none;border-color:#134074;box-shadow:0 0 0 4px rgba(19,64,116,.12)}
+  .flt-select:disabled{background:#f1f5f9;cursor:not-allowed;color:#94a3b8}
+  .flt-field.is-filled .flt-select{border-color:#059669;background:#f0fdf9}
+  .flt-field.is-filled .flt-icon{color:#059669}
+  .flt-step{width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;background:#e5eeff;color:#395f95;border:2px solid #e5eeff;transition:all .3s;flex-shrink:0}
+  .flt-step.is-done{background:#059669;border-color:#059669;color:#fff}
+  .flt-step.is-active{background:#001026;border-color:#001026;color:#fff;box-shadow:0 0 0 4px rgba(0,16,38,.12)}
+  .flt-line{flex:1;height:3px;border-radius:99px;background:#e5eeff;overflow:hidden;position:relative}
+  .flt-line>i{position:absolute;inset:0;width:0;background:linear-gradient(90deg,#059669,#4edea3);transition:width .4s ease}
+  .flt-line.is-done>i{width:100%}
+  .flt-quick{transition:all .2s}
+  .flt-quick:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,16,38,.08);border-color:#a7c8ff}
+</style>
+
 <section class="w-full px-space-md sm:px-space-lg py-space-md max-w-[1200px] mx-auto">
-<div class="bg-surface-container-lowest p-space-md sm:p-space-lg rounded-3xl shadow-md">
-<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-space-md mb-space-md bg-surface-container-low/50 -mx-space-md sm:-mx-space-lg -mt-space-md sm:-mt-space-lg px-space-md sm:px-space-lg pt-space-md sm:pt-space-lg rounded-t-3xl">
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-xl bg-primary-container text-tertiary-fixed flex items-center justify-center">
-<span class="material-symbols-outlined text-[22px]">tune</span>
-</div>
-<div>
-<h2 class="font-headline-md text-headline-md text-primary">Pilih Instansi &amp; Lokasi Satuan Pendidikan</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">
+  <div class="bg-surface-container-lowest rounded-3xl shadow-md overflow-hidden border border-border-subtle/60">
+
+    <!-- Header -->
+    <div class="relative bg-gradient-to-br from-primary via-primary-container to-primary px-space-md sm:px-space-lg py-space-lg text-on-primary overflow-hidden">
+      <div class="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-tertiary-fixed/10 blur-3xl pointer-events-none"></div>
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/15 backdrop-blur text-tertiary-fixed flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[26px]">location_searching</span>
+          </div>
+          <div>
+            <h2 class="font-headline-md text-headline-md text-white font-bold leading-tight">Pilih Instansi &amp; Lokasi Satuan Pendidikan</h2>
+            <p class="font-body-sm text-body-sm text-on-primary-container mt-0.5 max-w-xl">
               Tentukan wilayah administratif hingga nama sekolah untuk memantau menu rill dan dapur SPPG penyedianya.
             </p>
-</div>
-</div>
-<div class="flex items-center gap-2">
-  <span id="dbConnectionTag" class="px-3 py-1 rounded-full bg-status-success/15 text-status-success font-label-sm text-label-sm font-semibold flex items-center gap-1.5 shadow-sm">
-    <span class="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
-    <span id="dbConnectionText">Terhubung Database Neon Realtime</span>
-  </span>
-</div>
-</div>
-<!-- Filter Controls: Hierarchical Cascade -->
-<form class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-space-md" id="filterForm">
-  <!-- 1. Provinsi -->
-  <div class="flex flex-col gap-1.5">
-    <label class="font-label-md text-label-md text-primary flex items-center justify-between">
-      <span>1. Provinsi</span>
-      <span class="text-label-sm text-secondary font-medium">Langkah 1</span>
-    </label>
-    <div class="relative">
-      <select id="filterProvinsi" class="w-full appearance-none bg-surface-container-low text-primary px-3.5 py-2.5 pr-9 rounded-xl font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-border-focus focus:outline-none transition-all">
-        <option value="">-- Pilih Provinsi --</option>
-        <option value="51">BALI</option>
-      </select>
-      <span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
-    </div>
-  </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <span id="dbConnectionTag" class="px-3 py-1.5 rounded-full bg-status-success/20 border border-status-success/30 text-tertiary-fixed font-label-sm text-label-sm font-semibold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-tertiary-fixed animate-pulse"></span>
+            <span id="dbConnectionText">Terhubung Database Neon Realtime</span>
+          </span>
+        </div>
+      </div>
 
-  <!-- 2. Kota / Kabupaten -->
-  <div class="flex flex-col gap-1.5">
-    <label class="font-label-md text-label-md text-primary flex items-center justify-between">
-      <span>2. Kota / Kab</span>
-      <span class="text-label-sm text-secondary font-medium">Langkah 2</span>
-    </label>
-    <div class="relative">
-      <select id="filterKota" class="w-full appearance-none bg-surface-container-low text-primary px-3.5 py-2.5 pr-9 rounded-xl font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-border-focus focus:outline-none transition-all">
-        <option value="">-- Pilih Kota / Kab --</option>
-      </select>
-      <span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
+      <!-- Stepper -->
+      <div class="relative z-10 mt-6 flex items-center gap-2 sm:gap-3" id="fltStepper" aria-hidden="true">
+        <div class="flex items-center gap-2"><span class="flt-step is-active" data-step="1">1</span><span class="hidden sm:inline text-xs font-semibold text-white/90">Provinsi</span></div>
+        <div class="flt-line" data-line="1"><i></i></div>
+        <div class="flex items-center gap-2"><span class="flt-step" data-step="2">2</span><span class="hidden sm:inline text-xs font-semibold text-white/90">Kota/Kab</span></div>
+        <div class="flt-line" data-line="2"><i></i></div>
+        <div class="flex items-center gap-2"><span class="flt-step" data-step="3">3</span><span class="hidden sm:inline text-xs font-semibold text-white/90">Jenjang</span></div>
+        <div class="flt-line" data-line="3"><i></i></div>
+        <div class="flex items-center gap-2"><span class="flt-step" data-step="4">4</span><span class="hidden sm:inline text-xs font-semibold text-white/90">Sekolah</span></div>
+      </div>
     </div>
-  </div>
 
-  <!-- 3. Jenjang -->
-  <div class="flex flex-col gap-1.5">
-    <label class="font-label-md text-label-md text-primary flex items-center justify-between">
-      <span>3. Jenjang</span>
-      <span class="text-label-sm text-on-surface-variant">Filter</span>
-    </label>
-    <div class="relative">
-      <select id="filterJenjang" class="w-full appearance-none bg-surface-container-low text-primary px-3.5 py-2.5 pr-9 rounded-xl font-body-md text-body-md focus:bg-surface-container-lowest focus:ring-2 focus:ring-border-focus focus:outline-none transition-all">
-        <option value="">Semua Jenjang</option>
-        <option value="paud">PAUD / KB / TK</option>
-        <option value="sd">SD (Sekolah Dasar)</option>
-        <option value="smp">SMP (Menengah Pertama)</option>
-        <option value="sma">SMA (Menengah Atas)</option>
-      </select>
-      <span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
-    </div>
-  </div>
+    <!-- Body -->
+    <div class="p-space-md sm:p-space-lg">
+      <form class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-space-md" id="filterForm" onsubmit="return false">
 
-  <!-- 4. Instansi Pendidikan / Sekolah -->
-  <div class="flex flex-col gap-1.5 sm:col-span-2">
-    <label class="font-label-md text-label-md text-primary flex items-center justify-between">
-      <span>4. Nama Satuan Pendidikan (Sekolah)</span>
-      <span id="schoolStatusTag" class="text-label-sm text-on-surface-variant font-semibold">Pilih Wilayah Dulu</span>
-    </label>
-    <div class="relative">
-      <select id="schoolSelect" class="w-full appearance-none bg-surface-container-low text-primary px-3.5 py-2.5 pr-9 rounded-xl font-body-md text-body-md font-semibold focus:bg-surface-container-lowest focus:ring-2 focus:ring-border-focus focus:outline-none transition-all">
-        <option value="">-- Pilih Satuan Pendidikan --</option>
-      </select>
-      <span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
-    </div>
-  </div>
+        <!-- 1. Provinsi -->
+        <div class="lg:col-span-3 flex flex-col gap-1.5">
+          <label for="filterProvinsi" class="font-label-md text-label-md text-primary flex items-center justify-between">
+            <span>Provinsi</span>
+            <span class="text-label-sm text-secondary font-medium">Langkah 1</span>
+          </label>
+          <div class="flt-field" data-field="prov">
+            <span class="material-symbols-outlined flt-icon">map</span>
+            <select id="filterProvinsi" class="flt-select">
+              <option value="">-- Pilih Provinsi --</option>
+              <option value="51">BALI</option>
+            </select>
+            <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
+          </div>
+        </div>
 
-  <!-- Action Buttons Row -->
-  <div class="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border-subtle">
-    <div class="flex items-center gap-2 flex-wrap">
-      <span class="text-xs text-on-surface-variant font-medium">Contoh Cepat:</span>
-      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="K4524164808">SD NEGERI ABANGSONGAN</button>
-      <button type="button" class="quick-school-btn px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary transition-colors" data-school="K3390354458">KB MEKAR ANOM</button>
+        <!-- 2. Kota / Kabupaten -->
+        <div class="lg:col-span-3 flex flex-col gap-1.5">
+          <label for="filterKota" class="font-label-md text-label-md text-primary flex items-center justify-between">
+            <span>Kota / Kabupaten</span>
+            <span class="text-label-sm text-secondary font-medium">Langkah 2</span>
+          </label>
+          <div class="flt-field" data-field="kota">
+            <span class="material-symbols-outlined flt-icon">location_city</span>
+            <select id="filterKota" class="flt-select">
+              <option value="">-- Pilih Kota / Kab --</option>
+            </select>
+            <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
+          </div>
+        </div>
+
+        <!-- 3. Jenjang -->
+        <div class="lg:col-span-3 flex flex-col gap-1.5">
+          <label for="filterJenjang" class="font-label-md text-label-md text-primary flex items-center justify-between">
+            <span>Jenjang</span>
+            <span class="text-label-sm text-on-surface-variant">Opsional</span>
+          </label>
+          <div class="flt-field" data-field="jenjang">
+            <span class="material-symbols-outlined flt-icon">stairs</span>
+            <select id="filterJenjang" class="flt-select">
+              <option value="">Semua Jenjang</option>
+              <option value="paud">PAUD / KB / TK</option>
+              <option value="sd">SD (Sekolah Dasar)</option>
+              <option value="smp">SMP (Menengah Pertama)</option>
+              <option value="sma">SMA (Menengah Atas)</option>
+            </select>
+            <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
+          </div>
+        </div>
+
+        <!-- 4. Sekolah -->
+        <div class="sm:col-span-2 lg:col-span-3 flex flex-col gap-1.5">
+          <label for="schoolSelect" class="font-label-md text-label-md text-primary flex items-center justify-between gap-2">
+            <span>Satuan Pendidikan</span>
+            <span id="schoolStatusTag" class="text-label-sm text-on-surface-variant font-semibold">Pilih Wilayah Dulu</span>
+          </label>
+          <div class="flt-field" data-field="school">
+            <span class="material-symbols-outlined flt-icon">school</span>
+            <select id="schoolSelect" class="flt-select font-semibold">
+              <option value="">-- Pilih Satuan Pendidikan --</option>
+            </select>
+            <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">expand_more</span>
+          </div>
+        </div>
+
+        <!-- Quick picks + actions -->
+        <div class="sm:col-span-2 lg:col-span-12 flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-space-md mt-1 border-t border-dashed border-border-subtle">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2.5">
+            <span class="text-xs text-on-surface-variant font-semibold flex items-center gap-1">
+              <span class="material-symbols-outlined text-[16px] text-status-warning" style="font-variation-settings:'FILL' 1">bolt</span>
+              Akses Cepat
+            </span>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="quick-school-btn flt-quick flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-border-subtle text-xs font-semibold text-primary" data-school="K4524164808">
+                <span class="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center"><span class="material-symbols-outlined text-[14px]">school</span></span>
+                SD NEGERI ABANGSONGAN
+              </button>
+              <button type="button" class="quick-school-btn flt-quick flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-border-subtle text-xs font-semibold text-primary" data-school="K3390354458">
+                <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center"><span class="material-symbols-outlined text-[14px]">child_care</span></span>
+                KB MEKAR ANOM
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2.5 w-full lg:w-auto">
+            <button type="button" id="btnResetFilter" class="flex-1 lg:flex-initial px-4 py-2.5 rounded-xl bg-white hover:bg-surface-container-low text-on-surface-variant border border-border-subtle font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-[18px]">restart_alt</span>
+              <span>Reset</span>
+            </button>
+            <button type="button" id="btnApplyFilter" class="flex-[2] lg:flex-initial px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-[0.98]">
+              <span class="material-symbols-outlined text-tertiary-fixed text-[18px]">restaurant_menu</span>
+              <span>Tampilkan Menu</span>
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
-    <div class="flex items-center gap-2">
-      <button type="button" id="btnResetFilter" class="px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1">
-        <span class="material-symbols-outlined text-[16px]">restart_alt</span>
-        <span>Reset</span>
-      </button>
-      <button type="button" id="btnApplyFilter" class="px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md font-semibold transition-colors flex items-center gap-1 shadow-sm">
-        <span class="material-symbols-outlined text-[16px]">visibility</span>
-        <span>Tampilkan Menu</span>
-      </button>
+
+    <!-- Rute Lokasi / Breadcrumb — tersembunyi sampai sekolah dipilih -->
+    <div id="breadcrumbStrip" class="hidden px-space-md sm:px-space-lg py-space-md bg-surface-container-low/60 border-t border-border-subtle flex flex-wrap items-center justify-between gap-space-md">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+          <span class="material-symbols-outlined text-[16px] text-secondary">route</span> Rute Lokasi:
+        </span>
+        <span id="routeProvinsi" class="px-2.5 py-1 rounded-lg bg-white border border-border-subtle text-primary font-label-sm text-label-sm font-semibold">-</span>
+        <span class="material-symbols-outlined text-on-surface-variant text-[16px]">chevron_right</span>
+        <span id="routeKota" class="px-2.5 py-1 rounded-lg bg-white border border-border-subtle text-primary font-label-sm text-label-sm font-semibold">-</span>
+        <span class="material-symbols-outlined text-on-surface-variant text-[16px]">chevron_right</span>
+        <span id="routeKecamatan" class="px-2.5 py-1 rounded-lg bg-white border border-border-subtle text-primary font-label-sm text-label-sm font-semibold">-</span>
+        <span class="material-symbols-outlined text-on-surface-variant text-[16px]">chevron_right</span>
+        <span id="breadcrumbSchool" class="px-2.5 py-1 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-semibold">-</span>
+      </div>
+      <div class="flex items-center gap-space-sm w-full sm:w-auto">
+        <button id="btnResetLocRoute" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-white hover:bg-surface-container text-on-surface-variant border border-border-subtle font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5" type="button">
+          <span class="material-symbols-outlined text-[16px]">restart_alt</span>
+          <span>Reset Lokasi</span>
+        </button>
+        <button id="btnApplyFilter2" class="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm flex items-center justify-center gap-1.5" type="button">
+          <span class="material-symbols-outlined text-tertiary-fixed text-[18px]">search_check</span>
+          <span>Terapkan Filter</span>
+        </button>
+      </div>
     </div>
   </div>
-</form>
-</div>
-<!-- Action Strip & Active Breadcrumbs — hidden until school is selected -->
-<div id="breadcrumbStrip" class="mt-space-md pt-space-md flex flex-wrap items-center justify-between gap-space-md hidden">
-<div class="flex items-center gap-2 flex-wrap">
-<span class="font-label-sm text-label-sm text-on-surface-variant">Rute Lokasi:</span>
-<span id="routeProvinsi" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">-</span>
-<span class="text-on-surface-variant text-label-sm">›</span>
-<span id="routeKota" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">-</span>
-<span class="text-on-surface-variant text-label-sm">›</span>
-<span id="routeKecamatan" class="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">-</span>
-<span class="text-on-surface-variant text-label-sm">›</span>
-<span id="breadcrumbSchool" class="px-2 py-0.5 rounded-md bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold">-</span>
-</div>
-<div class="flex items-center gap-space-sm w-full sm:w-auto">
-<button id="btnResetLocRoute" class="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors flex items-center justify-center gap-1.5" type="button">
-<span class="material-symbols-outlined text-[16px]">restart_alt</span>
-<span>Reset Lokasi</span>
-</button>
-<button id="btnApplyFilter2" class="flex-1 sm:flex-initial px-5 py-2 rounded-xl bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm flex items-center justify-center gap-1.5" type="button">
-<span class="material-symbols-outlined text-tertiary-fixed text-[18px]">search_check</span>
-<span>Terapkan Filter</span>
-</button>
-</div>
-</div>
-</div>
 </section>
+
+<!-- Sinkron visual stepper & status isi (additif, tidak mengubah logika database) -->
+<script>
+(function () {
+  var ids = { prov: 'filterProvinsi', kota: 'filterKota', jenjang: 'filterJenjang', school: 'schoolSelect' };
+  function sync() {
+    var p = document.getElementById(ids.prov), k = document.getElementById(ids.kota),
+        s = document.getElementById(ids.school);
+    if (!p || !k || !s) return;
+    var done = [!!p.value, !!k.value, !!p.value && !!k.value, !!s.value]; // jenjang opsional: selesai jika wilayah terisi
+    Object.keys(ids).forEach(function (key) {
+      var el = document.getElementById(ids[key]);
+      var wrap = el && el.closest('.flt-field');
+      if (wrap) wrap.classList.toggle('is-filled', !!el.value);
+    });
+    var firstOpen = done.indexOf(false);
+    document.querySelectorAll('#fltStepper .flt-step').forEach(function (st, i) {
+      st.classList.toggle('is-done', done[i]);
+      st.classList.toggle('is-active', i === firstOpen);
+      st.textContent = done[i] ? '✓' : String(i + 1);
+    });
+    document.querySelectorAll('#fltStepper .flt-line').forEach(function (ln, i) {
+      ln.classList.toggle('is-done', done[i]);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    sync();
+    document.getElementById('filterForm').addEventListener('change', sync);
+    // JS database mengisi value secara programatik (tanpa event change), jadi cek berkala ringan
+    setInterval(sync, 400);
+  });
+})();
+</script>
 <!-- ═══════════════════════════════════════════════════════════════════
      SELECTION PROMPT — tampil sebelum user memilih sekolah
      ═══════════════════════════════════════════════════════════════════ -->
