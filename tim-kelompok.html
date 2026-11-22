@@ -33,22 +33,92 @@
     ::-webkit-scrollbar { display: none; }
     .hero-bg { background: linear-gradient(135deg,#001026 0%,#0b2545 55%,#134074 100%); }
     .hero-video { filter: saturate(.8); }
-    .org-root { position: relative; }
-    .org-root::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); height: 3rem; border-left: 2px solid #cbd5e1; }
-    .org-branches { position: relative; padding-top: 1rem; }
-    .org-branches::before { content: ""; position: absolute; top: 0; left: 16.666%; right: 16.666%; height: 0; border-top: 2px solid #cbd5e1; }
-    .org-branch { position: relative; transition: transform .2s ease, box-shadow .2s ease; }
-    .org-branch:hover { transform: translateY(-3px); box-shadow: 0 18px 36px rgba(0,16,38,.09); }
-    .org-branch::before { content: ""; position: absolute; top: -1.5rem; left: 50%; transform: translateX(-50%); height: 1.5rem; border-left: 2px solid #cbd5e1; }
-    .member-node { transition: transform .2s ease, box-shadow .2s ease; }
-    .member-node:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,16,38,.09); }
+
+    /* ===== Konektor bagan organisasi ===== */
+    .org-root { position: relative; z-index: 1; }
+    .org-root::after {
+      content: ""; position: absolute; left: 50%; top: 100%;
+      width: 12px; height: 12px; transform: translate(-50%, -50%);
+      border-radius: 999px; background: #134074; border: 3px solid #f8f9ff;
+    }
+
+    .org-branches {
+      --line: #b8c4d6;
+      --gap: 2rem;
+      --drop: 2rem;
+      position: relative;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--gap);
+      padding-top: calc(var(--drop) * 2);
+    }
+
+    /* batang vertikal: root -> garis horizontal */
+    .org-branches::before {
+      content: ""; position: absolute; top: 0; left: 50%;
+      width: 2px; height: var(--drop); transform: translateX(-50%);
+      border-radius: 2px;
+      background: linear-gradient(to bottom, #134074, var(--line));
+    }
+
+    /* garis horizontal: dari tengah kolom 1 ke tengah kolom 3 (gap ikut dihitung) */
+    .org-branches::after {
+      content: ""; position: absolute;
+      top: calc(var(--drop) - 5px); height: 10px;
+      left:  calc((100% - 2 * var(--gap)) / 6);
+      right: calc((100% - 2 * var(--gap)) / 6);
+      background:
+        radial-gradient(circle, #134074 0 3px, #f8f9ff 3px 5px, transparent 5px) center / 10px 10px no-repeat,
+        linear-gradient(var(--line), var(--line)) center / 100% 2px no-repeat;
+    }
+
+    .org-branch {
+      --accent: #2563eb;
+      position: relative; z-index: 1;
+      transition: box-shadow .25s ease, border-color .25s ease;
+    }
+    .org-branch[aria-labelledby="report-title"]      { --accent: #059669; }
+    .org-branch[aria-labelledby="development-title"] { --accent: #9333ea; }
+    .org-branch:hover { box-shadow: 0 18px 36px rgba(0,16,38,.09); }
+
+    /* garis turun ke kartu divisi */
+    .org-branch::before {
+      content: ""; position: absolute; left: 50%; top: calc(var(--drop) * -1);
+      width: 2px; height: var(--drop); transform: translateX(-50%);
+      border-radius: 2px;
+      background: linear-gradient(to bottom, var(--line), var(--accent));
+    }
+    /* titik di atas kartu */
+    .org-branch::after {
+      content: ""; position: absolute; left: 50%; top: 0;
+      width: 12px; height: 12px; transform: translate(-50%, -50%);
+      border-radius: 999px; background: var(--accent); border: 3px solid #f8f9ff;
+      transition: box-shadow .25s ease;
+    }
+    .org-branch:hover::after {
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+    }
+
+    /* ===== Kartu anggota ===== */
+    .member-node {
+      position: relative;
+      transition: box-shadow .22s ease, border-color .22s ease;
+    }
+    .member-node:hover { box-shadow: 0 10px 24px rgba(0,16,38,.09); }
+    .member-node:hover .member-avatar { transform: scale(1.06); }
+    .member-node:hover .member-arrow { transform: translateX(4px); }
     .member-node:focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }
+
+    /* penghubung antaranggota dalam satu divisi (sejajar pusat avatar) */
+    .member-node + .member-node::before {
+      content: ""; position: absolute; left: 2.75rem;
+      top: calc(-.75rem - 1px); height: calc(.75rem + 1px); width: 2px;
+      transform: translateX(-50%); border-radius: 2px;
+      background: var(--accent); opacity: .35;
+    }
+
     .member-avatar { position: relative; overflow: hidden; transition: transform .25s ease; }
     .member-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     .member-avatar .member-avatar-fallback { position: relative; z-index: 0; }
-    .member-node { transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
-    .member-node:hover .member-avatar { transform: scale(1.06); }
-    .member-node:hover .member-arrow { transform: translateX(4px); }
     .member-nim {
       display: inline-flex; align-items: center;
       margin-top: .3rem; padding: .1rem .5rem;
@@ -57,16 +127,16 @@
       font-size: 10px; font-weight: 700; letter-spacing: .02em;
     }
     .member-cta { transition: color .2s ease; }
-    .org-branch { transition: transform .25s ease, box-shadow .25s ease; }
     .member-profile-photo {
       box-shadow: 0 10px 30px rgba(0,16,38,.18);
     }
     .profile-dialog { width: min(92vw, 32rem); max-height: 85vh; }
     .profile-dialog::backdrop { background: rgba(0,16,38,.68); backdrop-filter: blur(4px); }
-    @media (max-width: 767px) {
-      .org-branches { gap: 1.5rem; }
-      .org-branches::before, .org-branch::before, .org-root::after { display: none; }
-    }
+
+    /* ===== Scroll horizontal di layar kecil: 3 divisi tetap berjajar kiri-tengah-kanan ===== */
+    .org-scroll { overflow-x: auto; overflow-y: hidden; padding: .5rem .5rem 1.75rem; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+    .org-chart { min-width: 58rem; /* 3 kolom 18rem + 2 gap 2rem */ }
+    .org-branch { scroll-snap-align: center; }
   </style>
   <link rel="stylesheet" href="assets/css/site-footer.css"/>
   <script src="assets/js/site-footer.js" defer></script>
@@ -137,7 +207,12 @@
     <p class="mt-3 text-sm text-on-surface-variant">Pilih nama anggota untuk melihat profil lengkap dan tanggung jawabnya.</p>
   </div>
 
-  <div class="org-root max-w-sm mx-auto mb-12 rounded-2xl bg-gradient-to-br from-[#001026] to-[#134074] text-white px-6 py-5 text-center shadow-lg shadow-blue-950/15">
+  <p class="lg:hidden mb-3 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-on-surface-variant">
+    <span class="material-symbols-outlined text-[16px]">swipe</span> Geser ke samping untuk melihat semua divisi
+  </p>
+  <div class="org-scroll" id="orgScroll"><div class="org-chart">
+
+  <div class="org-root max-w-sm mx-auto rounded-2xl bg-gradient-to-br from-[#001026] to-[#134074] text-white px-6 py-5 text-center shadow-lg shadow-blue-950/15">
     <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
       <span class="material-symbols-outlined text-[#6ffbbe] text-2xl">groups</span>
     </span>
@@ -156,7 +231,7 @@
     </div>
   </div>
 
-  <div class="org-branches grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+  <div class="org-branches grid">
     <section class="org-branch rounded-2xl border border-blue-100 bg-white p-5 sm:p-6 shadow-sm" aria-labelledby="proposal-title">
       <div class="mb-5 flex items-center gap-3 border-b border-blue-100 pb-4">
         <span class="material-symbols-outlined flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-800">description</span>
@@ -221,6 +296,8 @@
       </div>
     </section>
   </div>
+
+  </div></div>
 </main>
 
 <dialog id="memberProfileDialog" class="profile-dialog m-auto rounded-3xl border-0 bg-white p-0 text-on-surface shadow-2xl">
@@ -254,6 +331,9 @@
     var dialog = document.getElementById('memberProfileDialog');
     var photo = document.getElementById('memberProfilePhoto');
     var placeholder = document.getElementById('memberProfilePlaceholder');
+
+    var orgScroll = document.getElementById('orgScroll');
+    if (orgScroll) orgScroll.scrollLeft = (orgScroll.scrollWidth - orgScroll.clientWidth) / 2;
 
     document.querySelectorAll('[data-member]').forEach(function (member) {
       member.addEventListener('click', function () {

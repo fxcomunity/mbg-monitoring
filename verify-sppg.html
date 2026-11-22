@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Verifikasi SPPG — Radar MBG</title>
+  <meta name="description" content="Verifikasi keaslian dan status SPPG MBG melalui QR code."/>
+  <link rel="icon" type="image/webp" href="assets/images/favicon.webp"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .verify-card { background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%); }
+  </style>
+</head>
+<body class="bg-surface min-h-screen flex items-center justify-center p-4">
+  <div class="verify-card w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-[#001026] to-[#134074] p-6 text-white">
+      <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-3xl text-[#6ffbbe]">verified</span>
+        <div>
+          <h1 class="text-xl font-bold">Verifikasi SPPG</h1>
+          <p class="text-xs text-white/70">Radar MBG Nasional — Badan Gizi Nasional RI</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6">
+      <div id="loadingState" class="text-center py-8">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+        <p class="text-sm text-slate-600">Memverifikasi data SPPG...</p>
+      </div>
+
+      <div id="errorState" class="hidden text-center py-8">
+        <span class="material-symbols-outlined text-6xl text-red-400 mb-4">error</span>
+        <h2 class="text-lg font-bold text-slate-800 mb-2">Verifikasi Gagal</h2>
+        <p id="errorMessage" class="text-sm text-slate-600 mb-4"></p>
+        <a href="index.html" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-[#0b2545] transition-colors">
+          <span class="material-symbols-outlined text-[18px]">home</span>
+          Kembali ke Beranda
+        </a>
+      </div>
+
+      <div id="successState" class="hidden">
+        <!-- Status Badge -->
+        <div class="flex items-center justify-center mb-6">
+          <span id="statusBadge" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold"></span>
+        </div>
+
+        <!-- QR Code -->
+        <div class="flex justify-center mb-6">
+          <div class="p-4 bg-white rounded-2xl border-2 border-slate-200 shadow-inner">
+            <canvas id="qrCanvas" class="w-48 h-48"></canvas>
+          </div>
+        </div>
+
+        <!-- Data SPPG -->
+        <div class="space-y-4">
+          <div class="bg-slate-50 rounded-2xl p-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Informasi Dapur SPPG</h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-600">ID SPPG:</span>
+                <span id="sppgId" class="font-bold text-primary"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">Nama Dapur:</span>
+                <span id="sppgNama" class="font-semibold text-slate-800 text-right max-w-[60%]"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">Lokasi:</span>
+                <span id="sppgLokasi" class="font-semibold text-slate-800 text-right max-w-[60%]"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">Yayasan:</span>
+                <span id="sppgYayasan" class="font-semibold text-slate-800 text-right max-w-[60%]"></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">Bulan Data:</span>
+                <span id="sppgBulan" class="font-semibold text-slate-800"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Koordinat -->
+          <div id="koordinatSection" class="hidden bg-blue-50 rounded-2xl p-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-blue-600 mb-2">Koordinat GPS</h3>
+            <p id="koordinatText" class="text-sm text-blue-800 font-mono"></p>
+          </div>
+
+          <!-- Verified At -->
+          <div class="text-center pt-4 border-t border-slate-200">
+            <p class="text-xs text-slate-500"> diverifikasi pada <span id="verifiedAt" class="font-semibold"></span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-slate-50 px-6 py-4 border-t border-slate-200">
+      <p class="text-xs text-slate-500 text-center">
+        Data diverifikasi secara real-time dari basis data Radar MBG Nasional.
+        <br/>
+        <span class="font-semibold">Badan Gizi Nasional Republik Indonesia</span>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const sppgId = params.get('id');
+
+      const loadingState = document.getElementById('loadingState');
+      const errorState = document.getElementById('errorState');
+      const successState = document.getElementById('successState');
+      const errorMessage = document.getElementById('errorMessage');
+
+      if (!sppgId) {
+        loadingState.classList.add('hidden');
+        errorState.classList.remove('hidden');
+        errorMessage.textContent = 'Parameter ID SPPG tidak ditemukan. Pastikan Anda memindai QR code yang valid.';
+        return;
+      }
+
+      const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? `api/sppg_qr.php?id=${sppgId}`
+        : `/api/sppg_qr?id=${sppgId}`;
+
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+          loadingState.classList.add('hidden');
+
+          if (data.status === 'error') {
+            errorState.classList.remove('hidden');
+            errorMessage.textContent = data.message || 'Data SPPG tidak ditemukan.';
+            return;
+          }
+
+          const sppg = data.sppg;
+
+          // Status badge
+          const statusBadge = document.getElementById('statusBadge');
+          const statusConfig = {
+            'aktif': { bg: 'bg-green-100', text: 'text-green-700', icon: 'check_circle' },
+            'nonaktif': { bg: 'bg-red-100', text: 'text-red-700', icon: 'cancel' },
+            'maintenance': { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: 'build' }
+          };
+          const config = statusConfig[sppg.status] || statusConfig.aktif;
+          statusBadge.className = `inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${config.bg} ${config.text}`;
+          statusBadge.innerHTML = `<span class="material-symbols-outlined">${config.icon}</span> ${sppg.status.toUpperCase()}`;
+
+          // Data fields
+          document.getElementById('sppgId').textContent = sppg.id;
+          document.getElementById('sppgNama').textContent = sppg.nama;
+          document.getElementById('sppgLokasi').textContent = `${sppg.kabupaten_kota}, ${sppg.provinsi}`;
+          document.getElementById('sppgYayasan').textContent = sppg.nama_yayasan || '—';
+          document.getElementById('sppgBulan').textContent = sppg.data_bulan || '—';
+
+          // Koordinat
+          if (sppg.koordinat) {
+            document.getElementById('koordinatSection').classList.remove('hidden');
+            document.getElementById('koordinatText').textContent = `Lat: ${sppg.koordinat.lat}, Lng: ${sppg.koordinat.lng}`;
+          }
+
+          // Verified at
+          document.getElementById('verifiedAt').textContent = new Date(sppg.verified_at).toLocaleString('id-ID');
+
+          // Generate QR code
+          QRCode.toCanvas(document.getElementById('qrCanvas'), data.qr_content, {
+            width: 192,
+            margin: 2,
+            color: {
+              dark: '#001026',
+              light: '#ffffff'
+            }
+          });
+
+          successState.classList.remove('hidden');
+        })
+        .catch(err => {
+          loadingState.classList.add('hidden');
+          errorState.classList.remove('hidden');
+          errorMessage.textContent = 'Gagal terhubung ke server. Silakan coba lagi.';
+          console.error('Verifikasi error:', err);
+        });
+    })();
+  </script>
+</body>
+</html>
