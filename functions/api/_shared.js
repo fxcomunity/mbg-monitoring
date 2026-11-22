@@ -3,7 +3,6 @@
  * Shared Pages helpers.
  */
 import { pbkdf2Sync } from 'node:crypto';
-import { neon } from '@neondatabase/serverless';
 
 export const CORS = {
   'Content-Type': 'application/json; charset=UTF-8',
@@ -37,10 +36,11 @@ export async function dbQuery(databaseUrl, query, params = []) {
   }
 
   let rows;
-  try {
-    const sql = neon(databaseUrl);
+  const neonMod = await import('@neondatabase/serverless').catch(() => null);
+  if (neonMod && typeof neonMod.neon === 'function') {
+    const sql = neonMod.neon(databaseUrl);
     rows = await sql.query(query, params);
-  } catch (driverErr) {
+  } else {
     // Fallback native HTTP API fetch for Cloudflare Workers.
     // Neon SQL-over-HTTP requires the full connection string in the
     // Neon-Connection-String header; a bare Bearer password is rejected.
