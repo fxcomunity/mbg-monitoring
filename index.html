@@ -58,6 +58,50 @@
   html.mbg-has-profile-cache #mobileNavLogin { display: none !important; }
   html.mbg-has-profile-cache #navUserBtn,
   html.mbg-has-profile-cache #mobileNavLogin { display: flex !important; }
+
+  /* ═══ Polish Homepage ═══ */
+  .homepage-hero {
+    background: linear-gradient(135deg, #001026 0%, #0b2545 50%, #134074 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .homepage-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 60%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(37,211,102,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-search {
+    transition: transform .3s ease, box-shadow .3s ease;
+  }
+  .hero-search:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  }
+  .portal-cards > div {
+    transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+    border: 1px solid rgba(226,232,240,.6);
+  }
+  .portal-cards > div:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px -12px rgba(0,16,38,.15);
+    border-color: rgba(37,211,102,.3);
+  }
+  .portal-cards > div:hover .material-symbols-outlined {
+    transform: scale(1.1);
+  }
+  .metric-card {
+    transition: transform .25s ease, box-shadow .25s ease;
+    border: 1px solid rgba(226,232,240,.5);
+  }
+  .metric-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px -8px rgba(0,16,38,.12);
+  }
 </style>
 <script>
   try {
@@ -325,7 +369,7 @@
 <div class="max-w-7xl mx-auto">
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-space-md">
 <!-- Metric 1 -->
-<div class="flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
+<div class="metric-card flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
 <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
 <span>Porsi Tersalurkan</span>
 <span class="material-symbols-outlined text-secondary text-[18px]">bento</span>
@@ -337,7 +381,7 @@
 </div>
 </div>
 <!-- Metric 2 -->
-<div class="flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
+<div class="metric-card flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
 <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
 <span>SPPG Aktif Beroperasi</span>
 <span class="material-symbols-outlined text-secondary text-[18px]">outdoor_grill</span>
@@ -349,7 +393,7 @@
 </div>
 </div>
 <!-- Metric 3 -->
-<div class="flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
+<div class="metric-card flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
 <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
 <span>Sekolah Terlayani</span>
 <span class="material-symbols-outlined text-secondary text-[18px]">school</span>
@@ -358,7 +402,7 @@
 <span class="font-label-sm text-label-sm text-on-surface-variant">Jumlah dari basis data</span>
 </div>
 <!-- Metric 4 -->
-<div class="flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
+<div class="metric-card flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
 <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
 <span>Kepatuhan AKG</span>
 <span class="material-symbols-outlined text-tertiary-fixed-dim text-[18px]">nutrition</span>
@@ -370,7 +414,7 @@
 </div>
 </div>
 <!-- Metric 5 -->
-<div class="col-span-2 md:col-span-1 flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
+<div class="metric-card col-span-2 md:col-span-1 flex flex-col gap-1 p-space-md rounded-xl bg-surface-container-low">
 <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
 <span>Rantai Hangat Makanan</span>
 <span class="material-symbols-outlined text-status-warning text-[18px]">thermostat</span>
