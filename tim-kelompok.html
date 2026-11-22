@@ -34,12 +34,12 @@
     .hero-bg { background: linear-gradient(135deg,#001026 0%,#0b2545 55%,#134074 100%); }
     .hero-video { filter: saturate(.8); }
     .org-root { position: relative; }
-    .org-root::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); height: 2.5rem; border-left: 2px solid #cbd5e1; }
-    .org-branches { position: relative; }
+    .org-root::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); height: 3rem; border-left: 2px solid #cbd5e1; }
+    .org-branches { position: relative; padding-top: 1rem; }
     .org-branches::before { content: ""; position: absolute; top: 0; left: 16.666%; right: 16.666%; height: 0; border-top: 2px solid #cbd5e1; }
     .org-branch { position: relative; transition: transform .2s ease, box-shadow .2s ease; }
     .org-branch:hover { transform: translateY(-3px); box-shadow: 0 18px 36px rgba(0,16,38,.09); }
-    .org-branch::before { content: ""; position: absolute; top: -2.5rem; left: 50%; transform: translateX(-50%); height: 2.5rem; border-left: 2px solid #cbd5e1; }
+    .org-branch::before { content: ""; position: absolute; top: -1.5rem; left: 50%; transform: translateX(-50%); height: 1.5rem; border-left: 2px solid #cbd5e1; }
     .member-node { transition: transform .2s ease, box-shadow .2s ease; }
     .member-node:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,16,38,.09); }
     .member-node:focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }
