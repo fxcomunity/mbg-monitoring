@@ -31,12 +31,12 @@
           <span class="text-sm font-semibold hidden sm:inline">Beranda</span>
         </a>
         <div class="h-8 w-px bg-white/20 hidden sm:block"></div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-2xl text-[#6ffbbe]">verified</span>
+        <div class="flex items-center gap-3">
+          <img src="assets/images/ic_launcher.png" alt="Logo BGN" class="h-10 w-auto"/>
+          <div>
             <h1 class="text-xl font-bold">Verifikasi SPPG</h1>
+            <p class="text-xs text-white/60">Radar MBG Nasional — Badan Gizi Nasional RI</p>
           </div>
-          <p class="text-xs text-white/60 mt-0.5">Radar MBG Nasional — Badan Gizi Nasional RI</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
@@ -249,6 +249,26 @@
       <p class="text-sm text-slate-500">Coba kata kunci lain atau periksa ejaan.</p>
     </div>
 
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="material-symbols-outlined text-3xl text-[#2563eb]">help</span>
+          <h3 class="text-lg font-bold text-slate-800">Konfirmasi Verifikasi</h3>
+        </div>
+        <p class="text-sm text-slate-600 mb-4">Apakah Anda yakin ingin memverifikasi SPPG berikut?</p>
+        <div id="confirmData" class="bg-slate-50 rounded-xl p-4 mb-4 text-sm space-y-2"></div>
+        <div class="flex gap-3">
+          <button id="confirmCancel" class="flex-1 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors">
+            Batal
+          </button>
+          <button id="confirmOk" class="flex-1 px-4 py-2 rounded-xl bg-[#2563eb] text-white font-semibold hover:bg-[#1d4ed8] transition-colors">
+            Ya, Verifikasi
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Loading State -->
     <div id="loadingState" class="hidden text-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
@@ -307,6 +327,10 @@
       const samplePageNumbers = document.getElementById('samplePageNumbers');
       const samplePrevPage = document.getElementById('samplePrevPage');
       const sampleNextPage = document.getElementById('sampleNextPage');
+      const confirmModal = document.getElementById('confirmModal');
+      const confirmData = document.getElementById('confirmData');
+      const confirmCancel = document.getElementById('confirmCancel');
+      const confirmOk = document.getElementById('confirmOk');
 
       let searchTimeout = null;
       let currentResults = [];
@@ -378,6 +402,7 @@
         emptyState.classList.add('hidden');
         loadingState.classList.add('hidden');
         sampleSection.classList.add('hidden');
+        samplePagination.classList.add('hidden');
       }
 
       function showSample(page = 1) {
@@ -387,6 +412,7 @@
         samplePagination.classList.remove('hidden'); // Show sample pagination
         resultsSection.classList.add('hidden'); // Hide search results
         detailSection.classList.add('hidden'); // Hide detail
+        emptyState.classList.add('hidden'); // Ensure empty state is hidden
 
         // Fetch sample data with pagination
         fetch(`${searchApi}?q=SPPG&page=${page}&limit=10`)
@@ -502,6 +528,7 @@
         currentQuery = query;
         currentPage = page;
         samplePagination.classList.add('hidden'); // Hide sample pagination when searching
+        emptyState.classList.add('hidden'); // Ensure empty state is hidden during search
 
         fetch(`${searchApi}?q=${encodeURIComponent(query)}&page=${page}&limit=10`)
           .then(res => res.json())
@@ -636,9 +663,16 @@
         if (currentPage < totalPages) performSearch(currentQuery, currentPage + 1);
       });
 
-      function selectSppg(id) {
+      function selectSppg(id, skipConfirm = false) {
+        if (!skipConfirm) {
+          // Show confirmation modal first
+          showConfirmModal(id);
+          return;
+        }
+
         loadingState.classList.remove('hidden');
         resultsSection.classList.add('hidden');
+        sampleSection.classList.add('hidden');
 
         fetch(`${qrApi}?id=${id}`)
           .then(res => res.json())
@@ -656,6 +690,54 @@
             loadingState.classList.add('hidden');
             emptyState.classList.remove('hidden');
             console.error('Detail error:', err);
+          });
+      }
+
+      function showConfirmModal(id) {
+        // Fetch basic data for confirmation
+        fetch(`${searchApi}?q=${id}&limit=1`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success' && data.data && data.data.length > 0) {
+              const sppg = data.data[0];
+              confirmData.innerHTML = `
+                <div class="space-y-2">
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">ID SPPG:</span>
+                    <span class="font-bold text-primary">${sppg.id}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Nama:</span>
+                    <span class="font-semibold text-slate-800 text-right max-w-[60%]">${escapeHtml(sppg.nama)}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Alamat:</span>
+                    <span class="font-semibold text-slate-800 text-right max-w-[60%]">${escapeHtml(sppg.alamat || '—')}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Kepatuhan:</span>
+                    <span class="font-bold ${sppg.kepatuhan_score >= 80 ? 'text-green-600' : sppg.kepatuhan_score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${sppg.kepatuhan_score}%</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Total Antaran:</span>
+                    <span class="font-bold text-primary">${sppg.total_antaran}x</span>
+                  </div>
+                </div>
+              `;
+              confirmModal.classList.remove('hidden');
+
+              confirmOk.onclick = () => {
+                confirmModal.classList.add('hidden');
+                selectSppg(id, true);
+              };
+
+              confirmCancel.onclick = () => {
+                confirmModal.classList.add('hidden');
+              };
+            }
+          })
+          .catch(err => {
+            console.error('Confirm modal error:', err);
           });
       }
 
@@ -734,8 +816,8 @@
       if (directId) {
         sampleSection.classList.add('hidden');
         if (isDirect) {
-          // Direct mode: skip search, go straight to detail
-          selectSppg(directId);
+          // Direct mode: skip search & confirm, go straight to detail
+          selectSppg(directId, true);
         } else {
           // Normal mode: show search with ID pre-filled
           searchInput.value = directId;
