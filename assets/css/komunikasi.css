@@ -1950,5 +1950,3 @@ body, .communication-app, .chat-panel, .feature-panel { background-image: none; 
 }
 .status-viewer-reply input::placeholder { color: rgba(255,255,255,.55); }
 .status-viewer-reply input:focus { background: rgba(255,255,255,.18); }
-
-/* (footer & tim styles dipisah ke file masing-masing) */
