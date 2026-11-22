@@ -37,6 +37,200 @@ export async function onRequest(context) {
 
   // ── GET ──────────────────────────────────────────────────────────────────
   if (request.method === 'GET') {
+    const allSchools = url.searchParams.has('all_schools') || url.searchParams.has('list_all');
+    const schoolKey = url.searchParams.get('school_key');
+
+    // Handle all_schools request from menu-hari-ini.html
+    if (allSchools) {
+      try {
+        const harianRes = await dbQuery(db, `
+          SELECT DISTINCT ON (i.id_instansi)
+                 m.*, i.nama_instansi, i.kode_prov_dagri, p.nama_provinsi, i.kode_kabko_dagri, k.nama_kabko,
+                 i.kode_kec_dagri, kc.nama_kecamatan, s.nama AS nama_sppg, s.alamat,
+                 g.energi_kkal, g.protein_g, g.lemak_g, g.karbohidrat_g, g.serat_g, gm.gambar_url
+          FROM menu_harian m
+          JOIN instansi i ON m.id_instansi = i.id_instansi
+          LEFT JOIN provinsi p ON i.kode_prov_dagri = p.kode_prov_dagri
+          LEFT JOIN kabupaten_kota k ON i.kode_kabko_dagri = k.kode_kabko_dagri
+          LEFT JOIN kecamatan kc ON i.kode_kec_dagri = kc.kode_kec_dagri
+          LEFT JOIN sppg s ON i.id_sppg = s.id::text
+          LEFT JOIN gizi_menu g ON m.id_menu = g.id_menu
+          LEFT JOIN gambar_menu gm ON m.id_menu = gm.id_menu
+          ORDER BY i.id_instansi, m.tanggal_menu DESC
+        `);
+
+        const sppgRes = await dbQuery(db, `
+          SELECT DISTINCT ON (school_key) * FROM menu_sppg 
+          ORDER BY school_key, menu_date DESC, id DESC
+        `);
+
+        const kabRes = await dbQuery(db, `SELECT kode_prov_dagri, kode_kabko_dagri, nama_kabko FROM kabupaten_kota ORDER BY nama_kabko ASC`);
+
+        const schoolsMap = {};
+        const regionCascade = {};
+
+        const parseList = (str) => {
+          if (!str) return [];
+          return [...new Set(str.split(/[;+]/).map(s => s.trim()).filter(Boolean))];
+        };
+
+        const detectJenjang = (n) => {
+          const u = (n || '').toUpperCase();
+          if (u.includes('KB') || u.includes('PAUD') || u.includes('TK')) return 'paud';
+          if (u.includes('SMP') || u.includes('MTS')) return 'smp';
+          if (u.includes('SMA') || u.includes('SMK') || u.includes('MA')) return 'sma';
+          return 'sd';
+        };
+
+        for (const rh of (harianRes.rows || [])) {
+          const key = rh.id_instansi;
+          const kList = parseList(rh.komposisi || rh.nama_menu);
+          schoolsMap[key] = {
+            key,
+            name: rh.nama_instansi,
+            provinsi: rh.kode_prov_dagri,
+            provinsiName: rh.nama_provinsi,
+            kota: rh.kode_kabko_dagri,
+            kotaName: rh.nama_kabko,
+            kecamatan: rh.nama_kecamatan,
+            jenjang: detectJenjang(rh.nama_instansi),
+            ageGroup: null,
+            arrival: null,
+            cycle: `Siklus Menu: Tanggal ${rh.tanggal_menu || 'Hari Ini'}`,
+            packageName: rh.nama_menu,
+            desc: `Komposisi resmi: ${rh.komposisi || rh.nama_menu}`,
+            calories: rh.energi_kkal ? Math.round(Number(rh.energi_kkal)) : null,
+            protein: rh.protein_g,
+            lemak: rh.lemak_g,
+            karbohidrat: rh.karbohidrat_g,
+            serat: rh.serat_g,
+            porsi: rh.porsi,
+            komposisiList: kList,
+            photo: rh.gambar_url || null,
+            sppg: {
+              name: rh.nama_sppg,
+              address: rh.alamat
+            }
+          };
+
+          const pCode = rh.kode_prov_dagri;
+          if (!regionCascade[pCode]) {
+            regionCascade[pCode] = { name: rh.nama_provinsi, cities: [] };
+          }
+          if (!regionCascade[pCode].cities.some(c => c.id === rh.kode_kabko_dagri)) {
+            regionCascade[pCode].cities.push({ id: rh.kode_kabko_dagri, name: rh.nama_kabko });
+          }
+        }
+
+        for (const r of (sppgRes.rows || [])) {
+          const key = r.school_key || `sch-${r.id}`;
+          if (schoolsMap[key]) continue;
+          schoolsMap[key] = {
+            key,
+            name: r.school_target,
+            provinsi: r.province_code,
+            provinsiName: r.province_name,
+            kota: r.city_code,
+            kotaName: r.city,
+            kecamatan: r.kecamatan,
+            jenjang: r.jenjang,
+            ageGroup: r.age_group,
+            arrival: r.arrival_status,
+            cycle: r.menu_cycle,
+            packageName: r.menu_title,
+            desc: r.description,
+            calories: r.calories ? Number(r.calories) : null,
+            protein: null,
+            lemak: null,
+            karbohidrat: null,
+            serat: null,
+            komposisiList: parseList(`${r.menu_title}; ${r.description || ''}`),
+            photo: r.photo_url,
+            sppg: {
+              name: r.sppg_name,
+              address: r.sppg_address,
+              radius: r.sppg_radius,
+              dietitian: r.dietitian,
+              dietitianTitle: r.dietitian_title,
+              lab: r.lab_test_cert,
+              temp: r.temperature !== null ? `${r.temperature}°C` : null
+            }
+          };
+
+          const pCode = r.province_code;
+          if (!regionCascade[pCode]) {
+            regionCascade[pCode] = { name: r.province_name, cities: [] };
+          }
+          if (!regionCascade[pCode].cities.some(c => c.id === r.city_code)) {
+            regionCascade[pCode].cities.push({ id: r.city_code, name: r.city });
+          }
+        }
+
+        for (const kab of (kabRes.rows || [])) {
+          if (regionCascade[kab.kode_prov_dagri]) {
+            if (!regionCascade[kab.kode_prov_dagri].cities.some(c => c.id === kab.kode_kabko_dagri)) {
+              regionCascade[kab.kode_prov_dagri].cities.push({ id: kab.kode_kabko_dagri, name: kab.nama_kabko });
+            }
+          }
+        }
+
+        return jsonRes({
+          status: 'success',
+          source: 'postgresql_neon',
+          today_date: todayWIB(),
+          total_schools: Object.keys(schoolsMap).length,
+          schools: schoolsMap,
+          region_cascade: regionCascade
+        });
+      } catch (err) {
+        return jsonRes({ status: 'error', message: err.message }, 500);
+      }
+    }
+
+    if (schoolKey) {
+      try {
+        const singleRes = await dbQuery(db, `
+          SELECT * FROM menu_sppg 
+          WHERE (school_key = $1 OR LOWER(school_target) = LOWER($2))
+          ORDER BY menu_date DESC LIMIT 1
+        `, [schoolKey, schoolKey]);
+        if (singleRes.rows?.length > 0) {
+          const r = singleRes.rows[0];
+          return jsonRes({
+            status: 'success',
+            data: {
+              key: r.school_key,
+              name: r.school_target,
+              provinsi: r.province_code,
+              provinsiName: r.province_name,
+              kota: r.city_code,
+              kotaName: r.city,
+              kecamatan: r.kecamatan,
+              jenjang: r.jenjang,
+              ageGroup: r.age_group,
+              arrival: r.arrival_status,
+              cycle: r.menu_cycle,
+              packageName: r.menu_title,
+              desc: r.description,
+              calories: r.calories ? Number(r.calories) : null,
+              photo: r.photo_url,
+              sppg: {
+                name: r.sppg_name,
+                address: r.sppg_address,
+                radius: r.sppg_radius,
+                dietitian: r.dietitian,
+                dietitianTitle: r.dietitian_title,
+                lab: r.lab_test_cert,
+                temp: r.temperature !== null ? `${r.temperature}°C` : null
+              }
+            }
+          });
+        }
+      } catch (err) {
+        return jsonRes({ status: 'error', message: err.message }, 500);
+      }
+    }
+
     const targetDate = date || todayWIB();
     const isToday = targetDate === todayWIB();
 

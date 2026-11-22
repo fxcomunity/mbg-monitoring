@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id" class="h-full">
 <head>
   <meta charset="utf-8"/>
@@ -64,6 +64,57 @@
       .video-bg-fallback {
         animation: none;
       }
+    }
+    /* Speech-bubble tooltip (like browser's native email validation popover) */
+    .input-tooltip {
+      position: relative;
+      display: none;
+      margin-top: 6px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.12), 0 1px 4px rgba(0,0,0,.08);
+      padding: 8px 12px 8px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #334155;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .input-tooltip::before {
+      content: '';
+      position: absolute;
+      top: -7px;
+      left: 18px;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-bottom: 7px solid #e2e8f0;
+    }
+    .input-tooltip::after {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 19px;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 6px solid #fff;
+    }
+    .input-tooltip.visible {
+      display: flex;
+    }
+    .input-tooltip-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background: #f97316;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
     }
   </style>
   <!-- Auto-redirect: kalau sesi masih aktif, langsung ke dashboard sesuai role (admin / sppg / user) -->
@@ -224,9 +275,10 @@
                        class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#134074] focus:border-transparent transition-all shadow-sm">
               </div>
               <p id="loginUsernameHelp" class="mt-1.5 text-[10px] text-slate-500">Gunakan username atau email terdaftar. Input berisi pola SQL berbahaya akan ditolak.</p>
-              <div id="loginUsernameWarning" class="hidden mt-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] leading-relaxed text-red-700" role="alert" aria-live="polite">
-                <span class="font-bold">Input ditolak.</span>
-                <span>Pola yang tidak diizinkan terdeteksi pada username/email. Percobaan login tidak akan dikirim.</span>
+              <!-- Speech-bubble tooltip – matches browser native validation popover style -->
+              <div id="loginUsernameWarning" class="input-tooltip" role="alert" aria-live="polite" aria-describedby="loginUsername">
+                <div class="input-tooltip-icon" aria-hidden="true">!</div>
+                <span id="loginUsernameWarningMsg">Input tidak valid atau mengandung pola yang dilarang.</span>
               </div>
             </div>
 
@@ -497,9 +549,20 @@
 
     const loginUsernameInput = document.getElementById('loginUsername');
     const loginUsernameWarning = document.getElementById('loginUsernameWarning');
+    const loginUsernameWarningMsg = document.getElementById('loginUsernameWarningMsg');
     const loginInjectionPattern = /(?:['"`;]|--|\/\*|\*\/|\b(?:union|select|insert|update|delete|drop|truncate)\b|\b(?:or|and)\s+\d+\s*=\s*\d)/i;
-    const loginUsernamePattern = /^[a-z0-9][a-z0-9_.-]{2,59}$/i;
-    const loginEmailPattern = /^[a-z0-9.!#$%&*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+    // Allow usernames without @ symbol (e.g. 19250779, admin_bgn, sppg_jakpus_01)
+    const loginUsernamePattern = /^[a-z0-9][a-z0-9_.@-]{1,253}$/i;
+    const loginEmailPattern = /^[a-z0-9.!#$%&*+\/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+
+    function setTooltip(show, message) {
+      if (show) {
+        if (loginUsernameWarningMsg) loginUsernameWarningMsg.textContent = message || 'Input tidak valid atau mengandung pola yang dilarang.';
+        loginUsernameWarning.classList.add('visible');
+      } else {
+        loginUsernameWarning.classList.remove('visible');
+      }
+    }
 
     function validateLoginUsername(showFormatWarning = false) {
       const username = loginUsernameInput.value.trim();
@@ -507,14 +570,22 @@
       const validIdentity = loginUsernamePattern.test(username) || loginEmailPattern.test(username);
       const shouldWarn = injectionDetected || (showFormatWarning && username !== '' && !validIdentity);
 
-      loginUsernameWarning.classList.toggle('hidden', !shouldWarn);
+      if (injectionDetected) {
+        setTooltip(true, 'Pola SQL/karakter berbahaya terdeteksi. Input ini ditolak demi keamanan.');
+      } else if (showFormatWarning && username !== '' && !validIdentity) {
+        setTooltip(true, 'Masukkan username (huruf/angka/underscore) atau alamat email yang valid.');
+      } else {
+        setTooltip(false);
+      }
       loginUsernameInput.setAttribute('aria-invalid', String(shouldWarn));
-      loginUsernameInput.classList.toggle('border-red-500', shouldWarn);
-      loginUsernameInput.classList.toggle('focus:ring-red-500', shouldWarn);
+      loginUsernameInput.classList.toggle('border-red-400', shouldWarn);
+      loginUsernameInput.classList.toggle('ring-2', shouldWarn);
+      loginUsernameInput.classList.toggle('ring-red-300', shouldWarn);
       return username !== '' && username.length <= 254 && validIdentity && !injectionDetected;
     }
 
     loginUsernameInput.addEventListener('input', () => validateLoginUsername());
+    loginUsernameInput.addEventListener('blur', () => validateLoginUsername(true));
 
     // Static / Fetch Login Handler
     async function handleStaticLogin(e) {

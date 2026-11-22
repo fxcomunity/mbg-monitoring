@@ -140,10 +140,10 @@ try {
     // 1. Ambil Detail Tunggal Menu Berdasarkan school_key / id_instansi
     // --------------------------------------------------------------------------
     if ($schoolKey !== '') {
-        // Cek dulu di tabel instansi + menu_harian
+        // Cek dulu di tabel instansi + menu_harian (utamakan hari ini, fallback ke menu terbaru)
         $stmt = $pdo->prepare("
             SELECT m.*, i.nama_instansi, i.kode_prov_dagri, p.nama_provinsi, i.kode_kabko_dagri, k.nama_kabko,
-                   i.kode_kec_dagri, kc.nama_kecamatan, s.nama_sppg, s.alamat, s.kode_sppg,
+                   i.kode_kec_dagri, kc.nama_kecamatan, s.nama AS nama_sppg, s.alamat,
                    g.energi_kkal, g.protein_g, g.lemak_g, g.karbohidrat_g, g.serat_g,
                    gm.gambar_url
             FROM menu_harian m
@@ -151,12 +151,11 @@ try {
             LEFT JOIN provinsi p ON i.kode_prov_dagri = p.kode_prov_dagri
             LEFT JOIN kabupaten_kota k ON i.kode_kabko_dagri = k.kode_kabko_dagri
             LEFT JOIN kecamatan kc ON i.kode_kec_dagri = kc.kode_kec_dagri
-            LEFT JOIN sppg s ON i.id_sppg = s.id_sppg
+            LEFT JOIN sppg s ON i.id_sppg = s.id::text
             LEFT JOIN gizi_menu g ON m.id_menu = g.id_menu
             LEFT JOIN gambar_menu gm ON m.id_menu = gm.id_menu
             WHERE (i.id_instansi = ? OR LOWER(i.nama_instansi) = LOWER(?))
-              AND m.tanggal_menu = CURRENT_DATE
-            ORDER BY (CASE WHEN m.porsi = 'large' THEN 0 ELSE 1 END)
+            ORDER BY (CASE WHEN m.tanggal_menu = CURRENT_DATE THEN 0 ELSE 1 END), m.tanggal_menu DESC, (CASE WHEN m.porsi = 'large' THEN 0 ELSE 1 END)
             LIMIT 1
         ");
         $stmt->execute([$schoolKey, $schoolKey]);
@@ -171,11 +170,11 @@ try {
             exit;
         }
 
-        // Jika tidak ada di menu_harian today, cek apakah ada di menu_sppg
+        // Jika tidak ada di menu_harian, cek apakah ada di menu_sppg
         $stmtSppg = $pdo->prepare("
             SELECT * FROM menu_sppg 
             WHERE (school_key = ? OR LOWER(school_target) = LOWER(?))
-            ORDER BY (CASE WHEN menu_date = CURRENT_DATE THEN 0 ELSE 1 END), menu_date DESC LIMIT 1
+            ORDER BY (CASE WHEN menu_date = CURRENT_DATE THEN 0 ELSE 1 END), menu_date DESC, id DESC LIMIT 1
         ");
         $stmtSppg->execute([$schoolKey, $schoolKey]);
         $rowSppg = $stmtSppg->fetch();
@@ -232,11 +231,11 @@ try {
         $schoolsMap = [];
         $regionCascade = [];
 
-        // A. Ambil dari tabel menu_harian + instansi untuk HARI INI
+        // A. Ambil dari tabel menu_harian + instansi (utamakan hari ini, fallback ke tanggal terbaru per instansi)
         $stmtHarian = $pdo->prepare("
             SELECT DISTINCT ON (i.id_instansi)
                    m.*, i.nama_instansi, i.kode_prov_dagri, p.nama_provinsi, i.kode_kabko_dagri, k.nama_kabko,
-                   i.kode_kec_dagri, kc.nama_kecamatan, s.nama_sppg, s.alamat, s.kode_sppg,
+                   i.kode_kec_dagri, kc.nama_kecamatan, s.nama AS nama_sppg, s.alamat,
                    g.energi_kkal, g.protein_g, g.lemak_g, g.karbohidrat_g, g.serat_g,
                    gm.gambar_url
             FROM menu_harian m
@@ -244,11 +243,10 @@ try {
             LEFT JOIN provinsi p ON i.kode_prov_dagri = p.kode_prov_dagri
             LEFT JOIN kabupaten_kota k ON i.kode_kabko_dagri = k.kode_kabko_dagri
             LEFT JOIN kecamatan kc ON i.kode_kec_dagri = kc.kode_kec_dagri
-            LEFT JOIN sppg s ON i.id_sppg = s.id_sppg
+            LEFT JOIN sppg s ON i.id_sppg = s.id::text
             LEFT JOIN gizi_menu g ON m.id_menu = g.id_menu
             LEFT JOIN gambar_menu gm ON m.id_menu = gm.id_menu
-            WHERE m.tanggal_menu = ?
-            ORDER BY i.id_instansi, (CASE WHEN m.porsi = 'large' THEN 0 ELSE 1 END)
+            ORDER BY i.id_instansi, (CASE WHEN m.tanggal_menu = ? THEN 0 ELSE 1 END), m.tanggal_menu DESC, (CASE WHEN m.porsi = 'large' THEN 0 ELSE 1 END)
         ");
         $stmtHarian->execute([$todayDate]);
         $rowsHarian = $stmtHarian->fetchAll();
@@ -283,8 +281,11 @@ try {
             }
         }
 
-        // B. Ambil juga dari menu_sppg HANYA jika menu_date = TODAY
-        $stmtSppg = $pdo->prepare("SELECT DISTINCT ON (school_key) * FROM menu_sppg WHERE menu_date = ? ORDER BY school_key, id DESC");
+        // B. Ambil juga dari menu_sppg (utamakan menu_date = TODAY, fallback ke menu_date terbaru per sekolah)
+        $stmtSppg = $pdo->prepare("
+            SELECT DISTINCT ON (school_key) * FROM menu_sppg 
+            ORDER BY school_key, (CASE WHEN menu_date = ? THEN 0 ELSE 1 END), menu_date DESC, id DESC
+        ");
         $stmtSppg->execute([$todayDate]);
         $rowsSppg = $stmtSppg->fetchAll();
 
@@ -390,21 +391,25 @@ try {
     $todayDate = date('Y-m-d');
     $sql = "
         SELECT m.*, i.nama_instansi, i.kode_prov_dagri, p.nama_provinsi, i.kode_kabko_dagri, k.nama_kabko,
-               i.kode_kec_dagri, kc.nama_kecamatan, s.nama_sppg, s.alamat,
+               i.kode_kec_dagri, kc.nama_kecamatan, s.nama AS nama_sppg, s.alamat,
                g.energi_kkal, g.protein_g, g.lemak_g, g.karbohidrat_g, g.serat_g
         FROM menu_harian m
         JOIN instansi i ON m.id_instansi = i.id_instansi
         LEFT JOIN provinsi p ON i.kode_prov_dagri = p.kode_prov_dagri
         LEFT JOIN kabupaten_kota k ON i.kode_kabko_dagri = k.kode_kabko_dagri
         LEFT JOIN kecamatan kc ON i.kode_kec_dagri = kc.kode_kec_dagri
-        LEFT JOIN sppg s ON i.id_sppg = s.id_sppg
+        LEFT JOIN sppg s ON i.id_sppg = s.id::text
         LEFT JOIN gizi_menu g ON m.id_menu = g.id_menu
-        WHERE m.tanggal_menu = ?
+        WHERE 1=1
     ";
-    $params = [$todayDate];
+    $params = [];
+    if ($filterDate !== '') {
+        $sql .= " AND m.tanggal_menu = ?";
+        $params[] = $filterDate;
+    }
 
     if ($query !== '') {
-        $sql .= " AND (i.nama_instansi ILIKE ? OR k.nama_kabko ILIKE ? OR s.nama_sppg ILIKE ? OR m.nama_menu ILIKE ?)";
+        $sql .= " AND (i.nama_instansi ILIKE ? OR k.nama_kabko ILIKE ? OR s.nama ILIKE ? OR m.nama_menu ILIKE ?)";
         $p = "%{$query}%";
         $params = array_merge($params, [$p, $p, $p, $p]);
     }
