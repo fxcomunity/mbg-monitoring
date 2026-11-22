@@ -16,6 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../database/db.php';
 
+$pdo = getDB();
+
 $sppgId = isset($_GET['id']) ? intval($_GET['id']) : null;
 
 if (!$sppgId) {
