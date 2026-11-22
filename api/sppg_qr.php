@@ -69,7 +69,7 @@ try {
             'lng' => (float)$sppg['longitude']
         ] : null,
         'verified_at' => date('c'),
-        'verification_url' => $baseUrl . '/verify-sppg.html?id=' . $sppg['id']
+        'verification_url' => $baseUrl . '/verify-sppg.html?id=' . $sppg['id'] . '&direct=1'
     ];
 
     echo json_encode([

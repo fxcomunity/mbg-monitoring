@@ -57,7 +57,7 @@ export async function onRequest(context) {
         lng: parseFloat(sppg.longitude)
       } : null,
       verified_at: new Date().toISOString(),
-      verification_url: `${url.origin}/verify-sppg.html?id=${sppg.id}`
+      verification_url: `${url.origin}/verify-sppg.html?id=${sppg.id}&direct=1`
     };
 
     return json({
