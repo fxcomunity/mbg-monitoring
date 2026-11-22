@@ -45,7 +45,6 @@
 <link rel="stylesheet" href="../assets/css/site-footer.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script src="../assets/js/site-footer.js" defer></script>
 <style id="map-ux-styles">
 /* ===== Peta: tampilan Leaflet (warna tetap sesuai palet situs) ===== */
@@ -866,14 +865,14 @@ body.map-fs-lock{overflow:hidden}
           Ingin Memverifikasi Standar SPPG di Wilayah Anda?
         </h3>
 <p class="text-body-md font-body-md text-on-primary-container">
-          Komite Sekolah, Orang Tua Siswa, dan Pengawas Wilayah dapat melakukan inspeksi mendadak berbekal QR ID Dapur dan mencocokkan sertifikat uji lab cemaran biologis secara transparan.
+          Komite Sekolah, Orang Tua Siswa, dan Pengawas Wilayah dapat mencari dan memverifikasi dapur SPPG berdasarkan nama, ID, atau alamat untuk inspeksi mendadak dan pencocokan sertifikat uji lab cemaran biologis secara transparan.
         </p>
 </div>
 <div class="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full md:w-auto">
-<button onclick="window.open('../verify-sppg.html', '_blank')" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-tertiary-fixed text-tertiary-container hover:bg-tertiary-fixed-dim font-label-lg text-label-lg font-bold shadow-sm transition-colors text-center flex items-center justify-center gap-2">
-<span class="material-symbols-outlined">qr_code_2</span>
-          Pindai Barcode Dapur
-        </button>
+<a href="../verify-sppg.html" target="_blank" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-tertiary-fixed text-tertiary-container hover:bg-tertiary-fixed-dim font-label-lg text-label-lg font-bold shadow-sm transition-colors text-center flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">search</span>
+          Cari &amp; Verifikasi SPPG
+        </a>
 <button class="w-full sm:w-auto px-6 py-3 rounded-xl bg-primary-container text-on-primary hover:bg-surface-tint font-label-lg text-label-lg font-medium transition-colors text-center">
           Pedoman Higiene SLHS
         </button>
@@ -1277,18 +1276,11 @@ body.map-fs-lock{overflow:hidden}
             <button type="button" class="route-to-sppg" style="flex:1;padding:6px 8px;border-radius:8px;background:#2563EB;color:#fff;font-size:11px;font-weight:700;border:none;cursor:pointer;">
               ${sppg.location_accuracy === 'approximate' ? 'Rute ke pusat wilayah' : 'Lihat rute'}
             </button>
-            <button type="button" class="qr-toggle" data-sppg-id="${sppg.id}" style="flex:1;padding:6px 8px;border-radius:8px;background:#059669;color:#fff;font-size:11px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">
+            <a href="../verify-sppg.html?id=${sppg.id}" target="_blank" style="flex:1;padding:6px 8px;border-radius:8px;background:#059669;color:#fff;font-size:11px;font-weight:700;text-decoration:none;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px;">
               <span class="material-symbols-outlined" style="font-size:14px;">qr_code_2</span>
-              QR
-            </button>
+              Verifikasi
+            </a>
           </div>
-          <div class="qr-container" style="display:none;margin-top:8px;text-align:center;">
-            <div style="background:#fff;padding:8px;border-radius:8px;border:1px solid #e2e8f0;display:inline-block;">
-              <canvas class="qr-canvas" width="120" height="120"></canvas>
-            </div>
-            <p style="font-size:9px;color:#64748b;margin-top:4px;">Scan untuk verifikasi</p>
-          </div>
-        </div>
       `);
 
       marker.on('click', () => {
@@ -1301,36 +1293,6 @@ body.map-fs-lock{overflow:hidden}
           routeButton.addEventListener('click', () => {
             updatePinnedCard(sppg);
             routeToCurrentSppg(sppg);
-          });
-        }
-
-        // QR toggle handler
-        const qrToggle = event.popup.getElement()?.querySelector('.qr-toggle');
-        const qrContainer = event.popup.getElement()?.querySelector('.qr-container');
-        const qrCanvas = event.popup.getElement()?.querySelector('.qr-canvas');
-        if (qrToggle && qrContainer && qrCanvas) {
-          qrToggle.addEventListener('click', async () => {
-            if (qrContainer.style.display === 'none') {
-              qrContainer.style.display = 'block';
-              try {
-                const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                  ? `../../api/sppg_qr.php?id=${sppg.id}`
-                  : `../../api/sppg_qr?id=${sppg.id}`;
-                const res = await fetch(apiUrl);
-                const data = await res.json();
-                if (data.status === 'success') {
-                  QRCode.toCanvas(qrCanvas, data.qr_content, {
-                    width: 120,
-                    margin: 1,
-                    color: { dark: '#001026', light: '#ffffff' }
-                  });
-                }
-              } catch (err) {
-                console.error('QR error:', err);
-              }
-            } else {
-              qrContainer.style.display = 'none';
-            }
           });
         }
       });
