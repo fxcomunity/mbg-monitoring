@@ -9,7 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script>window.qrcode || document.write('<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"><\/script>')</script>
   <link rel="stylesheet" href="assets/css/site-footer.css"/>
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -131,53 +132,52 @@
         </div>
 
         <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- QR Code -->
-            <div class="flex flex-col items-center">
-              <div class="bg-white p-4 rounded-2xl border-2 border-slate-200 shadow-inner mb-3">
-                <canvas id="qrCanvas" width="200" height="200"></canvas>
-              </div>
-              <p class="text-xs text-slate-500 text-center">Scan QR code untuk verifikasi cepat</p>
-              <button id="downloadQR" class="mt-3 px-4 py-2 bg-[#2563eb] text-white rounded-xl text-sm font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2">
-                <span class="material-symbols-outlined text-[16px]">download</span>
-                Unduh QR Code
-              </button>
-            </div>
+          <div class="grid grid-cols-1 gap-6">
 
             <!-- Data Details -->
             <div class="space-y-4">
-              <div class="bg-slate-50 rounded-xl p-4">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Informasi Dapur</h3>
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">ID SPPG:</span>
-                    <span id="detailId" class="font-bold text-primary"></span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Nama Dapur:</span>
-                    <span id="detailNamaFull" class="font-semibold text-slate-800 text-right"></span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Alamat:</span>
-                    <span id="detailAlamat" class="font-semibold text-slate-800 text-right max-w-[60%]"></span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Kecamatan:</span>
-                    <span id="detailKecamatan" class="font-semibold text-slate-800 text-right"></span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Kelurahan/Desa:</span>
-                    <span id="detailKelurahan" class="font-semibold text-slate-800 text-right"></span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Yayasan:</span>
-                    <span id="detailYayasan" class="font-semibold text-slate-800 text-right"></span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-600">Bulan Data:</span>
-                    <span id="detailBulan" class="font-semibold text-slate-800"></span>
-                  </div>
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="flex items-center justify-between gap-3 px-5 py-3.5 bg-gradient-to-r from-slate-50 to-white border-b border-slate-200">
+                  <h3 class="flex items-center gap-2 text-sm font-bold text-slate-800">
+                    <span class="material-symbols-outlined text-[20px] text-[#2563eb]">restaurant</span>
+                    Informasi Dapur
+                  </h3>
+                  <button id="copyId" type="button" title="Salin ID SPPG" class="group inline-flex items-center gap-2 pl-3 pr-2.5 py-1.5 rounded-lg bg-[#eff4ff] border border-[#c7d8ff] text-[#1d4ed8] hover:bg-[#dbe7ff] transition-colors">
+                    <span class="text-xs font-medium text-slate-500">ID</span>
+                    <span id="detailId" class="font-mono text-sm font-bold tracking-wide"></span>
+                    <span id="copyIdIcon" class="material-symbols-outlined text-[16px] opacity-60 group-hover:opacity-100">content_copy</span>
+                  </button>
                 </div>
+                <dl class="divide-y divide-slate-100 text-sm">
+                  <div class="px-5 py-4">
+                    <dt class="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1"><span class="material-symbols-outlined text-[15px] text-slate-400">storefront</span>Nama dapur</dt>
+                    <dd id="detailNamaFull" data-info class="text-base font-bold text-slate-900 leading-snug"></dd>
+                  </div>
+                  <div class="px-5 py-3.5">
+                    <dt class="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1"><span class="material-symbols-outlined text-[15px] text-slate-400">location_on</span>Alamat</dt>
+                    <dd id="detailAlamat" data-info class="font-medium text-slate-700 leading-relaxed"></dd>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                  <div class="px-5 py-3.5">
+                    <dt class="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1"><span class="material-symbols-outlined text-[15px] text-slate-400">map</span>Kecamatan</dt>
+                    <dd id="detailKecamatan" data-info class="font-semibold text-slate-800 leading-snug "></dd>
+                  </div>
+                  <div class="px-5 py-3.5">
+                    <dt class="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1"><span class="material-symbols-outlined text-[15px] text-slate-400">home_pin</span>Kelurahan/Desa</dt>
+                    <dd id="detailKelurahan" data-info class="font-semibold text-slate-800 leading-snug "></dd>
+                  </div>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                  <div class="px-5 py-3.5">
+                    <dt class="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1"><span class="material-symbols-outlined text-[15px] text-slate-400">apartment</span>Yayasan</dt>
+                    <dd id="detailYayasan" data-info class="font-semibold text-slate-800 leading-snug "></dd>
+                  </div>
+                  <div class="px-5 py-3.5">
+                    <dt class="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1"><span class="material-symbols-outlined text-[15px] text-slate-400">calendar_month</span>Bulan data</dt>
+                    <dd id="detailBulan" data-info class="font-semibold text-slate-800 leading-snug "></dd>
+                  </div>
+                  </div>
+                </dl>
               </div>
 
               <div id="detailGps" class="hidden bg-blue-50 rounded-xl p-4">
@@ -238,6 +238,33 @@
               </div>
             </div>
           </div>
+
+          <!-- QR Verifikasi (paling bawah) -->
+          <div class="mt-8 pt-6 border-t-2 border-dashed border-slate-200">
+            <div class="flex flex-col md:flex-row items-center gap-6 bg-slate-50 rounded-2xl p-6">
+              <div class="bg-white p-3 rounded-2xl border-2 border-slate-200 shadow-inner shrink-0">
+                <canvas id="qrCanvas" width="260" height="260"></canvas>
+              </div>
+              <div class="text-center md:text-left">
+                <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold mb-2">
+                  <span class="material-symbols-outlined text-[14px]">qr_code_2</span>
+                  QR Verifikasi
+                </span>
+                <h3 class="text-base font-bold text-slate-800">Kode verifikasi resmi</h3>
+                <p class="text-sm text-slate-600 mt-1 mb-4">Berisi ID, nama, lokasi, kepatuhan, total antaran, dan tautan verifikasi sesuai data yang dicek sistem Radar MBG saat ini.</p>
+                <div class="flex flex-wrap gap-2 justify-center md:justify-start">
+                  <button id="downloadQR" class="px-4 py-2 bg-[#2563eb] text-white rounded-xl text-sm font-semibold hover:bg-[#1d4ed8] transition-colors flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    Unduh QR Code
+                  </button>
+                  <button id="copyLink" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold hover:bg-slate-100 transition-colors flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[16px]">link</span>
+                    <span id="copyLinkText">Salin link</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -246,27 +273,7 @@
     <div id="emptyState" class="hidden text-center py-12">
       <span class="material-symbols-outlined text-6xl text-slate-300 mb-4">search_off</span>
       <h3 class="text-lg font-bold text-slate-700 mb-2">Tidak ada hasil</h3>
-      <p class="text-sm text-slate-500">Coba kata kunci lain atau periksa ejaan.</p>
-    </div>
-
-    <!-- Confirmation Modal -->
-    <div id="confirmModal" class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in">
-        <div class="flex items-center gap-3 mb-4">
-          <span class="material-symbols-outlined text-3xl text-[#2563eb]">help</span>
-          <h3 class="text-lg font-bold text-slate-800">Konfirmasi Verifikasi</h3>
-        </div>
-        <p class="text-sm text-slate-600 mb-4">Apakah Anda yakin ingin memverifikasi SPPG berikut?</p>
-        <div id="confirmData" class="bg-slate-50 rounded-xl p-4 mb-4 text-sm space-y-2"></div>
-        <div class="flex gap-3">
-          <button id="confirmCancel" class="flex-1 px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition-colors">
-            Batal
-          </button>
-          <button id="confirmOk" class="flex-1 px-4 py-2 rounded-xl bg-[#2563eb] text-white font-semibold hover:bg-[#1d4ed8] transition-colors">
-            Ya, Verifikasi
-          </button>
-        </div>
-      </div>
+      <p id="emptyMsg" class="text-sm text-slate-500">Coba kata kunci lain atau periksa ejaan.</p>
     </div>
 
     <!-- Loading State -->
@@ -327,10 +334,6 @@
       const samplePageNumbers = document.getElementById('samplePageNumbers');
       const samplePrevPage = document.getElementById('samplePrevPage');
       const sampleNextPage = document.getElementById('sampleNextPage');
-      const confirmModal = document.getElementById('confirmModal');
-      const confirmData = document.getElementById('confirmData');
-      const confirmCancel = document.getElementById('confirmCancel');
-      const confirmOk = document.getElementById('confirmOk');
 
       let searchTimeout = null;
       let currentResults = [];
@@ -339,6 +342,9 @@
       let totalPages = 0;
       let totalResults = 0;
       let samplePage = 1;
+      let cameFromList = false;      // true jika detail dibuka dari daftar (bukan link langsung)
+      let returnView = 'sample';     // daftar yang dikembalikan saat "Kembali": 'sample' | 'results'
+      const DEFAULT_TITLE = 'Verifikasi SPPG — Radar MBG';
       let sampleTotalPages = 3024; // 30231 / 10 = 3024 pages
 
       const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -392,11 +398,23 @@
 
       // Back to results
       document.getElementById('backToResults').addEventListener('click', () => {
-        detailSection.classList.add('hidden');
-        resultsSection.classList.remove('hidden');
+        if (cameFromList) {
+          history.back(); // popstate -> backToList()
+        } else {
+          history.replaceState({}, '', pagePath());
+          backToList();
+        }
+      });
+
+      window.addEventListener('popstate', (e) => {
+        const id = new URLSearchParams(location.search).get('id');
+        if (id) { cameFromList = !!e.state; selectSppg(id, false); }
+        else { cameFromList = false; backToList(); }
       });
 
       function hideAll() {
+        clearDetailUrl();
+        document.getElementById('emptyMsg').textContent = 'Coba kata kunci lain atau periksa ejaan.';
         resultsSection.classList.add('hidden');
         detailSection.classList.add('hidden');
         emptyState.classList.add('hidden');
@@ -425,7 +443,7 @@
                 item.className = 'result-item w-full text-left p-4 bg-white rounded-xl border border-slate-200 hover:border-[#2563eb] transition-all';
                 item.innerHTML = `
                   <div class="flex items-start gap-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#001026] to-[#134074] flex items-center justify-center text-white font-bold text-lg shrink-0">
+                    <div class="min-w-[3rem] h-12 px-2 rounded-xl bg-gradient-to-br from-[#001026] to-[#134074] flex items-center justify-center text-white font-bold text-sm shrink-0">
                       ${sppg.id}
                     </div>
                     <div class="flex-1 min-w-0">
@@ -561,7 +579,7 @@
               item.className = 'result-item w-full text-left p-4 bg-white rounded-xl border border-slate-200 hover:border-[#2563eb] transition-all';
               item.innerHTML = `
                 <div class="flex items-start gap-4">
-                  <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#001026] to-[#134074] flex items-center justify-center text-white font-bold text-lg shrink-0">
+                  <div class="min-w-[3rem] h-12 px-2 rounded-xl bg-gradient-to-br from-[#001026] to-[#134074] flex items-center justify-center text-white font-bold text-sm shrink-0">
                     ${sppg.id}
                   </div>
                   <div class="flex-1 min-w-0">
@@ -663,81 +681,94 @@
         if (currentPage < totalPages) performSearch(currentQuery, currentPage + 1);
       });
 
-      function selectSppg(id, skipConfirm = false) {
-        if (!skipConfirm) {
-          // Show confirmation modal first
-          showConfirmModal(id);
-          return;
+      // ===== Detail SPPG dengan URL unik: verify-sppg?id=123&nama=sppg-bsi-jakarta =====
+      // Gambar QR ke canvas (library: qrcode-generator). Gagal load -> detail tetap tampil.
+      function drawQr(canvas, text) {
+        const ctx = canvas.getContext('2d');
+        const size = 520; // resolusi internal; tampil 260px
+        try {
+          if (typeof qrcode !== 'function') throw new Error('library QR tidak termuat');
+          const qr = qrcode(0, 'M');
+          qr.addData(unescape(encodeURIComponent(text))); // UTF-8 -> byte
+          qr.make();
+          const n = qr.getModuleCount(), margin = 4;
+          const cell = Math.max(1, Math.floor(size / (n + margin * 2)));
+          const px = cell * (n + margin * 2);
+          canvas.width = canvas.height = px;
+          canvas.style.width = canvas.style.height = '260px';
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, px, px);
+          ctx.fillStyle = '#001026';
+          for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+            if (qr.isDark(r, c)) ctx.fillRect((c + margin) * cell, (r + margin) * cell, cell, cell);
+          }
+        } catch (err) {
+          console.error('QR error:', err);
+          canvas.width = canvas.height = 260;
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 260, 260);
+          ctx.fillStyle = '#b91c1c'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText('QR gagal dimuat', 130, 130);
         }
+      }
 
-        loadingState.classList.remove('hidden');
+      function slugify(s) {
+        return (s || '').toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, '');
+      }
+
+      function pagePath() { return location.pathname.replace(/\.html$/, ''); }
+
+      function detailUrl(s) {
+        return `${location.origin}${pagePath()}?id=${s.id}&nama=${slugify(s.nama + ' ' + (s.kabupaten_kota || ''))}`;
+      }
+
+      function clearDetailUrl() {
+        if (new URLSearchParams(location.search).has('id')) {
+          history.replaceState({}, '', pagePath());
+          cameFromList = false;
+          document.title = DEFAULT_TITLE;
+        }
+      }
+
+      function backToList() {
+        detailSection.classList.add('hidden');
+        emptyState.classList.add('hidden');
+        loadingState.classList.add('hidden');
+        document.title = DEFAULT_TITLE;
+        (returnView === 'results' ? resultsSection : sampleSection).classList.remove('hidden');
+        window.scrollTo({ top: 0 });
+      }
+
+      function selectSppg(id, push = true) {
+        if (push) returnView = resultsSection.classList.contains('hidden') ? 'sample' : 'results';
         resultsSection.classList.add('hidden');
         sampleSection.classList.add('hidden');
+        detailSection.classList.add('hidden');
+        emptyState.classList.add('hidden');
+        loadingState.classList.remove('hidden');
 
-        fetch(`${qrApi}?id=${id}`)
+        fetch(`${qrApi}?id=${encodeURIComponent(id)}`)
           .then(res => res.json())
           .then(data => {
             loadingState.classList.add('hidden');
-
-            if (data.status === 'error') {
+            if (data.status === 'error' || !data.sppg) {
+              document.getElementById('emptyMsg').textContent = 'Detail SPPG gagal dimuat: ' + (data.message || 'data tidak ditemukan');
               emptyState.classList.remove('hidden');
               return;
             }
-
             showDetail(data.sppg, data.qr_content);
+            document.title = `${data.sppg.nama} — Verifikasi SPPG`;
+            if (push) {
+              history.pushState({ id: data.sppg.id }, '', detailUrl(data.sppg).replace(location.origin, ''));
+              cameFromList = true;
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
           })
           .catch(err => {
             loadingState.classList.add('hidden');
+            document.getElementById('emptyMsg').textContent = 'Detail SPPG gagal dimuat: ' + err.message + ' (cek respons ' + qrApi + ')';
             emptyState.classList.remove('hidden');
             console.error('Detail error:', err);
-          });
-      }
-
-      function showConfirmModal(id) {
-        // Fetch basic data for confirmation
-        fetch(`${searchApi}?q=${id}&limit=1`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.status === 'success' && data.data && data.data.length > 0) {
-              const sppg = data.data[0];
-              confirmData.innerHTML = `
-                <div class="space-y-2">
-                  <div class="flex justify-between">
-                    <span class="text-slate-500">ID SPPG:</span>
-                    <span class="font-bold text-primary">${sppg.id}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-500">Nama:</span>
-                    <span class="font-semibold text-slate-800 text-right max-w-[60%]">${escapeHtml(sppg.nama)}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-500">Alamat:</span>
-                    <span class="font-semibold text-slate-800 text-right max-w-[60%]">${escapeHtml(sppg.alamat || '—')}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-500">Kepatuhan:</span>
-                    <span class="font-bold ${sppg.kepatuhan_score >= 80 ? 'text-green-600' : sppg.kepatuhan_score >= 60 ? 'text-yellow-600' : 'text-red-600'}">${sppg.kepatuhan_score}%</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-500">Total Antaran:</span>
-                    <span class="font-bold text-primary">${sppg.total_antaran}x</span>
-                  </div>
-                </div>
-              `;
-              confirmModal.classList.remove('hidden');
-
-              confirmOk.onclick = () => {
-                confirmModal.classList.add('hidden');
-                selectSppg(id, true);
-              };
-
-              confirmCancel.onclick = () => {
-                confirmModal.classList.add('hidden');
-              };
-            }
-          })
-          .catch(err => {
-            console.error('Confirm modal error:', err);
           });
       }
 
@@ -753,6 +784,19 @@
         document.getElementById('detailYayasan').textContent = sppg.nama_yayasan || '—';
         document.getElementById('detailBulan').textContent = sppg.data_bulan || '—';
         document.getElementById('detailVerified').textContent = new Date(sppg.verified_at).toLocaleString('id-ID');
+
+        // Nilai kosong ("—") dibuat samar; tombol salin ID
+        document.querySelectorAll('[data-info]').forEach(el => {
+          const empty = el.textContent.trim() === '—';
+          el.classList.toggle('text-slate-300', empty);
+          el.classList.toggle('font-normal', empty);
+        });
+        document.getElementById('copyId').onclick = async () => {
+          const ic = document.getElementById('copyIdIcon');
+          try { await navigator.clipboard.writeText(String(sppg.id)); ic.textContent = 'check'; }
+          catch (e) { ic.textContent = 'error'; }
+          setTimeout(() => (ic.textContent = 'content_copy'), 1200);
+        };
 
         // Status badge
         const statusBadge = document.getElementById('detailStatus');
@@ -784,20 +828,37 @@
           document.getElementById('statusVerifikasi').textContent = sppg.status_verifikasi === 'aktif' ? 'Terverifikasi' : 'Belum diverifikasi';
         }
 
-        // Generate QR
-        QRCode.toCanvas(document.getElementById('qrCanvas'), qrContent, {
-          width: 200,
-          margin: 2,
-          color: { dark: '#001026', light: '#ffffff' }
-        });
+        // QR berisi informasi yang diverifikasi sistem + link verifikasi
+        const verifyUrl = detailUrl(sppg);
+        const lokasi = [sppg.kecamatan, sppg.kabupaten_kota, sppg.provinsi].filter(Boolean).join(', ') || '-';
+        const alamat = (sppg.alamat || '-').slice(0, 80);
+        const qrText = [
+          'RADAR MBG NASIONAL - TERVERIFIKASI',
+          `ID SPPG: ${sppg.id}`,
+          `Nama: ${sppg.nama}`,
+          `Alamat: ${alamat}`,
+          `Lokasi: ${lokasi}`,
+          `Kepatuhan: ${sppg.kepatuhan_score}%`,
+          `Total Antaran: ${sppg.total_antaran}x`,
+          `Antaran Terakhir: ${sppg.tanggal_terakhir_antaran || 'Belum ada'}`,
+          `Diverifikasi: ${new Date(sppg.verified_at).toLocaleString('id-ID')}`,
+          `Cek: ${verifyUrl}`
+        ].join('\n');
 
-        // Download QR handler
+        drawQr(document.getElementById('qrCanvas'), qrText);
+
         document.getElementById('downloadQR').onclick = () => {
-          const canvas = document.getElementById('qrCanvas');
           const link = document.createElement('a');
           link.download = `sppg-qr-${sppg.id}.png`;
-          link.href = canvas.toDataURL();
+          link.href = document.getElementById('qrCanvas').toDataURL();
           link.click();
+        };
+
+        document.getElementById('copyLink').onclick = async () => {
+          const label = document.getElementById('copyLinkText');
+          try { await navigator.clipboard.writeText(verifyUrl); label.textContent = 'Tersalin'; }
+          catch (e) { label.textContent = 'Gagal menyalin'; }
+          setTimeout(() => (label.textContent = 'Salin link'), 1500);
         };
 
         detailSection.classList.remove('hidden');
@@ -809,21 +870,13 @@
         return div.innerHTML;
       }
 
-      // Check URL params for direct ID
-      const params = new URLSearchParams(window.location.search);
-      const directId = params.get('id');
-      const isDirect = params.get('direct') === '1';
-      if (directId) {
+      // Link unik / QR lama (?id=123 atau ?id=123&direct=1) langsung membuka kartu detail
+      const directId = new URLSearchParams(window.location.search).get('id');
+      if (directId && /^\d+$/.test(directId)) {
         sampleSection.classList.add('hidden');
-        if (isDirect) {
-          // Direct mode: skip search & confirm, go straight to detail
-          selectSppg(directId, true);
-        } else {
-          // Normal mode: show search with ID pre-filled
-          searchInput.value = directId;
-          performSearch(directId, 1);
-        }
+        selectSppg(directId, false);
       }
+
     })();
   </script>
 </body>

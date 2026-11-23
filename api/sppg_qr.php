@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+ini_set('display_errors', '0'); // notice/warning PHP jangan merusak JSON
 require_once __DIR__ . '/../database/db.php';
 
 $pdo = getDB();
@@ -30,7 +31,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT id, nama, provinsi, kabupaten_kota, kecamatan, kelurahan_desa,
                alamat, nama_yayasan, status, data_bulan, latitude, longitude,
-               created_at, updated_at, kepatuhan_score, total_antaran,
+               kepatuhan_score, total_antaran,
                masalah_terakhir, tanggal_terakhir_antaran, status_verifikasi
         FROM sppg
         WHERE id = ?
@@ -72,11 +73,12 @@ try {
         'verification_url' => $baseUrl . '/verify-sppg.html?id=' . $sppg['id'] . '&direct=1'
     ];
 
+    $flags = JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
     echo json_encode([
         'status' => 'success',
         'sppg' => $qrData,
-        'qr_content' => json_encode($qrData, JSON_UNESCAPED_UNICODE)
-    ]);
+        'qr_content' => json_encode($qrData, $flags)
+    ], $flags);
 
 } catch (PDOException $e) {
     http_response_code(500);

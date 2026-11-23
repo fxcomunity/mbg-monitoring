@@ -22,7 +22,7 @@ export async function onRequest(context) {
     const result = await dbQuery(env.DATABASE_URL,
       `SELECT id, nama, provinsi, kabupaten_kota, kecamatan, kelurahan_desa,
               alamat, nama_yayasan, status, data_bulan, latitude, longitude,
-              created_at, updated_at, kepatuhan_score, total_antaran,
+              kepatuhan_score, total_antaran,
               masalah_terakhir, tanggal_terakhir_antaran, status_verifikasi
        FROM sppg
        WHERE id = $1`,

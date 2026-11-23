@@ -20,7 +20,7 @@ $pdo = getDB();
 
 $query = isset($_GET['q']) ? trim($_GET['q']) : '';
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$limit = isset($_GET['limit']) ? intval($_GET['limit']) : 10;
+$limit = isset($_GET['limit']) ? min(50, max(1, intval($_GET['limit']))) : 10;
 $offset = ($page - 1) * $limit;
 
 if (strlen($query) < 2) {
@@ -29,40 +29,38 @@ if (strlen($query) < 2) {
 }
 
 try {
-    $searchTerm = '%' . $query . '%';
+    // "sppg jakarta" -> setiap kata harus cocok di salah satu kolom (urutan kata bebas)
+    $tokens = array_slice(array_values(array_filter(preg_split('/\s+/', $query))), 0, 5);
+    $cols = ['nama', 'alamat', 'provinsi', 'kabupaten_kota', 'kecamatan'];
+    $conds = [];
+    $params = [];
+    foreach ($tokens as $tok) {
+        $like = '%' . addcslashes($tok, '%_\\') . '%';
+        $conds[] = '(' . implode(' OR ', array_map(function ($c) { return "$c ILIKE ?"; }, $cols)) . ')';
+        foreach ($cols as $_) { $params[] = $like; }
+    }
+    $where = implode(' AND ', $conds);
+    if (ctype_digit($query)) {
+        $where = "(id::text = ? OR ($where))";
+        array_unshift($params, $query);
+    }
 
-    // Get total count for pagination
-    $countStmt = $pdo->prepare("
-        SELECT COUNT(*) as total
-        FROM sppg
-        WHERE id::text = ?
-           OR nama ILIKE ?
-           OR alamat ILIKE ?
-           OR provinsi ILIKE ?
-           OR kabupaten_kota ILIKE ?
-    ");
-    $countStmt->execute([$query, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+    $countStmt = $pdo->prepare("SELECT COUNT(*) AS total FROM sppg WHERE $where");
+    $countStmt->execute($params);
     $totalCount = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
-    $totalPages = ceil($totalCount / $limit);
+    $totalPages = (int)ceil($totalCount / $limit);
 
-    // Search with pagination
     $stmt = $pdo->prepare("
         SELECT id, nama, provinsi, kabupaten_kota, kecamatan, kelurahan_desa,
                alamat, nama_yayasan, status, data_bulan, latitude, longitude,
                kepatuhan_score, total_antaran, masalah_terakhir,
                tanggal_terakhir_antaran, status_verifikasi
         FROM sppg
-        WHERE id::text = ?
-           OR nama ILIKE ?
-           OR alamat ILIKE ?
-           OR provinsi ILIKE ?
-           OR kabupaten_kota ILIKE ?
-        ORDER BY
-          CASE WHEN id::text = ? THEN 0 ELSE 1 END,
-          nama ASC
+        WHERE $where
+        ORDER BY CASE WHEN id::text = ? THEN 0 ELSE 1 END, nama ASC
         LIMIT ? OFFSET ?
     ");
-    $stmt->execute([$query, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $query, $limit, $offset]);
+    $stmt->execute(array_merge($params, [$query, $limit, $offset]));
     $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Format results

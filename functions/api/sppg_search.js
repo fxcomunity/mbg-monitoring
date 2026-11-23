@@ -22,39 +22,36 @@ export async function onRequest(context) {
   }
 
   try {
-    const searchTerm = `%${query}%`;
+    // "sppg jakarta" -> setiap kata harus cocok di salah satu kolom (urutan kata bebas)
+    const tokens = query.split(/\s+/).filter(Boolean).slice(0, 5);
+    const cols = ['nama', 'alamat', 'provinsi', 'kabupaten_kota', 'kecamatan'];
+    const params = [];
+    const conds = tokens.map(tok => {
+      const like = '%' + tok.replace(/[\\%_]/g, '\\$&') + '%';
+      return '(' + cols.map(c => { params.push(like); return `${c} ILIKE $${params.length}`; }).join(' OR ') + ')';
+    });
+    let where = conds.join(' AND ');
+    if (/^\d+$/.test(query)) {
+      params.push(query);
+      where = `(id::text = $${params.length} OR (${where}))`;
+    }
 
-    // Get total count for pagination
     const countResult = await dbQuery(env.DATABASE_URL,
-      `SELECT COUNT(*)::int as total
-       FROM sppg
-       WHERE id::text = $1
-          OR nama ILIKE $2
-          OR alamat ILIKE $3
-          OR provinsi ILIKE $4
-          OR kabupaten_kota ILIKE $5`,
-      [query, searchTerm, searchTerm, searchTerm, searchTerm]
-    );
+      `SELECT COUNT(*)::int AS total FROM sppg WHERE ${where}`, params);
     const totalCount = countResult.rows[0]?.total || 0;
     const totalPages = Math.ceil(totalCount / limit);
 
-    // Search with pagination
+    const n = params.length;
     const result = await dbQuery(env.DATABASE_URL,
       `SELECT id, nama, provinsi, kabupaten_kota, kecamatan, kelurahan_desa,
               alamat, nama_yayasan, status, data_bulan, latitude, longitude,
               kepatuhan_score, total_antaran, masalah_terakhir,
               tanggal_terakhir_antaran, status_verifikasi
        FROM sppg
-       WHERE id::text = $1
-          OR nama ILIKE $2
-          OR alamat ILIKE $3
-          OR provinsi ILIKE $4
-          OR kabupaten_kota ILIKE $5
-       ORDER BY
-         CASE WHEN id::text = $1 THEN 0 ELSE 1 END,
-         nama ASC
-       LIMIT $6 OFFSET $7`,
-      [query, searchTerm, searchTerm, searchTerm, searchTerm, limit, offset]
+       WHERE ${where}
+       ORDER BY CASE WHEN id::text = $${n + 1} THEN 0 ELSE 1 END, nama ASC
+       LIMIT $${n + 2} OFFSET $${n + 3}`,
+      [...params, query, limit, offset]
     );
 
     const data = (result.rows || []).map(row => ({
